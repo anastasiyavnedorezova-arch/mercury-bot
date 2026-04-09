@@ -85,8 +85,9 @@ async function getUserId(telegramId) {
 }
 
 const START_TRANSACTION_TEXT =
-  `Напиши мне о своей трате или доходе в свободной форме.\n` +
-  `Например: «продукты 1800», «такси 450», «зарплата 120000» 👇`;
+  `Напиши мне о своей трате или доходе в свободной форме\n` +
+  `или запиши голосовое — я распознаю его 🎤\n` +
+  `Например: «продукты 1800», «такси 450», «зарплата 120000»`;
 
 export async function handleOnboardingCallback(bot, query) {
   const chatId = query.message.chat.id;
