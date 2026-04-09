@@ -107,12 +107,12 @@ const PLANS = {
     check: 'check_payment_1month',
   },
   buy_6months:  {
-    label: '6 месяцев — 2 490 ₽ (скидка 17%)',
+    label: '6 месяцев — 2 490 ₽ · скидка 17%',
     link: () => process.env.PAYMENT_LINK_6MONTHS,
     check: 'check_payment_6months',
   },
   buy_12months: {
-    label: '12 месяцев — 4 490 ₽ (скидка 25%)',
+    label: '12 месяцев — 4 490 ₽ · скидка 25%',
     link: () => process.env.PAYMENT_LINK_12MONTHS,
     check: 'check_payment_12months',
   },
@@ -126,15 +126,25 @@ export async function handleSubscriptionCallback(bot, query) {
   await bot.answerCallbackQuery(query.id);
 
   if (action === 'buy_subscription') {
-    await bot.sendMessage(chatId, 'Выбери период подписки:', {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '1 месяц — 499 ₽', callback_data: 'buy_1month' }],
-          [{ text: '6 месяцев — 2 490 ₽ (скидка 17%)', callback_data: 'buy_6months' }],
-          [{ text: '12 месяцев — 4 490 ₽ (скидка 25%)', callback_data: 'buy_12months' }],
-        ],
-      },
-    });
+    await bot.sendMessage(
+      chatId,
+      '💳 Оформление подписки Меркури\n\n' +
+      'Подписка даёт полный доступ ко всем функциям:\n' +
+      '✅ до 3 финансовых целей с расчётом доходности\n' +
+      '✅ бюджет и алерты о превышении\n' +
+      '✅ глубокая аналитика по запросу\n' +
+      '✅ редактирование и удаление записей\n\n' +
+      'Выбери период:',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '1 месяц — 499 ₽', callback_data: 'buy_1month' }],
+            [{ text: '6 месяцев — 2 490 ₽ · скидка 17%', callback_data: 'buy_6months' }],
+            [{ text: '12 месяцев — 4 490 ₽ · скидка 25%', callback_data: 'buy_12months' }],
+          ],
+        },
+      }
+    );
     return;
   }
 

@@ -1,5 +1,8 @@
 import { supabase } from '../db.js';
 import { showMainMenu } from './menu.js';
+import { showGoal } from './goal.js';
+import { showBudget } from './budget.js';
+import { showSubscription } from './subscription.js';
 
 const STEP1_TEXT =
   `Привет! Я Меркури — твой личный финансовый помощник 👋\n\n` +
@@ -176,7 +179,7 @@ export async function handleOnboardingCallback(bot, query) {
   }
 
   if (action === 'onboarding:start_goal') {
-    await bot.sendMessage(chatId, 'Раздел в разработке 🔧');
+    await showGoal(bot, chatId, telegramId);
     return;
   }
 
@@ -259,7 +262,7 @@ export async function handleOnboardingCallback(bot, query) {
   }
 
   if (action === 'onboarding:start_budget') {
-    await bot.sendMessage(chatId, 'Раздел в разработке 🔧');
+    await showBudget(bot, chatId, telegramId);
     return;
   }
 
@@ -328,7 +331,7 @@ export async function handleOnboardingCallback(bot, query) {
   }
 
   if (action === 'onboarding:pay_subscription') {
-    await bot.sendMessage(chatId, 'Раздел оплаты в разработке 🔧');
+    await showSubscription(bot, chatId, telegramId);
     return;
   }
 
