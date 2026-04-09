@@ -12,6 +12,7 @@ import { showAnalyticsMenu, handleAnalyticsCallback } from './handlers/analytics
 import { showFeedback } from './handlers/feedback.js';
 import { showSubscription, handleSubscriptionCallback, activateSubscription } from './handlers/subscription.js';
 import { startScheduler } from './notifications/scheduler.js';
+import { handleVoiceMessage } from './handlers/voice.js';
 import { userStates } from './state.js';
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
@@ -61,6 +62,10 @@ bot.onText(/\/feedback/, async (msg) => {
 bot.onText(/\/subscription/, async (msg) => {
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showSubscription(bot, msg.chat.id, msg.from.id);
+});
+
+bot.on('voice', (msg) => {
+  handleVoiceMessage(bot, msg);
 });
 
 bot.on('message', (msg) => {
