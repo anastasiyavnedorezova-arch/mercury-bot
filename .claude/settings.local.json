@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(brew install supabase/tap/supabase 2>&1 | tail -5)",
+      "Bash(which node && node --version)",
+      "Bash(curl -fsSL https://github.com/supabase/cli/releases/latest/download/supabase_darwin_amd64.tar.gz -o /tmp/supabase.tar.gz)",
+      "Bash(tar -xzf /tmp/supabase.tar.gz -C /tmp/)",
+      "Read(//private/tmp/**)",
+      "Bash(/tmp/supabase --version)",
+      "Bash(PROJECT_REF=\"ijvkcskzvwluntrsbcsj\" && /tmp/supabase db execute --project-ref \"$PROJECT_REF\" --file /Users/anastasianedorezova/Documents/mercury-bot/migration.sql 2>&1)",
+      "Bash(/tmp/supabase db query --help 2>&1)",
+      "Bash(node --check src/handlers/goal.js 2>&1)",
+      "Bash(node --check src/utils/goalCalc.js && node --check src/handlers/goal.js && echo \"OK\")",
+      "Bash(node --check src/handlers/budget.js && node --check src/handlers/message.js && node --check src/handlers/menu.js && node --check src/bot.js && echo \"Все файлы OK\")",
+      "Bash(node --check src/bot.js && echo \"OK\")",
+      "Bash(node --check src/handlers/budget.js && echo \"OK\")",
+      "Bash(node --check src/prompts/system_prompt.js && node --check src/handlers/message.js && node --check src/handlers/budget.js && echo \"Все файлы OK\")",
+      "Bash(node --check src/handlers/history.js && node --check src/handlers/message.js && node --check src/handlers/menu.js && node --check src/bot.js && echo \"Все файлы OK\")",
+      "Bash(node --check src/bot.js && node --check src/handlers/history.js && echo \"OK\")",
+      "Bash(node --check src/handlers/history.js && echo \"OK\")",
+      "Bash(npm install node-cron --save 2>&1 | tail -5)"
+    ]
+  }
+}
