@@ -13,6 +13,7 @@ import { showFeedback } from './handlers/feedback.js';
 import { showSubscription, handleSubscriptionCallback, activateSubscription } from './handlers/subscription.js';
 import { startScheduler } from './notifications/scheduler.js';
 import { handleVoiceMessage } from './handlers/voice.js';
+import { startWebhookServer } from './webhook.js';
 import { userStates } from './state.js';
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
@@ -194,6 +195,7 @@ bot.onText(/\/activate (.+)/, async (msg, match) => {
 });
 
 startScheduler(bot);
+startWebhookServer(bot);
 
 bot.on('polling_error', (error) => {
   console.error('Polling error:', error.code, error.message);

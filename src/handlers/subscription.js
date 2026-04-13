@@ -103,17 +103,17 @@ export async function showSubscription(bot, chatId, telegramId) {
 const PLANS = {
   buy_1month:   {
     label: '1 месяц — 499 ₽',
-    link: () => process.env.PAYMENT_LINK_1MONTH,
+    link: (telegramId) => `${process.env.PAYMENT_LINK_1MONTH}?metadata[telegram_id]=${telegramId}`,
     check: 'check_payment_1month',
   },
   buy_6months:  {
     label: '6 месяцев — 2 490 ₽ · скидка 17%',
-    link: () => process.env.PAYMENT_LINK_6MONTHS,
+    link: (telegramId) => `${process.env.PAYMENT_LINK_6MONTHS}?metadata[telegram_id]=${telegramId}`,
     check: 'check_payment_6months',
   },
   buy_12months: {
     label: '12 месяцев — 4 490 ₽ · скидка 25%',
-    link: () => process.env.PAYMENT_LINK_12MONTHS,
+    link: (telegramId) => `${process.env.PAYMENT_LINK_12MONTHS}?metadata[telegram_id]=${telegramId}`,
     check: 'check_payment_12months',
   },
 };
@@ -153,7 +153,7 @@ export async function handleSubscriptionCallback(bot, query) {
     await bot.sendMessage(
       chatId,
       `Для оплаты перейди по ссылке 👇\n\n` +
-      `[${label}](${link()})\n\n` +
+      `[${label}](${link(telegramId)})\n\n` +
       `После оплаты вернись в бот и нажми кнопку ниже — я сразу всё активирую 💛`,
       {
         parse_mode: 'Markdown',
