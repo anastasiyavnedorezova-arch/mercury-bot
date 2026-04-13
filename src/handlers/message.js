@@ -10,6 +10,7 @@ import { handleGoalState } from './goal.js';
 import { handleBudgetState } from './budget.js';
 import { handleHistoryState } from './history.js';
 import { handleFeedbackMessage } from './feedback.js';
+import { handleSubscriptionEmailState } from './subscription.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -183,6 +184,9 @@ export async function handleMessage(bot, msg) {
 
   // Состояние ввода фидбека
   if (await handleFeedbackMessage(bot, msg)) return;
+
+  // Состояние ввода email для оплаты подписки
+  if (await handleSubscriptionEmailState(bot, msg)) return;
 
   // Проверяем ожидающее состояние (например, выбор категории для WB текстом)
   const state = userStates.get(telegramId);

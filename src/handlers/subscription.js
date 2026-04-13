@@ -1,5 +1,6 @@
 import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
+import { userStates } from '../state.js';
 
 async function getUserId(telegramId) {
   const { data } = await supabase
@@ -19,6 +20,10 @@ function formatDate(isoStr) {
 function daysLeft(isoStr) {
   const diff = new Date(isoStr).getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / 86_400_000));
+}
+
+function isValidEmail(str) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str.trim());
 }
 
 export async function showSubscription(bot, chatId, telegramId) {
@@ -101,22 +106,63 @@ export async function showSubscription(bot, chatId, telegramId) {
 }
 
 const PLANS = {
-  buy_1month:   {
-    label: '1 месяц — 499 ₽',
-    link: (telegramId) => `${process.env.PAYMENT_LINK_1MONTH}?metadata[telegram_id]=${telegramId}`,
-    check: 'check_payment_1month',
-  },
-  buy_6months:  {
-    label: '6 месяцев — 2 490 ₽ · скидка 17%',
-    link: (telegramId) => `${process.env.PAYMENT_LINK_6MONTHS}?metadata[telegram_id]=${telegramId}`,
-    check: 'check_payment_6months',
-  },
-  buy_12months: {
-    label: '12 месяцев — 4 490 ₽ · скидка 25%',
-    link: (telegramId) => `${process.env.PAYMENT_LINK_12MONTHS}?metadata[telegram_id]=${telegramId}`,
-    check: 'check_payment_12months',
-  },
+  buy_1month:   { label: '1 месяц — 499 ₽',                   link: () => process.env.PAYMENT_LINK_1MONTH,   check: 'check_payment_1month' },
+  buy_6months:  { label: '6 месяцев — 2 490 ₽ · скидка 17%', link: () => process.env.PAYMENT_LINK_6MONTHS,  check: 'check_payment_6months' },
+  buy_12months: { label: '12 месяцев — 4 490 ₽ · скидка 25%',link: () => process.env.PAYMENT_LINK_12MONTHS, check: 'check_payment_12months' },
 };
+
+async function showPaymentLink(bot, chatId, telegramId, planKey, email) {
+  const { label, link, check } = PLANS[planKey];
+  await bot.sendMessage(
+    chatId,
+    `Отлично! Для оплаты перейди по ссылке 👇\n\n` +
+    `[Оплатить ${label}](${link()})\n\n` +
+    `⚠️ При оплате используй email: ${email}\n` +
+    `Это нужно чтобы я автоматически активировал подписку 💛\n\n` +
+    `После оплаты вернись в бот.`,
+    {
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true,
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '✅ Я оплатил(а)', callback_data: check }],
+          [{ text: 'Отмена', callback_data: 'cancel_payment' }],
+        ],
+      },
+    }
+  );
+}
+
+export async function handleSubscriptionEmailState(bot, msg) {
+  const telegramId = msg.from.id;
+  const chatId = msg.chat.id;
+  const state = userStates.get(telegramId);
+
+  if (!state?.awaitingEmail) return false;
+
+  const text = msg.text?.trim() ?? '';
+
+  if (!isValidEmail(text)) {
+    await bot.sendMessage(chatId,
+      'Не похоже на email. Попробуй ещё раз 👇\n' +
+      'Например: ivan@gmail.com');
+    return true;
+  }
+
+  const email = text.toLowerCase();
+  const { selectedPeriod } = state;
+  userStates.delete(telegramId);
+
+  // Сохраняем email в таблице users
+  await supabase
+    .from('users')
+    .update({ email })
+    .eq('external_id', String(telegramId))
+    .eq('channel', 'telegram');
+
+  await showPaymentLink(bot, chatId, telegramId, selectedPeriod, email);
+  return true;
+}
 
 export async function handleSubscriptionCallback(bot, query) {
   const chatId = query.message.chat.id;
@@ -149,22 +195,12 @@ export async function handleSubscriptionCallback(bot, query) {
   }
 
   if (PLANS[action]) {
-    const { label, link, check } = PLANS[action];
+    userStates.set(telegramId, { awaitingEmail: true, selectedPeriod: action });
     await bot.sendMessage(
       chatId,
-      `Для оплаты перейди по ссылке 👇\n\n` +
-      `[${label}](${link(telegramId)})\n\n` +
-      `После оплаты вернись в бот и нажми кнопку ниже — я сразу всё активирую 💛`,
-      {
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true,
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: '✅ Я оплатил(а)', callback_data: check }],
-            [{ text: 'Отмена', callback_data: 'cancel_payment' }],
-          ],
-        },
-      }
+      'Укажи email для подтверждения оплаты 📧\n' +
+      'На него придёт чек от ЮKassa, и я смогу автоматически ' +
+      'активировать твою подписку.'
     );
     return;
   }
@@ -188,6 +224,7 @@ export async function handleSubscriptionCallback(bot, query) {
   }
 
   if (action === 'cancel_payment') {
+    userStates.delete(telegramId);
     await showSubscription(bot, chatId, telegramId);
     return;
   }

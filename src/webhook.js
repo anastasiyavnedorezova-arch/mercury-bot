@@ -27,29 +27,20 @@ export function startWebhookServer(bot) {
       const payment = event.object;
       const amount = parseFloat(payment.amount.value);
       const paymentId = payment.id;
-      const metadata = payment.metadata ?? {};
-      const telegramId = metadata.telegram_id;
+
+      // Email покупателя — ЮKassa передаёт в receipt или metadata
+      const customerEmail =
+        payment.receipt?.customer?.email ??
+        payment.metadata?.custEmail ??
+        payment.metadata?.customerNumber ??
+        null;
 
       let months = 1;
       if (amount >= 4490) months = 12;
       else if (amount >= 2490) months = 6;
 
       console.log('[webhook] Payment succeeded:', paymentId,
-        'amount:', amount, 'telegramId:', telegramId, 'months:', months);
-
-      const { data: users } = await supabase
-        .from('users')
-        .select('id')
-        .eq('external_id', String(telegramId))
-        .eq('channel', 'telegram')
-        .limit(1);
-
-      if (!users?.length) {
-        console.error('[webhook] User not found for telegramId:', telegramId);
-        return res.status(200).send('ok');
-      }
-
-      const userId = users[0].id;
+        'amount:', amount, 'email:', customerEmail, 'months:', months);
 
       // Идемпотентность — не обрабатывать один платёж дважды
       const { data: existing } = await supabase
@@ -62,6 +53,36 @@ export function startWebhookServer(bot) {
         console.log('[webhook] Payment already processed:', paymentId);
         return res.status(200).send('ok');
       }
+
+      // Ищем пользователя по email
+      const { data: users } = await supabase
+        .from('users')
+        .select('id, external_id')
+        .eq('email', customerEmail)
+        .limit(1);
+
+      if (!users?.length) {
+        console.error('[webhook] User not found for email:', customerEmail);
+
+        // Сохраняем необработанный платёж для ручной активации
+        await supabase.from('feedback').insert({
+          message: `НЕОБРАБОТАННЫЙ ПЛАТЁЖ: paymentId=${paymentId}, amount=${amount}, email=${customerEmail}`,
+        }).catch(e => console.error('[webhook] feedback insert error:', e.message));
+
+        // Уведомляем администратора
+        await bot.sendMessage(
+          process.env.ADMIN_TELEGRAM_ID,
+          `⚠️ Необработанный платёж!\n` +
+          `PaymentId: ${paymentId}\n` +
+          `Сумма: ${amount} ₽\n` +
+          `Email: ${customerEmail}\n\n` +
+          `Активируй вручную: /activate <telegram_id> ${months}`
+        ).catch(e => console.error('[webhook] admin notify error:', e.message));
+
+        return res.status(200).send('ok');
+      }
+
+      const { id: userId, external_id: telegramId } = users[0];
 
       const startsAt = new Date();
       const endsAt = new Date();
