@@ -18,6 +18,9 @@ import { userStates } from './state.js';
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
+// Все обновления старше этого момента — остатки очереди после перезапуска
+const BOT_START_TIME = Math.floor(Date.now() / 1000);
+
 bot.getMe().then(() => {
   console.log('Mercury bot started');
 }).catch(err => {
@@ -35,47 +38,103 @@ bot.setMyCommands([
 bot.setChatMenuButton({ menu_button: { type: 'commands' } })
   .catch((err) => console.error('setChatMenuButton error:', err.message));
 
-bot.onText(/\/start/, (msg) => handleStart(bot, msg));
+// ── Команды ───────────────────────────────────────────────────────────────────
+
+bot.onText(/\/start/, (msg) => {
+  if (msg.date < BOT_START_TIME) return;
+  handleStart(bot, msg);
+});
+
 bot.onText(/\/menu/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showMainMenu(bot, msg.chat.id);
 });
+
 bot.onText(/\/goal/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showGoal(bot, msg.chat.id, msg.from.id);
 });
+
 bot.onText(/\/budget/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showBudget(bot, msg.chat.id, msg.from.id);
 });
+
 bot.onText(/\/history/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showHistory(bot, msg.chat.id);
 });
+
 bot.onText(/\/analytics/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showAnalyticsMenu(bot, msg.chat.id);
 });
+
 bot.onText(/\/feedback/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showFeedback(bot, msg.chat.id, msg.from.id);
 });
+
 bot.onText(/\/subscription/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showSubscription(bot, msg.chat.id, msg.from.id);
 });
 
+bot.onText(/\/activate (.+)/, async (msg, match) => {
+  if (msg.date < BOT_START_TIME) return;
+  if (msg.chat.id.toString() !== process.env.ADMIN_TELEGRAM_ID) return;
+
+  const parts = match[1].trim().split(/\s+/);
+  const targetExternalId = parts[0];
+  const months = parseInt(parts[1]) || 1;
+
+  const result = await activateSubscription(bot, targetExternalId, months);
+
+  if (result.ok) {
+    await bot.sendMessage(
+      msg.chat.id,
+      `✅ Подписка активирована для пользователя ${targetExternalId} на ${months} мес.`
+    );
+  } else {
+    await bot.sendMessage(msg.chat.id, `❌ Ошибка: ${result.reason}`);
+  }
+});
+
+// ── Голосовые ─────────────────────────────────────────────────────────────────
+
 bot.on('voice', (msg) => {
+  if (msg.date < BOT_START_TIME) return;
   handleVoiceMessage(bot, msg);
 });
 
+// ── Текстовые сообщения ───────────────────────────────────────────────────────
+
 bot.on('message', (msg) => {
+  if (msg.date < BOT_START_TIME) {
+    console.log('[filter] Skipping old message from:', msg.date);
+    return;
+  }
   if (msg.text && !msg.text.startsWith('/')) {
     handleMessage(bot, msg);
   }
 });
 
+// ── Callback-кнопки ───────────────────────────────────────────────────────────
+
 bot.on('callback_query', async (query) => {
+  if (query.message.date < BOT_START_TIME) {
+    console.log('[filter] Skipping old callback from:', query.message.date);
+    await bot.answerCallbackQuery(query.id).catch(() => {});
+    return;
+  }
+
   const action = query.data;
 
   // Кнопки онбординга — единственное, что разрешено без согласия
@@ -174,25 +233,7 @@ bot.on('callback_query', async (query) => {
   await bot.answerCallbackQuery(query.id);
 });
 
-// Ручная активация подписки (только для ADMIN)
-bot.onText(/\/activate (.+)/, async (msg, match) => {
-  if (msg.chat.id.toString() !== process.env.ADMIN_TELEGRAM_ID) return;
-
-  const parts = match[1].trim().split(/\s+/);
-  const targetExternalId = parts[0];
-  const months = parseInt(parts[1]) || 1;
-
-  const result = await activateSubscription(bot, targetExternalId, months);
-
-  if (result.ok) {
-    await bot.sendMessage(
-      msg.chat.id,
-      `✅ Подписка активирована для пользователя ${targetExternalId} на ${months} мес.`
-    );
-  } else {
-    await bot.sendMessage(msg.chat.id, `❌ Ошибка: ${result.reason}`);
-  }
-});
+// ── Системные обработчики ─────────────────────────────────────────────────────
 
 startScheduler(bot);
 startWebhookServer(bot);
@@ -202,7 +243,6 @@ bot.on('polling_error', (error) => {
 });
 
 process.on('unhandledRejection', (reason) => {
-  // Игнорируем ошибку устаревших callback_query при перезапуске
   if (reason?.message?.includes('query is too old') ||
       reason?.message?.includes('query ID is invalid')) {
     return;
