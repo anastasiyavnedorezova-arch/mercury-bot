@@ -11,6 +11,7 @@ import { handleBudgetState } from './budget.js';
 import { handleHistoryState } from './history.js';
 import { handleFeedbackMessage } from './feedback.js';
 import { handleSubscriptionEmailState } from './subscription.js';
+import { handleCategoryNameState } from './categories.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -89,12 +90,12 @@ async function sendConfirmation(bot, chatId, parsed, txId, access) {
   await bot.sendMessage(chatId, buildConfirmationText(parsed), keyboard);
 }
 
-async function callLLM(userText) {
+async function callLLM(userText, userCategories = []) {
   const today = new Date().toISOString().split('T')[0];
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: getSystemPrompt() },
+      { role: 'system', content: getSystemPrompt(userCategories) },
       { role: 'user', content: `Сегодня ${today}. ${userText}` },
     ],
     temperature: 0,
@@ -188,6 +189,9 @@ export async function handleMessage(bot, msg) {
   // Состояние ввода email для оплаты подписки
   if (await handleSubscriptionEmailState(bot, msg)) return;
 
+  // Состояние ввода названия пользовательской категории
+  if (await handleCategoryNameState(bot, msg)) return;
+
   // Проверяем ожидающее состояние (например, выбор категории для WB текстом)
   const state = userStates.get(telegramId);
   if (state?.awaitingCategory) {
@@ -198,7 +202,17 @@ export async function handleMessage(bot, msg) {
   // Обычный поток
   let parsed;
   try {
-    parsed = await callLLM(text);
+    const userId = await getUserId(telegramId);
+    let userCategories = [];
+    if (userId) {
+      const { data } = await supabase
+        .from('categories')
+        .select('name, type')
+        .eq('user_id', userId)
+        .eq('is_active', true);
+      userCategories = data ?? [];
+    }
+    parsed = await callLLM(text, userCategories);
   } catch (err) {
     console.error('OpenAI error:', err.message);
     await bot.sendMessage(chatId, 'Ошибка при обработке сообщения. Попробуй ещё раз 🙏');

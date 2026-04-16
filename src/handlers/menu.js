@@ -4,11 +4,15 @@ import { showHistory } from './history.js';
 import { showAnalyticsMenu } from './analytics.js';
 import { showFeedback } from './feedback.js';
 import { showSubscription } from './subscription.js';
+import { showCategories } from './categories.js';
 
 const MENU_BUTTONS = [
   [
     { text: 'Записать расход или доход', callback_data: 'menu:add' },
     { text: 'История транзакций', callback_data: 'menu:history' },
+  ],
+  [
+    { text: 'Мои категории', callback_data: 'menu:categories' },
   ],
   [
     { text: 'Моя цель', callback_data: 'menu:goal' },
@@ -72,6 +76,11 @@ export async function handleMenuCallback(bot, query) {
 
   if (action === 'menu:subscription') {
     await showSubscription(bot, chatId, query.from.id);
+    return;
+  }
+
+  if (action === 'menu:categories') {
+    await showCategories(bot, chatId, query.from.id);
     return;
   }
 

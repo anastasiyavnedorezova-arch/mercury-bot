@@ -11,6 +11,7 @@ import { showHistory, handleHistoryCallback } from './handlers/history.js';
 import { showAnalyticsMenu, handleAnalyticsCallback } from './handlers/analytics.js';
 import { showFeedback } from './handlers/feedback.js';
 import { showSubscription, handleSubscriptionCallback, activateSubscription } from './handlers/subscription.js';
+import { showCategories, handleCategoriesCallback } from './handlers/categories.js';
 import { startScheduler } from './notifications/scheduler.js';
 import { handleVoiceMessage } from './handlers/voice.js';
 import { startWebhookServer } from './webhook.js';
@@ -32,6 +33,7 @@ bot.setMyCommands([
   { command: 'start', description: 'Начало работы' },
   { command: 'analytics', description: 'Аналитика' },
   { command: 'subscription', description: 'Управление подпиской' },
+  { command: 'categories', description: 'Мои категории' },
   { command: 'feedback', description: 'Написать команде' },
 ]).catch((err) => console.error('setMyCommands error:', err.message));
 
@@ -85,6 +87,12 @@ bot.onText(/\/subscription/, async (msg) => {
   if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
   showSubscription(bot, msg.chat.id, msg.from.id);
+});
+
+bot.onText(/\/categories/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
+  if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
+  showCategories(bot, msg.chat.id, msg.from.id);
 });
 
 bot.onText(/\/activate (.+)/, async (msg, match) => {
@@ -170,6 +178,19 @@ bot.on('callback_query', async (query) => {
   // Кнопки аналитики
   if (action.startsWith('analytics') || action === 'show_monthly_analytics') {
     await handleAnalyticsCallback(bot, query);
+    return;
+  }
+
+  // Кнопки категорий
+  if (
+    action === 'add_category' ||
+    action.startsWith('add_cat_type:') ||
+    action.startsWith('add_cat_group:') ||
+    action.startsWith('delete_category:') ||
+    action.startsWith('confirm_delete:') ||
+    action === 'cancel_delete'
+  ) {
+    await handleCategoriesCallback(bot, query);
     return;
   }
 
