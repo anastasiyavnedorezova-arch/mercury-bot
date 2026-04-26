@@ -14,6 +14,7 @@ import { showSubscription, handleSubscriptionCallback, activateSubscription } fr
 import { showCategories, handleCategoriesCallback } from './handlers/categories.js';
 import { startScheduler } from './notifications/scheduler.js';
 import { handleVoiceMessage } from './handlers/voice.js';
+import { handleFileUpload, handleFileConfirmation, handleFileCallback } from './handlers/fileUpload.js';
 import { startWebhookServer } from './webhook.js';
 import { userStates } from './state.js';
 
@@ -120,6 +121,21 @@ bot.onText(/\/activate (.+)/, async (msg, match) => {
 bot.on('voice', (msg) => {
   if (msg.date < BOT_START_TIME) return;
   handleVoiceMessage(bot, msg);
+});
+
+// ── Фото и документы (банковские выписки) ─────────────────────────────────────
+
+bot.on('photo', (msg) => {
+  if (msg.date < BOT_START_TIME) return;
+  handleFileUpload(bot, msg, 'photo');
+});
+
+bot.on('document', (msg) => {
+  if (msg.date < BOT_START_TIME) return;
+  const mime = msg.document?.mime_type ?? '';
+  if (mime.startsWith('image/') || mime === 'application/pdf') {
+    handleFileUpload(bot, msg, 'document');
+  }
 });
 
 // ── Текстовые сообщения ───────────────────────────────────────────────────────
@@ -237,6 +253,16 @@ bot.on('callback_query', async (query) => {
       return;
     }
     await handleMenuCallback(bot, query);
+    return;
+  }
+
+  // Кнопки выписки
+  if (
+    action === 'file_confirm' ||
+    action === 'file_cancel' ||
+    action === 'file_show_again'
+  ) {
+    await handleFileCallback(bot, query);
     return;
   }
 

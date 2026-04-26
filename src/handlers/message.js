@@ -12,6 +12,7 @@ import { handleHistoryState } from './history.js';
 import { handleFeedbackMessage } from './feedback.js';
 import { handleSubscriptionEmailState } from './subscription.js';
 import { handleCategoryNameState } from './categories.js';
+import { handleFileConfirmation } from './fileUpload.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -170,6 +171,9 @@ export async function handleMessage(bot, msg) {
 
   // Жёсткая блокировка: без согласия не обрабатываем ничего
   if (await requireTerms(bot, telegramId, chatId)) return;
+
+  // Состояние подтверждения загруженной выписки
+  if (await handleFileConfirmation(bot, msg)) return;
 
   // Состояние редактирования транзакции (Исправить → поле → текст)
   if (await handleTxEditState(bot, msg)) return;
