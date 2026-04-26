@@ -62,33 +62,11 @@ async function downloadTelegramFile(bot, fileId) {
   return { tmpPath, filePath: file.file_path };
 }
 
-function mimeFromPath(filePath) {
+function mimeFromExt(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === '.png') return 'image/png';
   if (ext === '.pdf') return 'application/pdf';
   return 'image/jpeg';
-}
-
-async function pdfToBase64Images(pdfPath) {
-  const { fromPath } = await import('pdf2pic');
-  const convert = fromPath(pdfPath, {
-    density: 150,
-    saveFilename: `pdf_${Date.now()}`,
-    savePath: '/tmp',
-    format: 'png',
-    width: 1200,
-  });
-
-  const base64Images = [];
-  for (let page = 1; page <= 3; page++) {
-    try {
-      const result = await convert(page, { responseType: 'base64' });
-      if (result?.base64) base64Images.push(result.base64);
-    } catch {
-      break;
-    }
-  }
-  return base64Images;
 }
 
 function splitMessage(text, maxLen = 4096) {
@@ -107,24 +85,21 @@ function splitMessage(text, maxLen = 4096) {
   return parts;
 }
 
-async function analyzeStatement(base64Images, mimeType = 'image/jpeg') {
-  const imageContent = base64Images.map((b64) => ({
-    type: 'image_url',
-    image_url: {
-      url: `data:${mimeType};base64,${b64}`,
-      detail: 'high',
-    },
-  }));
-
+async function analyzeStatement(base64Content, mimeType) {
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
-      { role: 'system', content: STATEMENT_SYSTEM_PROMPT },
       {
         role: 'user',
         content: [
-          { type: 'text', text: 'Извлеки все транзакции из этой банковской выписки.' },
-          ...imageContent,
+          { type: 'text', text: STATEMENT_SYSTEM_PROMPT },
+          {
+            type: 'image_url',
+            image_url: {
+              url: `data:${mimeType};base64,${base64Content}`,
+              detail: 'high',
+            },
+          },
         ],
       },
     ],
@@ -133,7 +108,6 @@ async function analyzeStatement(base64Images, mimeType = 'image/jpeg') {
   });
 
   const raw = response.choices[0].message.content.trim();
-  // Strip markdown code fences if present
   const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
   return JSON.parse(cleaned);
 }
@@ -217,58 +191,44 @@ export async function handleFileUpload(bot, msg, fileType) {
   await bot.sendChatAction(chatId, 'typing');
   await bot.sendMessage(chatId, '📄 Анализирую выписку, подожди немного...');
 
-  // Download and prepare images
-  let base64Images = [];
-  let tmpFiles = [];
-  let imageMime = 'image/jpeg';
+  // Download file
+  let tmpPath;
+  let mimeType;
 
   try {
     if (fileType === 'photo') {
       const photo = msg.photo[msg.photo.length - 1];
-      const { tmpPath } = await downloadTelegramFile(bot, photo.file_id);
-      tmpFiles.push(tmpPath);
-      base64Images.push(fs.readFileSync(tmpPath).toString('base64'));
-      imageMime = 'image/jpeg';
+      const downloaded = await downloadTelegramFile(bot, photo.file_id);
+      tmpPath = downloaded.tmpPath;
+      mimeType = 'image/jpeg';
     } else {
       const doc = msg.document;
-      const { tmpPath, filePath } = await downloadTelegramFile(bot, doc.file_id);
-      tmpFiles.push(tmpPath);
-
-      if (doc.mime_type === 'application/pdf') {
-        base64Images = await pdfToBase64Images(tmpPath);
-        imageMime = 'image/png';
-      } else {
-        base64Images.push(fs.readFileSync(tmpPath).toString('base64'));
-        imageMime = mimeFromPath(filePath);
-      }
+      const downloaded = await downloadTelegramFile(bot, doc.file_id);
+      tmpPath = downloaded.tmpPath;
+      mimeType = doc.mime_type === 'application/pdf'
+        ? 'application/pdf'
+        : mimeFromExt(downloaded.tmpPath);
     }
   } catch (err) {
-    console.error('[fileUpload] Download/convert error:', err.message);
+    console.error('[fileUpload] Download error:', err.message);
     await bot.sendMessage(chatId, 'Не смог загрузить файл. Попробуй ещё раз 🙏');
-    tmpFiles.forEach((f) => fs.unlink(f, () => {}));
     return;
   }
 
-  if (base64Images.length === 0) {
-    await bot.sendMessage(chatId, 'Не смог прочитать файл. Попробуй другой формат 🙏');
-    tmpFiles.forEach((f) => fs.unlink(f, () => {}));
-    return;
-  }
+  const base64Content = fs.readFileSync(tmpPath).toString('base64');
+  fs.unlink(tmpPath, () => {});
 
-  // Analyze via GPT-4o Vision
+  // Analyze via GPT-4o
   let rawTransactions = [];
   try {
-    rawTransactions = await analyzeStatement(base64Images, imageMime);
-    console.log(`[fileUpload] Vision found ${rawTransactions.length} transactions for user ${telegramId}`);
+    rawTransactions = await analyzeStatement(base64Content, mimeType);
+    console.log(`[fileUpload] Found ${rawTransactions.length} transactions for user ${telegramId}`);
   } catch (err) {
     console.error('[fileUpload] Vision error:', err.message);
     await bot.sendMessage(chatId,
       'Не смог распознать выписку. Попробуй скриншот или другой файл 🙏');
-    tmpFiles.forEach((f) => fs.unlink(f, () => {}));
     return;
   }
-
-  tmpFiles.forEach((f) => fs.unlink(f, () => {}));
 
   if (!Array.isArray(rawTransactions) || rawTransactions.length === 0) {
     await bot.sendMessage(chatId,

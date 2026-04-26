@@ -19,7 +19,8 @@
       "Bash(node --check src/bot.js && node --check src/handlers/history.js && echo \"OK\")",
       "Bash(node --check src/handlers/history.js && echo \"OK\")",
       "Bash(npm install node-cron --save 2>&1 | tail -5)",
-      "Bash(npm install pdf2pic --cache /tmp/npm-cache 2>&1 | tail -5)"
+      "Bash(npm install pdf2pic --cache /tmp/npm-cache 2>&1 | tail -5)",
+      "Bash(npm uninstall pdf2pic)"
     ]
   }
 }

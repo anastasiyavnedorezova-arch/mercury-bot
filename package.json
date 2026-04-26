@@ -13,7 +13,7 @@
   "license": "ISC",
   "description": "",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.100.1",
@@ -21,7 +21,6 @@
     "express": "^5.2.1",
     "node-cron": "^4.2.1",
     "node-telegram-bot-api": "^0.67.0",
-    "openai": "^6.33.0",
-    "pdf2pic": "^3.2.0"
+    "openai": "^6.33.0"
   }
 }
