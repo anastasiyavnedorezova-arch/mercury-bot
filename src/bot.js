@@ -14,7 +14,7 @@ import { showSubscription, handleSubscriptionCallback, activateSubscription } fr
 import { showCategories, handleCategoriesCallback } from './handlers/categories.js';
 import { startScheduler } from './notifications/scheduler.js';
 import { handleVoiceMessage } from './handlers/voice.js';
-import { handleFileUpload, handleFileConfirmation, handleFileCallback } from './handlers/fileUpload.js';
+import { handleFileUpload, handleFileCallback } from './handlers/fileUpload.js';
 import { startWebhookServer } from './webhook.js';
 import { userStates } from './state.js';
 

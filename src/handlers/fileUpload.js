@@ -288,25 +288,116 @@ export async function handleFileUpload(bot, msg, fileType) {
   await bot.sendMessage(chatId, parts[parts.length - 1], confirmKeyboard);
 }
 
-export async function handleFileConfirmation(bot, msg) {
+const CONFIRM_KEYBOARD = {
+  reply_markup: {
+    inline_keyboard: [
+      [
+        { text: '✅ Записать', callback_data: 'file_confirm' },
+        { text: '❌ Отменить', callback_data: 'file_cancel' },
+      ],
+      [{ text: '🔄 Показать снова', callback_data: 'file_show_again' }],
+    ],
+  },
+};
+
+function buildUpdatedSummary(transactions) {
+  let text = 'Обновил категории 👇\n\n✅ Готовы к записи:\n';
+  transactions.forEach((tx, i) => {
+    const emoji = tx.type === 'income' ? '📈' : '📉';
+    const comment = tx.comment ? ` (${tx.comment})` : '';
+    const typeLabel = tx.type === 'income' ? ' (доход)' : '';
+    text += `${i + 1}. ${tx.transaction_date} — ${tx.category}: ${tx.amount} ₽${comment}${typeLabel}\n`;
+  });
+  text += '\nВсё верно? Записываю?';
+  return text;
+}
+
+export async function handleFileTextResponse(bot, msg) {
   const telegramId = msg.from.id;
   const chatId = msg.chat.id;
   const state = userStates.get(telegramId);
 
   if (!state?.awaitingFileConfirmation) return false;
 
-  await bot.sendMessage(chatId, 'Используй кнопки чтобы подтвердить или отменить сохранение.', {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: '✅ Записать', callback_data: 'file_confirm' },
-          { text: '❌ Отменить', callback_data: 'file_cancel' },
-        ],
-        [{ text: '🔁 Показать снова', callback_data: 'file_show_again' }],
-      ],
-    },
-  });
+  await bot.sendChatAction(chatId, 'typing');
+
+  const correctionPrompt = `У пользователя есть список транзакций на подтверждение.
+Pending транзакции: ${JSON.stringify(state.pendingTransactions)}
+
+Пользователь написал правки: "${msg.text}"
+
+Разбери что пользователь хочет изменить.
+Верни JSON:
+{
+  "updates": [
+    {
+      "index": 0,
+      "category": "Возврат денег",
+      "type": "income",
+      "comment": "возврат Озон"
+    }
+  ],
+  "applyToAll": null
+}
+
+Поле applyToAll — если пользователь говорит "остальное всё в категорию X" — укажи название категории строкой.
+Верни ТОЛЬКО валидный JSON без пояснений.`;
+
+  let parsed;
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: correctionPrompt }],
+      temperature: 0,
+    });
+    const raw = response.choices[0].message.content.trim();
+    const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    console.error('[fileUpload] Correction LLM error:', err.message);
+    await bot.sendMessage(chatId,
+      'Не смог разобрать правки. Попробуй написать иначе или используй кнопки 🙏',
+      CONFIRM_KEYBOARD);
+    return true;
+  }
+
+  // Apply updates
+  const updated = [...state.pendingTransactions];
+
+  if (Array.isArray(parsed.updates)) {
+    for (const upd of parsed.updates) {
+      if (typeof upd.index === 'number' && updated[upd.index]) {
+        if (upd.category) updated[upd.index].category = upd.category;
+        if (upd.type) updated[upd.index].type = upd.type;
+        if (upd.comment !== undefined) updated[upd.index].comment = upd.comment;
+      }
+    }
+  }
+
+  if (parsed.applyToAll) {
+    for (const tx of updated) {
+      if (tx.category === 'Другое' || tx.confidence !== 'high') {
+        tx.category = parsed.applyToAll;
+      }
+    }
+  }
+
+  // Save updated state
+  userStates.set(telegramId, { ...state, pendingTransactions: updated });
+
+  const summaryText = buildUpdatedSummary(updated);
+  const parts = splitMessage(summaryText);
+  for (let i = 0; i < parts.length - 1; i++) {
+    await bot.sendMessage(chatId, parts[i]);
+  }
+  await bot.sendMessage(chatId, parts[parts.length - 1], CONFIRM_KEYBOARD);
   return true;
+}
+
+export async function handleFileConfirmation(bot, msg) {
+  const telegramId = msg.from.id;
+  const state = userStates.get(telegramId);
+  return state?.awaitingFileConfirmation === true;
 }
 
 export async function handleFileCallback(bot, query) {
