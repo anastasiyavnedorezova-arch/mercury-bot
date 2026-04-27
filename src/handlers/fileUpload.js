@@ -9,7 +9,13 @@ import { saveTransaction } from './message.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const STATEMENT_SYSTEM_PROMPT = `Ты — парсер банковских выписок. Проанализируй изображение(я) банковской выписки и извлеки все транзакции.
+function getStatementPrompt() {
+  const today = new Date().toISOString().split('T')[0];
+  return `Ты — парсер банковских выписок. Проанализируй изображение(я) банковской выписки и извлеки все транзакции.
+
+Сегодня ${today}. Используй текущий год для определения дат транзакций.
+Если в выписке написано просто "вчера" или "сегодня" — используй соответствующие даты относительно сегодня.
+Если указан только день и месяц без года — используй текущий год.
 
 Верни ТОЛЬКО валидный JSON массив объектов. Никакого текста до или после.
 Если транзакций не найдено — верни пустой массив [].
@@ -39,6 +45,7 @@ const STATEMENT_SYSTEM_PROMPT = `Ты — парсер банковских вы
 Одежда и обувь, Путешествия, Отдых и развлечения, Обучение, Подписки, Подарки другим,
 Кредиты и займы, Налоги, Комиссии, Долг я дал, Благотворительность, Связь и интернет, Цель,
 Дети, Животные, Другое`;
+}
 
 function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
@@ -92,7 +99,7 @@ async function analyzeStatement(base64Content, mimeType) {
       {
         role: 'user',
         content: [
-          { type: 'text', text: STATEMENT_SYSTEM_PROMPT },
+          { type: 'text', text: getStatementPrompt() },
           {
             type: 'image_url',
             image_url: {
@@ -303,10 +310,9 @@ const CONFIRM_KEYBOARD = {
 function buildUpdatedSummary(transactions) {
   let text = 'Обновил категории 👇\n\n✅ Готовы к записи:\n';
   transactions.forEach((tx, i) => {
-    const emoji = tx.type === 'income' ? '📈' : '📉';
     const comment = tx.comment ? ` (${tx.comment})` : '';
-    const typeLabel = tx.type === 'income' ? ' (доход)' : '';
-    text += `${i + 1}. ${tx.transaction_date} — ${tx.category}: ${tx.amount} ₽${comment}${typeLabel}\n`;
+    const typeLabel = tx.type === 'income' ? ' (доход) ✅' : ' (расход)';
+    text += `${i + 1}. ${tx.transaction_date} — ${tx.category} — ${tx.amount} ₽${comment}${typeLabel}\n`;
   });
   text += '\nВсё верно? Записываю?';
   return text;
@@ -327,20 +333,34 @@ Pending транзакции: ${JSON.stringify(state.pendingTransactions)}
 Пользователь написал правки: "${msg.text}"
 
 Разбери что пользователь хочет изменить.
+
+ВАЖНО по определению type:
+- Если пользователь говорит "возврат", "вернули", "пополнение", "доход", "получил(а)" → type = "income"
+- Если пользователь говорит "расход", "потратил(а)", "покупка", "оплата" → type = "expense"
+- Если тип не упоминается явно → оставить как был в исходной транзакции
+
 Верни JSON:
 {
   "updates": [
     {
-      "index": 0,
+      "index": 1,
       "category": "Возврат денег",
       "type": "income",
       "comment": "возврат Озон"
+    },
+    {
+      "index": 2,
+      "category": "Дом и быт",
+      "type": "expense"
     }
   ],
-  "applyToAll": null
+  "applyToAll": {
+    "category": "Дом и быт",
+    "type": "expense"
+  }
 }
 
-Поле applyToAll — если пользователь говорит "остальное всё в категорию X" — укажи название категории строкой.
+applyToAll — если пользователь говорит "остальное всё в категорию X" — применить ко всем у кого категория "Другое" или confidence не high. Если applyToAll не нужен — верни null.
 Верни ТОЛЬКО валидный JSON без пояснений.`;
 
   let parsed;
@@ -375,9 +395,11 @@ Pending транзакции: ${JSON.stringify(state.pendingTransactions)}
   }
 
   if (parsed.applyToAll) {
+    const { category, type } = parsed.applyToAll;
     for (const tx of updated) {
       if (tx.category === 'Другое' || tx.confidence !== 'high') {
-        tx.category = parsed.applyToAll;
+        if (category) tx.category = category;
+        if (type) tx.type = type;
       }
     }
   }
