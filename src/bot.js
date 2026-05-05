@@ -238,6 +238,8 @@ bot.on('callback_query', async (query) => {
 
   // Кнопки категорий
   if (
+    action === 'my_categories' ||
+    action === 'show_all_categories' ||
     action === 'add_category' ||
     action.startsWith('add_cat_type:') ||
     action.startsWith('add_cat_group:') ||

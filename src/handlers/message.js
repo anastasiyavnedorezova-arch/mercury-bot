@@ -13,6 +13,7 @@ import { handleFeedbackMessage } from './feedback.js';
 import { handleSubscriptionEmailState } from './subscription.js';
 import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
+import { parseAmount } from '../utils/parseAmount.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -104,6 +105,7 @@ const FAQ_SYSTEM_PROMPT = `Ты — помощник финансового бо
 - Аналитика расходов по категориям
 - История транзакций с фильтрами
 - Пользовательские категории (/categories)
+- Редактирование и удаление записей (доступно всем, кнопки [Исправить] и [Удалить] появляются после каждой записи)
 - Обратная связь (/feedback)
 
 Команды и кнопки:
@@ -117,6 +119,25 @@ const FAQ_SYSTEM_PROMPT = `Ты — помощник финансового бо
 Тарифы:
 - Бесплатно: 1 цель, учёт операций, ежемесячная аналитика
 - Подписка 499₽/мес: всё + бюджет, расширенная аналитика, до 3 целей
+
+Примеры вопросов и ответов:
+Q: Как изменить запись?
+A: После каждой записи появляются кнопки [Исправить] и [Удалить]. Нажми [Исправить] и выбери что изменить: сумму, категорию, дату или тип операции.
+
+Q: Как посмотреть аналитику?
+A: Нажми кнопку [Аналитика] в главном меню или напиши /analytics
+
+Q: Как поставить цель?
+A: Нажми [Моя цель] в главном меню или напиши /goal
+
+Q: Как установить бюджет?
+A: Нажми [Мой бюджет] в главном меню или напиши /budget
+
+Q: Как посмотреть историю?
+A: Нажми [История транзакций] в главном меню
+
+Q: Как загрузить выписку из банка?
+A: Просто отправь фото или PDF выписки прямо в чат — бот распознает транзакции автоматически
 
 Если не знаешь ответа — предложи написать в поддержку через кнопку Обратная связь.`;
 
@@ -213,6 +234,18 @@ export async function handleMessage(bot, msg) {
   // Жёсткая блокировка: без согласия не обрабатываем ничего
   if (await requireTerms(bot, telegramId, chatId)) return;
 
+  // Обновляем username и активность при каждом сообщении
+  const telegramUsername = msg.from?.username || msg.from?.first_name || null;
+  if (telegramUsername) {
+    supabase
+      .from('users')
+      .update({ username: telegramUsername, last_active_at: new Date().toISOString() })
+      .eq('external_id', String(telegramId))
+      .eq('channel', 'telegram')
+      .then(() => {})
+      .catch(err => console.error('[username update]', err.message));
+  }
+
   // Текстовые правки к выписке (до всех остальных состояний и LLM)
   if (await handleFileTextResponse(bot, msg)) return;
 
@@ -264,11 +297,16 @@ export async function handleMessage(bot, msg) {
     return;
   }
 
-  // Режим ожидания суммы: объединяем с предыдущим сообщением
+  // Режим ожидания суммы: объединяем ТОЛЬКО если новый текст — это число
   let effectiveText = text;
   if (state?.awaitingAmount) {
-    effectiveText = `${state.originalText} ${text}`;
-    userStates.delete(telegramId);
+    const originalContext = state.originalContext;
+    userStates.delete(telegramId); // очищаем первым делом, чтобы не зациклиться
+    const amount = parseAmount(text);
+    if (amount !== null && originalContext) {
+      effectiveText = `${originalContext} ${text}`;
+    }
+    // Если не число — обрабатываем новое сообщение как обычное
   }
 
   // Обычный поток
@@ -310,8 +348,8 @@ export async function handleMessage(bot, msg) {
       return;
     }
     if (parsed.error === 'no_amount') {
-      userStates.set(telegramId, { awaitingAmount: true, originalText: effectiveText });
-      await bot.sendMessage(chatId, 'Не смог распознать сумму. Уточни и напиши ещё раз 🙏');
+      userStates.set(telegramId, { awaitingAmount: true, originalContext: effectiveText });
+      await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число 👇');
       return;
     }
     await bot.sendMessage(chatId, 'Не смог распознать запись. Попробуй в формате: Продукты 2500 🤔');

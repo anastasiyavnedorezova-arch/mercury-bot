@@ -24,18 +24,21 @@ export async function showCategories(bot, chatId, telegramId) {
     return;
   }
 
-  const { data: groups } = await supabase
-    .from('category_groups')
-    .select('id, name, type')
-    .order('type')
-    .order('name');
+  await bot.sendMessage(chatId, '📂 Категории', {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '📋 Мои категории', callback_data: 'my_categories' }],
+        [{ text: '🗂 Все категории', callback_data: 'show_all_categories' }],
+        [{ text: '➕ Добавить категорию', callback_data: 'add_category' }],
+        [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+      ],
+    },
+  });
+}
 
-  const { data: systemCats } = await supabase
-    .from('categories')
-    .select('name, group_id')
-    .eq('is_system', true)
-    .eq('is_active', true)
-    .order('name');
+async function showMyCategories(bot, chatId, telegramId) {
+  const userId = await getUserId(telegramId);
+  if (!userId) return;
 
   const { data: userCats } = await supabase
     .from('categories')
@@ -45,48 +48,84 @@ export async function showCategories(bot, chatId, telegramId) {
     .eq('is_active', true)
     .order('name');
 
-  let text = '📂 Твои категории\n\nСистемные (изменить нельзя):\n';
-
-  if (groups && systemCats) {
-    const catsByGroup = {};
-    for (const cat of systemCats) {
-      if (!catsByGroup[cat.group_id]) catsByGroup[cat.group_id] = [];
-      catsByGroup[cat.group_id].push(cat.name);
-    }
-    for (const group of groups) {
-      const cats = catsByGroup[group.id];
-      if (cats?.length) {
-        text += `${group.name}: ${cats.join(', ')}\n`;
-      }
-    }
-  }
-
-  if (userCats?.length) {
-    text += '\nТвои категории:\n';
-    for (const cat of userCats) {
-      text += `• ${cat.name} (${cat.type === 'expense' ? 'расход' : 'доход'})\n`;
-    }
-  } else {
-    text += '\nПользовательских категорий пока нет.';
-  }
-
   const keyboard = [];
 
   if (userCats?.length) {
+    let text = '📂 Твои категории:\n\n';
     for (const cat of userCats) {
-      keyboard.push([
-        { text: `🗑 ${cat.name}`, callback_data: `delete_category:${cat.id}` },
-      ]);
+      text += `• ${cat.name} (${cat.type === 'expense' ? 'расход' : 'доход'})\n`;
+      keyboard.push([{ text: `🗑 Удалить «${cat.name}»`, callback_data: `delete_category:${cat.id}` }]);
+    }
+    keyboard.push([
+      { text: '➕ Добавить категорию', callback_data: 'add_category' },
+      { text: '☰ Главное меню', callback_data: 'menu:main' },
+    ]);
+    await bot.sendMessage(chatId, text.trim(), { reply_markup: { inline_keyboard: keyboard } });
+  } else {
+    await bot.sendMessage(chatId, 'Пользовательских категорий пока нет.', {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '➕ Добавить категорию', callback_data: 'add_category' }],
+          [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+        ],
+      },
+    });
+  }
+}
+
+async function showAllCategories(bot, chatId) {
+  const { data: groups } = await supabase
+    .from('category_groups')
+    .select('id, name, type, sort_order')
+    .order('type', { ascending: false })
+    .order('sort_order');
+
+  const { data: cats } = await supabase
+    .from('categories')
+    .select('name, group_id, sort_order')
+    .is('user_id', null)
+    .eq('is_active', true)
+    .order('sort_order');
+
+  if (!groups?.length || !cats?.length) {
+    await bot.sendMessage(chatId, 'Не удалось загрузить категории 🤔', MENU_KEYBOARD);
+    return;
+  }
+
+  const catsByGroup = {};
+  for (const cat of cats) {
+    if (!catsByGroup[cat.group_id]) catsByGroup[cat.group_id] = [];
+    catsByGroup[cat.group_id].push(cat.name);
+  }
+
+  const incomeGroups = groups.filter(g => g.type === 'income');
+  const expenseGroups = groups.filter(g => g.type === 'expense');
+
+  let text = '📋 Все категории Меркури:\n';
+
+  if (incomeGroups.length) {
+    text += '\n💰 ДОХОДЫ:\n';
+    for (const g of incomeGroups) {
+      const names = catsByGroup[g.id];
+      if (names?.length) text += `${g.name}: ${names.join(', ')}\n`;
     }
   }
 
-  keyboard.push([
-    { text: '➕ Добавить категорию', callback_data: 'add_category' },
-    { text: '☰ Главное меню', callback_data: 'menu:main' },
-  ]);
+  if (expenseGroups.length) {
+    text += '\n💸 РАСХОДЫ:\n';
+    for (const g of expenseGroups) {
+      const names = catsByGroup[g.id];
+      if (names?.length) text += `${g.name}: ${names.join(', ')}\n`;
+    }
+  }
 
-  await bot.sendMessage(chatId, text, {
-    reply_markup: { inline_keyboard: keyboard },
+  await bot.sendMessage(chatId, text.trim(), {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '➕ Добавить свою категорию', callback_data: 'add_category' }],
+        [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+      ],
+    },
   });
 }
 
@@ -96,6 +135,16 @@ export async function handleCategoriesCallback(bot, query) {
   const action = query.data;
 
   await bot.answerCallbackQuery(query.id);
+
+  if (action === 'my_categories') {
+    await showMyCategories(bot, chatId, telegramId);
+    return;
+  }
+
+  if (action === 'show_all_categories') {
+    await showAllCategories(bot, chatId);
+    return;
+  }
 
   // ── Добавить категорию: шаг 1 — выбор типа ──────────────────────────────
 
