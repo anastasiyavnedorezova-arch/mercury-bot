@@ -10,6 +10,11 @@ const MONTHS_NOM = [
   'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
 ];
 
+const MONTHS_GEN = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
+
 // Именительный падеж — для "за [месяц]": "Расходы за апрель"
 function getMonthName(d = new Date()) {
   return MONTHS_NOM[d.getMonth()];
@@ -372,6 +377,8 @@ async function showMonthlyReport(bot, chatId, userId) {
   const endDate = getMonthStart(now);
   const monthName = MONTHS_GEN[prevDate.getMonth()];
 
+  console.log('[monthly_analytics] fetching for month:', startDate);
+
   const { data: txData } = await supabase
     .from('transactions')
     .select('amount, type, categories(name)')
@@ -382,6 +389,18 @@ async function showMonthlyReport(bot, chatId, userId) {
   const rows = txData ?? [];
   const income  = rows.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const expense = rows.filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
+
+  console.log('[monthly_analytics] income:', income);
+  console.log('[monthly_analytics] expenses:', expense);
+
+  if (rows.length === 0) {
+    await bot.sendMessage(
+      chatId,
+      'За прошлый месяц записей не найдено.\nДанные появятся когда ты начнёшь вести записи 💛',
+      MENU_KEYBOARD
+    );
+    return;
+  }
 
   const byCategory = {};
   for (const row of rows.filter(t => t.type !== 'income')) {

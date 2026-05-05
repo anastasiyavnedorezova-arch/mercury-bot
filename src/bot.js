@@ -17,6 +17,7 @@ import { handleVoiceMessage } from './handlers/voice.js';
 import { handleFileUpload, handleFileCallback } from './handlers/fileUpload.js';
 import { startWebhookServer } from './webhook.js';
 import { userStates } from './state.js';
+import { supabase } from './db.js';
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -114,6 +115,44 @@ bot.onText(/\/activate (.+)/, async (msg, match) => {
   } else {
     await bot.sendMessage(msg.chat.id, `❌ Ошибка: ${result.reason}`);
   }
+});
+
+bot.onText(/\/broadcast (.+)/s, async (msg, match) => {
+  if (msg.date < BOT_START_TIME) return;
+  if (msg.chat.id.toString() !== process.env.ADMIN_TELEGRAM_ID) return;
+
+  const text = match[1];
+
+  const { data: users } = await supabase
+    .from('users')
+    .select('external_id')
+    .eq('channel', 'telegram');
+
+  if (!users?.length) {
+    await bot.sendMessage(msg.chat.id, 'Пользователей не найдено');
+    return;
+  }
+
+  await bot.sendMessage(msg.chat.id, `Начинаю рассылку для ${users.length} пользователей...`);
+
+  let success = 0;
+  let failed = 0;
+
+  for (const user of users) {
+    try {
+      await bot.sendMessage(user.external_id, text, { parse_mode: 'HTML' });
+      success++;
+      await new Promise(r => setTimeout(r, 50));
+    } catch (err) {
+      console.error('[broadcast] Failed for:', user.external_id, err.message);
+      failed++;
+    }
+  }
+
+  await bot.sendMessage(
+    msg.chat.id,
+    `✅ Рассылка завершена\nУспешно: ${success}\nОшибки: ${failed}`
+  );
 });
 
 // ── Голосовые ─────────────────────────────────────────────────────────────────
@@ -252,6 +291,11 @@ bot.on('callback_query', async (query) => {
       await showMainMenu(bot, query.message.chat.id);
       return;
     }
+    await handleMenuCallback(bot, query);
+    return;
+  }
+
+  if (action === 'ask_question') {
     await handleMenuCallback(bot, query);
     return;
   }

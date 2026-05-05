@@ -5,6 +5,7 @@ import { showAnalyticsMenu } from './analytics.js';
 import { showFeedback } from './feedback.js';
 import { showSubscription } from './subscription.js';
 import { showCategories } from './categories.js';
+import { userStates } from '../state.js';
 
 const MENU_BUTTONS = [
   [
@@ -24,6 +25,7 @@ const MENU_BUTTONS = [
   ],
   [
     { text: 'Обратная связь', callback_data: 'menu:feedback' },
+    { text: 'Задать вопрос', callback_data: 'ask_question' },
   ],
 ];
 
@@ -81,6 +83,16 @@ export async function handleMenuCallback(bot, query) {
 
   if (action === 'menu:categories') {
     await showCategories(bot, chatId, query.from.id);
+    return;
+  }
+
+  if (action === 'ask_question') {
+    userStates.set(query.from.id, { awaitingQuestion: true });
+    await bot.sendMessage(
+      chatId,
+      'Задай мне любой вопрос о работе Меркури 💛\n' +
+      'Например: «Как посмотреть аналитику?» или «Как изменить бюджет?»'
+    );
     return;
   }
 

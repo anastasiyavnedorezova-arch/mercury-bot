@@ -9,6 +9,7 @@ export async function handleStart(bot, msg) {
   if (msg.date < BOT_START_TIME) return;
   const telegramId = String(msg.from.id);
   const chatId = msg.chat.id;
+  const username = msg.from.username || msg.from.first_name || telegramId;
 
   const { data: existing } = await supabase
     .from('users')
@@ -21,10 +22,18 @@ export async function handleStart(bot, msg) {
     await supabase.from('users').insert({
       external_id: telegramId,
       channel: 'telegram',
+      username,
     });
     await showConsentScreen(bot, chatId);
     return;
   }
+
+  // Обновляем username и last_active_at при каждом /start
+  await supabase
+    .from('users')
+    .update({ username, last_active_at: new Date().toISOString() })
+    .eq('external_id', telegramId)
+    .eq('channel', 'telegram');
 
   if (!existing.terms_accepted_at) {
     await showConsentScreen(bot, chatId);

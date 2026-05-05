@@ -73,7 +73,7 @@ function buildConfirmationText(parsed) {
 
 async function sendConfirmation(bot, chatId, parsed, txId, access) {
   let keyboard;
-  if (txId && (access === 'trial' || access === 'active')) {
+  if (txId) {
     keyboard = {
       reply_markup: {
         inline_keyboard: [
@@ -89,6 +89,47 @@ async function sendConfirmation(bot, chatId, parsed, txId, access) {
     keyboard = MENU_KEYBOARD;
   }
   await bot.sendMessage(chatId, buildConfirmationText(parsed), keyboard);
+}
+
+const FAQ_SYSTEM_PROMPT = `Ты — помощник финансового бота Меркури.
+Отвечай на вопросы пользователей о работе бота.
+Отвечай кратко, дружелюбно, на русском языке.
+
+Функции Меркури:
+- Запись доходов и расходов в свободной форме (просто напиши "продукты 2500")
+- Запись голосовых сообщений
+- Загрузка банковских выписок (фото или PDF)
+- Финансовые цели с расчётом ежемесячного взноса
+- Месячный бюджет и прогноз превышения
+- Аналитика расходов по категориям
+- История транзакций с фильтрами
+- Пользовательские категории (/categories)
+- Обратная связь (/feedback)
+
+Команды и кнопки:
+- /menu — главное меню
+- /goal — цели
+- /budget — бюджет
+- /history — история
+- /analytics — аналитика
+- /categories — категории
+
+Тарифы:
+- Бесплатно: 1 цель, учёт операций, ежемесячная аналитика
+- Подписка 499₽/мес: всё + бюджет, расширенная аналитика, до 3 целей
+
+Если не знаешь ответа — предложи написать в поддержку через кнопку Обратная связь.`;
+
+async function callFaqLLM(question) {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: FAQ_SYSTEM_PROMPT },
+      { role: 'user', content: question },
+    ],
+    temperature: 0.3,
+  });
+  return response.choices[0].message.content.trim();
 }
 
 async function callLLM(userText, userCategories = []) {
@@ -198,9 +239,36 @@ export async function handleMessage(bot, msg) {
 
   // Проверяем ожидающее состояние (например, выбор категории для WB текстом)
   const state = userStates.get(telegramId);
+
+  if (state?.awaitingQuestion) {
+    userStates.delete(telegramId);
+    try {
+      const answer = await callFaqLLM(text);
+      await bot.sendMessage(chatId, answer, {
+        reply_markup: {
+          inline_keyboard: [[
+            { text: 'Задать ещё вопрос', callback_data: 'ask_question' },
+            { text: '☰ Главное меню', callback_data: 'menu:main' },
+          ]],
+        },
+      });
+    } catch (err) {
+      console.error('FAQ LLM error:', err.message);
+      await bot.sendMessage(chatId, 'Не смог ответить. Попробуй ещё раз 🙏');
+    }
+    return;
+  }
+
   if (state?.awaitingCategory) {
     await handleCategorySelection(bot, chatId, telegramId, text);
     return;
+  }
+
+  // Режим ожидания суммы: объединяем с предыдущим сообщением
+  let effectiveText = text;
+  if (state?.awaitingAmount) {
+    effectiveText = `${state.originalText} ${text}`;
+    userStates.delete(telegramId);
   }
 
   // Обычный поток
@@ -211,12 +279,12 @@ export async function handleMessage(bot, msg) {
     if (userId) {
       const { data } = await supabase
         .from('categories')
-        .select('name, type')
+        .select('name, type, synonyms')
         .eq('user_id', userId)
         .eq('is_active', true);
       userCategories = data ?? [];
     }
-    parsed = await callLLM(text, userCategories);
+    parsed = await callLLM(effectiveText, userCategories);
   } catch (err) {
     console.error('OpenAI error:', err.message);
     await bot.sendMessage(chatId, 'Ошибка при обработке сообщения. Попробуй ещё раз 🙏');
@@ -228,7 +296,7 @@ export async function handleMessage(bot, msg) {
       userStates.set(telegramId, {
         awaitingCategory: true,
         clarificationType: 'wb_category',
-        rawMessage: text,
+        rawMessage: effectiveText,
         amount: parsed.amount ?? null,
         type: parsed.type ?? 'expense',
         transaction_date: parsed.transaction_date ?? new Date().toISOString().split('T')[0],
@@ -242,6 +310,7 @@ export async function handleMessage(bot, msg) {
       return;
     }
     if (parsed.error === 'no_amount') {
+      userStates.set(telegramId, { awaitingAmount: true, originalText: effectiveText });
       await bot.sendMessage(chatId, 'Не смог распознать сумму. Уточни и напиши ещё раз 🙏');
       return;
     }
@@ -249,5 +318,5 @@ export async function handleMessage(bot, msg) {
     return;
   }
 
-  await processAndSave(bot, chatId, telegramId, parsed, text);
+  await processAndSave(bot, chatId, telegramId, parsed, effectiveText);
 }
