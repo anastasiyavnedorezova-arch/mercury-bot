@@ -95,51 +95,60 @@ async function sendConfirmation(bot, chatId, parsed, txId, access) {
 const FAQ_SYSTEM_PROMPT = `Ты — помощник финансового бота Меркури.
 Отвечай на вопросы пользователей о работе бота.
 Отвечай кратко, дружелюбно, на русском языке.
+Обращайся на "ты".
 
-Функции Меркури:
-- Запись доходов и расходов в свободной форме (просто напиши "продукты 2500")
-- Запись голосовых сообщений
-- Загрузка банковских выписок (фото или PDF)
-- Финансовые цели с расчётом ежемесячного взноса
-- Месячный бюджет и прогноз превышения
-- Аналитика расходов по категориям
-- История транзакций с фильтрами
-- Пользовательские категории (/categories)
-- Редактирование и удаление записей (доступно всем, кнопки [Исправить] и [Удалить] появляются после каждой записи)
-- Обратная связь (/feedback)
+ВОПРОСЫ И ОТВЕТЫ:
 
-Команды и кнопки:
-- /menu — главное меню
-- /goal — цели
-- /budget — бюджет
-- /history — история
-- /analytics — аналитика
-- /categories — категории
+Q: Что ты умеешь? / Что умеет бот?
+A: Кратко о том, что я умею:
+— Вести учёт расходов и доходов. Ты можешь написать сообщение в свободной форме, записать аудио или прислать скрин из банковского приложения
+— Рассчитывать и помогать отслеживать прогресс финансовой цели
+— Анализировать расходы и доходы, следить за бюджетом
 
-Тарифы:
-- Бесплатно: 1 цель, учёт операций, ежемесячная аналитика
-- Подписка 499₽/мес: всё + бюджет, расширенная аналитика, до 3 целей
+Q: Как записывать расходы и доходы?
+A: Я распознаю записи в виде:
+— Обычного сообщения: «продукты 1800», «такси 450»
+— Аудиосообщения с расходом и суммой
+— Изображения или скрина из банковского приложения
 
-Примеры вопросов и ответов:
-Q: Как изменить запись?
-A: После каждой записи появляются кнопки [Исправить] и [Удалить]. Нажми [Исправить] и выбери что изменить: сумму, категорию, дату или тип операции.
+Q: Как отредактировать или удалить запись?
+A: После каждой записи появляются кнопки [Исправить] и [Удалить]. Нажми нужную кнопку.
 
-Q: Как посмотреть аналитику?
-A: Нажми кнопку [Аналитика] в главном меню или напиши /analytics
+Q: Как посмотреть записи / историю?
+A: Выбери «История транзакций» в главном меню.
 
-Q: Как поставить цель?
-A: Нажми [Моя цель] в главном меню или напиши /goal
+Q: Как изменить цель?
+A: Нажми «Моя цель» в меню и выбери нужную цель. Далее уточни что нужно изменить.
+
+Q: Как посмотреть расходы за неделю / период?
+A: Сейчас аналитика доступна с 1-го числа месяца по текущий день — на пробном или платном тарифе. На бесплатном — общая аналитика в конце месяца.
+
+Q: Как посмотреть все категории?
+A: В главном меню выбери «Мои категории».
+
+Q: Как добавить свою категорию?
+A: В меню выбери «Мои категории» → «Добавить».
+
+Q: Сколько можно добавить категорий?
+A: Количество не ограничено. Но не добавляй слишком много — это может запутать распознавание.
+
+Q: Как добавить расход в свою категорию?
+A: Напиши подробнее. Например, если создал категорию «Дача» — пиши «цветы на дачу 2500» и я пойму что это расход для Дачи.
 
 Q: Как установить бюджет?
-A: Нажми [Мой бюджет] в главном меню или напиши /budget
+A: Нажми «Мой бюджет» в главном меню или напиши /budget
 
-Q: Как посмотреть историю?
-A: Нажми [История транзакций] в главном меню
+Q: Как поставить цель?
+A: Нажми «Моя цель» в главном меню или напиши /goal
+
+Q: Как посмотреть аналитику?
+A: Нажми «Аналитика» в главном меню или напиши /analytics
 
 Q: Как загрузить выписку из банка?
-A: Просто отправь фото или PDF выписки прямо в чат — бот распознает транзакции автоматически
+A: Просто отправь фото или скрин истории операций из банковского приложения прямо в чат — я распознаю транзакции автоматически.
 
-Если не знаешь ответа — предложи написать в поддержку через кнопку Обратная связь.`;
+Если вопрос не относится к функционалу бота — предложи написать через кнопку «Обратная связь».
+Не отвечай на вопросы не связанные с Меркури.`;
 
 async function callFaqLLM(question) {
   const response = await openai.chat.completions.create({
@@ -198,7 +207,8 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
 
 export async function handleCategorySelection(bot, chatId, telegramId, category) {
   const state = userStates.get(telegramId);
-  if (!state?.awaitingCategory) return false;
+  // pendingAmount означает Сценарий А — обрабатывается в handleMessage через LLM
+  if (!state?.awaitingCategory || state.pendingAmount !== undefined) return false;
   userStates.delete(telegramId);
 
   const userId = await getUserId(telegramId);
@@ -246,33 +256,26 @@ export async function handleMessage(bot, msg) {
       .catch(err => console.error('[username update]', err.message));
   }
 
-  // Текстовые правки к выписке (до всех остальных состояний и LLM)
+  // Сброс зависшего state (старше 30 минут)
+  const staleState = userStates.get(telegramId);
+  if (staleState?.createdAt && Date.now() - staleState.createdAt > 30 * 60 * 1000) {
+    console.log('[state] Clearing stale state for:', telegramId);
+    userStates.delete(telegramId);
+  }
+
+  // Состояния с приоритетом (правки выписки, редактирование транзакции и т.д.)
   if (await handleFileTextResponse(bot, msg)) return;
-
-  // Состояние редактирования транзакции (Исправить → поле → текст)
   if (await handleTxEditState(bot, msg)) return;
-
-  // Состояние диалога создания финансовой цели
   if (await handleGoalState(bot, msg)) return;
-
-  // Состояние ввода бюджета
   if (await handleBudgetState(bot, msg)) return;
-
-  // Состояние ввода дат для истории
   if (await handleHistoryState(bot, msg)) return;
-
-  // Состояние ввода фидбека
   if (await handleFeedbackMessage(bot, msg)) return;
-
-  // Состояние ввода email для оплаты подписки
   if (await handleSubscriptionEmailState(bot, msg)) return;
-
-  // Состояние ввода названия пользовательской категории
   if (await handleCategoryNameState(bot, msg)) return;
 
-  // Проверяем ожидающее состояние (например, выбор категории для WB текстом)
   const state = userStates.get(telegramId);
 
+  // FAQ-вопрос
   if (state?.awaitingQuestion) {
     userStates.delete(telegramId);
     try {
@@ -292,24 +295,84 @@ export async function handleMessage(bot, msg) {
     return;
   }
 
-  if (state?.awaitingCategory) {
+  // ── Определяем effectiveText в зависимости от pending-состояния ───────────
+
+  let effectiveText = text;
+
+  if (state?.awaitingCategory && state.pendingAmount !== undefined) {
+    // Сценарий А — ответ: пользователь написал категорию для отложенной суммы
+    userStates.delete(telegramId);
+    effectiveText = `${text} ${state.pendingAmount}`;
+    // pass through to LLM
+
+  } else if (state?.awaitingAmount && state.pendingCategory) {
+    // Сценарий Б — ответ: пользователь написал сумму для отложенной категории
+    userStates.delete(telegramId);
+    const amount = parseAmount(text);
+    if (amount !== null) {
+      effectiveText = `${state.pendingCategory} ${text}`;
+    }
+    // если не число — pass through as-is
+
+  } else if (state?.awaitingCategory) {
+    // WB/маркетплейс — пользователь набрал категорию текстом
     await handleCategorySelection(bot, chatId, telegramId, text);
     return;
-  }
 
-  // Режим ожидания суммы: объединяем ТОЛЬКО если новый текст — это число
-  let effectiveText = text;
-  if (state?.awaitingAmount) {
-    const originalContext = state.originalContext;
-    userStates.delete(telegramId); // очищаем первым делом, чтобы не зациклиться
-    const amount = parseAmount(text);
-    if (amount !== null && originalContext) {
-      effectiveText = `${originalContext} ${text}`;
+  } else {
+    // Нет активного state — проверяем Сценарии А и Б
+    const trimmed = text.trim();
+    const pureAmount = parseAmount(trimmed);
+    const onlyNumber = pureAmount !== null &&
+      /^[\d\s.,kKкК]+(тыс(яч(а|и)?)?|тк|млн(ов)?|млрд)?$/i.test(trimmed);
+
+    if (onlyNumber) {
+      // Сценарий А: пользователь написал только число
+      userStates.set(telegramId, {
+        awaitingCategory: true,
+        pendingAmount: pureAmount,
+        createdAt: Date.now(),
+      });
+      await bot.sendMessage(
+        chatId,
+        `Сумма <b>${pureAmount} ₽</b> — уточни в какую категорию записать эту транзакцию 👇`,
+        { parse_mode: 'HTML' }
+      );
+      return;
     }
-    // Если не число — обрабатываем новое сообщение как обычное
+
+    // Сценарий Б: только слова без числа — проверяем совпадение с категорией
+    if (pureAmount === null && trimmed.length > 1 && /^[а-яА-ЯёЁa-zA-Z\s,.-]+$/.test(trimmed)) {
+      const userId = await getUserId(telegramId);
+      if (userId) {
+        const { data: matchedCat } = await supabase
+          .from('categories')
+          .select('name')
+          .or(`user_id.is.null,user_id.eq.${userId}`)
+          .eq('is_active', true)
+          .ilike('name', trimmed)
+          .maybeSingle();
+
+        if (matchedCat) {
+          userStates.set(telegramId, {
+            awaitingAmount: true,
+            pendingCategory: matchedCat.name,
+            createdAt: Date.now(),
+          });
+          await bot.sendMessage(
+            chatId,
+            `Расход в категории <b>${matchedCat.name}</b>. Уточни, какую сумму записать 👇`,
+            { parse_mode: 'HTML' }
+          );
+          return;
+        }
+        // Категория не найдена — передаём в LLM (Сценарий В)
+      }
+    }
   }
 
-  // Обычный поток
+  // ── Обычный поток через LLM ───────────────────────────────────────────────
+
   let parsed;
   try {
     const userId = await getUserId(telegramId);
@@ -331,6 +394,18 @@ export async function handleMessage(bot, msg) {
 
   if (!Array.isArray(parsed) && parsed.error) {
     if (parsed.error === 'clarification_needed' && parsed.clarification_type === 'wb_category') {
+      // Fix 5: если в сообщении есть слова про возврат — не спрашиваем про WB
+      const isReturn = /возврат|вернули|вернул|refund/i.test(effectiveText);
+      if (isReturn && parsed.amount) {
+        await processAndSave(bot, chatId, telegramId, {
+          type: 'income',
+          amount: parsed.amount,
+          category: 'Возврат денег',
+          comment: 'возврат товара',
+          transaction_date: parsed.transaction_date ?? new Date().toISOString().split('T')[0],
+        }, effectiveText);
+        return;
+      }
       userStates.set(telegramId, {
         awaitingCategory: true,
         clarificationType: 'wb_category',
@@ -338,6 +413,7 @@ export async function handleMessage(bot, msg) {
         amount: parsed.amount ?? null,
         type: parsed.type ?? 'expense',
         transaction_date: parsed.transaction_date ?? new Date().toISOString().split('T')[0],
+        createdAt: Date.now(),
       });
       const options = parsed.options ?? ['Одежда и обувь', 'Дом и быт', 'Техника и мебель', 'Красота', 'Другое'];
       await bot.sendMessage(chatId, parsed.message, { reply_markup: inlineKeyboard(options) });
@@ -348,7 +424,6 @@ export async function handleMessage(bot, msg) {
       return;
     }
     if (parsed.error === 'no_amount') {
-      userStates.set(telegramId, { awaitingAmount: true, originalContext: effectiveText });
       await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число 👇');
       return;
     }

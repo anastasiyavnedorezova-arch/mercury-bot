@@ -52,30 +52,35 @@ bot.onText(/\/start/, (msg) => {
 bot.onText(/\/menu/, async (msg) => {
   if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
+  userStates.delete(msg.from.id);
   showMainMenu(bot, msg.chat.id);
 });
 
 bot.onText(/\/goal/, async (msg) => {
   if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
+  userStates.delete(msg.from.id);
   showGoal(bot, msg.chat.id, msg.from.id);
 });
 
 bot.onText(/\/budget/, async (msg) => {
   if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
+  userStates.delete(msg.from.id);
   showBudget(bot, msg.chat.id, msg.from.id);
 });
 
 bot.onText(/\/history/, async (msg) => {
   if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
+  userStates.delete(msg.from.id);
   showHistory(bot, msg.chat.id);
 });
 
 bot.onText(/\/analytics/, async (msg) => {
   if (msg.date < BOT_START_TIME) return;
   if (await requireTerms(bot, msg.from.id, msg.chat.id)) return;
+  userStates.delete(msg.from.id);
   showAnalyticsMenu(bot, msg.chat.id);
 });
 

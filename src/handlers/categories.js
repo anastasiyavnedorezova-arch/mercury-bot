@@ -74,52 +74,25 @@ async function showMyCategories(bot, chatId, telegramId) {
 }
 
 async function showAllCategories(bot, chatId) {
-  const { data: groups } = await supabase
-    .from('category_groups')
-    .select('id, name, type, sort_order')
-    .order('type', { ascending: false })
-    .order('sort_order');
+  const text =
+`Все категории Меркури:
 
-  const { data: cats } = await supabase
-    .from('categories')
-    .select('name, group_id, sort_order')
-    .is('user_id', null)
-    .eq('is_active', true)
-    .order('sort_order');
+<i>ДОХОДЫ:</i>
+<b>Доход за работу и выплаты:</b> Зарплата, Фриланс и подработка, Продажа и соцвыплаты
+<b>Доходность вложений и кэшбэк:</b> Проценты по вкладу, Инвестиционный доход, Кэшбек и бонусы
+<b>Подарки и возвраты:</b> Подарки мне, Возврат денег, Долг мне вернули
 
-  if (!groups?.length || !cats?.length) {
-    await bot.sendMessage(chatId, 'Не удалось загрузить категории 🤔', MENU_KEYBOARD);
-    return;
-  }
+<i>РАСХОДЫ:</i>
+<b>Еда:</b> Продукты, Кафе, рестораны, Кофе на вынос, Доставка еды
+<b>Жильё и дом:</b> Жильё, Дом и быт, Техника и мебель
+<b>Транспорт:</b> Транспорт, Авто
+<b>Здоровье и красота:</b> Здоровье, Красота, Спорт
+<b>Досуг и развлечения:</b> Одежда и обувь, Путешествия, Отдых и развлечения, Обучение, Подписки, Подарки другим
+<b>Финансы и обязательства:</b> Кредиты и займы, Налоги, Комиссии, Долг я дал, Благотворительность, Связь и интернет, Цель
+<b>Другое:</b> Дети, Животные, Другое`;
 
-  const catsByGroup = {};
-  for (const cat of cats) {
-    if (!catsByGroup[cat.group_id]) catsByGroup[cat.group_id] = [];
-    catsByGroup[cat.group_id].push(cat.name);
-  }
-
-  const incomeGroups = groups.filter(g => g.type === 'income');
-  const expenseGroups = groups.filter(g => g.type === 'expense');
-
-  let text = '📋 Все категории Меркури:\n';
-
-  if (incomeGroups.length) {
-    text += '\n💰 ДОХОДЫ:\n';
-    for (const g of incomeGroups) {
-      const names = catsByGroup[g.id];
-      if (names?.length) text += `${g.name}: ${names.join(', ')}\n`;
-    }
-  }
-
-  if (expenseGroups.length) {
-    text += '\n💸 РАСХОДЫ:\n';
-    for (const g of expenseGroups) {
-      const names = catsByGroup[g.id];
-      if (names?.length) text += `${g.name}: ${names.join(', ')}\n`;
-    }
-  }
-
-  await bot.sendMessage(chatId, text.trim(), {
+  await bot.sendMessage(chatId, text, {
+    parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
         [{ text: '➕ Добавить свою категорию', callback_data: 'add_category' }],
