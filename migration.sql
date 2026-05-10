@@ -297,4 +297,39 @@ BEGIN
 END;
 $$;
 
+-- ============================================================
+-- RENAME CATEGORIES (2026-05-10)
+-- ============================================================
+
+UPDATE categories SET name = 'Кафе и рестораны'
+WHERE name = 'Кафе, рестораны' AND user_id IS NULL;
+
+UPDATE categories SET name = 'Товары в дом'
+WHERE name = 'Дом и быт' AND user_id IS NULL;
+
+UPDATE categories SET name = 'Красота и уход за собой'
+WHERE name = 'Красота' AND user_id IS NULL;
+
+UPDATE categories SET name = 'Налоги и штрафы'
+WHERE name = 'Налоги' AND user_id IS NULL;
+
+UPDATE categories SET name = 'Остальное'
+WHERE name = 'Другое' AND is_system = false AND user_id IS NULL;
+
+-- Синонимы для переименованных категорий
+UPDATE categories SET synonyms = ARRAY['кафе, рестораны','кафе','ресторан','обед','ужин','суши','пицца','бизнес-ланч','бар','столовая','макдак','kfc','subway','шаурма','вок']
+WHERE name = 'Кафе и рестораны' AND user_id IS NULL;
+
+UPDATE categories SET synonyms = ARRAY['дом и быт','хозтовары','бытовая химия','постельное','химчистка']
+WHERE name = 'Товары в дом' AND user_id IS NULL;
+
+UPDATE categories SET synonyms = ARRAY['красота','маникюр','стрижка','косметолог','косметика','салон','ноготочки']
+WHERE name = 'Красота и уход за собой' AND user_id IS NULL;
+
+UPDATE categories SET synonyms = ARRAY['налоги','ндфл','налог ип','имущественный налог','штраф','гибдд']
+WHERE name = 'Налоги и штрафы' AND user_id IS NULL;
+
+UPDATE categories SET synonyms = ARRAY['другое']
+WHERE name = 'Остальное' AND user_id IS NULL;
+
 COMMIT;
