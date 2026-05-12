@@ -45,12 +45,21 @@ async function getCategoryId(name) {
     .select('id')
     .eq('name', name)
     .single();
-  return data?.id ?? null;
+  if (data?.id) return data.id;
+
+  // Fallback: если категория не найдена — используем «Остальное»
+  console.warn('[getCategoryId] Category not found:', name, '— falling back to Остальное');
+  const { data: fallback } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('name', 'Остальное')
+    .single();
+  return fallback?.id ?? null;
 }
 
 export async function saveTransaction(userId, parsed, rawMessage) {
   const categoryId = await getCategoryId(parsed.category);
-  const { data } = await supabase.from('transactions').insert({
+  const { data, error } = await supabase.from('transactions').insert({
     user_id: userId,
     type: parsed.type,
     amount: parsed.amount,
@@ -59,6 +68,11 @@ export async function saveTransaction(userId, parsed, rawMessage) {
     transaction_date: parsed.transaction_date,
     raw_message: rawMessage,
   }).select('id').single();
+
+  if (error) {
+    console.error('[saveTransaction] Supabase error:', error.message, '| category:', parsed.category, '| categoryId:', categoryId);
+    return null;
+  }
   return data?.id ?? null;
 }
 
@@ -193,11 +207,29 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
   console.log(`[access] telegramId=${telegramId} userId=${userId} access=${access}`);
 
   if (Array.isArray(parsed)) {
-    for (const item of parsed) await saveTransaction(userId, item, rawMessage);
+    let savedCount = 0;
+    for (const item of parsed) {
+      const id = await saveTransaction(userId, item, rawMessage);
+      if (id !== null) savedCount++;
+    }
+    if (savedCount === 0) {
+      await bot.sendMessage(chatId,
+        'Не удалось сохранить записи — попробуй ещё раз 🙏',
+        MENU_KEYBOARD
+      );
+      return;
+    }
     const text = parsed.map(buildConfirmationText).join('\n\n');
     await bot.sendMessage(chatId, text, MENU_KEYBOARD);
   } else {
     const txId = await saveTransaction(userId, parsed, rawMessage);
+    if (txId === null) {
+      await bot.sendMessage(chatId,
+        'Не удалось сохранить запись — попробуй ещё раз или напиши в обратную связь 🙏',
+        MENU_KEYBOARD
+      );
+      return;
+    }
     await sendConfirmation(bot, chatId, parsed, txId, access);
   }
 }
