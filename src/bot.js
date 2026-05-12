@@ -1,7 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import 'dotenv/config';
 import { handleStart } from './handlers/start.js';
-import { handleMessage, handleCategorySelection } from './handlers/message.js';
+import { handleMessage, handleCategorySelection, handleManualCallback } from './handlers/message.js';
 import { showMainMenu, handleMenuCallback } from './handlers/menu.js';
 import { handleOnboardingCallback, requireTerms } from './handlers/onboarding.js';
 import { handleTransactionCallback } from './handlers/transaction.js';
@@ -304,6 +304,12 @@ bot.on('callback_query', async (query) => {
 
   if (action === 'ask_question') {
     await handleMenuCallback(bot, query);
+    return;
+  }
+
+  // Кнопки ручного ввода транзакции
+  if (action.startsWith('manual:')) {
+    await handleManualCallback(bot, query);
     return;
   }
 

@@ -29,6 +29,15 @@ const MENU_KEYBOARD = {
   },
 };
 
+const MANUAL_ERROR_KEYBOARD = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: '✏️ Добавить запись вручную', callback_data: 'manual:start' }],
+      [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+    ],
+  },
+};
+
 async function getUserId(telegramId) {
   const { data } = await supabase
     .from('users')
@@ -265,6 +274,122 @@ export async function handleCategorySelection(bot, chatId, telegramId, category)
   return true;
 }
 
+const MANUAL_GROUPS = {
+  expense: {
+    'Еда': ['Продукты', 'Кафе и рестораны', 'Кофе на вынос', 'Доставка еды'],
+    'Жильё и дом': ['Жильё', 'Товары в дом', 'Техника и мебель'],
+    'Транспорт': ['Транспорт', 'Авто'],
+    'Здоровье и красота': ['Здоровье', 'Красота и уход за собой', 'Спорт'],
+    'Досуг и развлечения': ['Одежда и обувь', 'Путешествия', 'Отдых и развлечения', 'Обучение', 'Подписки', 'Подарки другим'],
+    'Финансы и обязательства': ['Кредиты и займы', 'Налоги и штрафы', 'Комиссии', 'Долг я дал', 'Благотворительность', 'Связь и интернет'],
+    'Другое': ['Дети', 'Животные', 'Остальное'],
+  },
+  income: {
+    'Доход за работу': ['Зарплата', 'Фриланс и подработка', 'Продажа и соцвыплаты'],
+    'Доходность вложений': ['Проценты по вкладу', 'Инвестиционный доход', 'Кэшбек и бонусы'],
+    'Подарки и возвраты': ['Подарки мне', 'Возврат денег', 'Долг мне вернули'],
+  },
+};
+
+async function handleManualAmountState(bot, msg) {
+  const telegramId = msg.from.id;
+  const chatId = msg.chat.id;
+  const state = userStates.get(telegramId);
+
+  if (state?.manualStep !== 'amount') return false;
+
+  const amount = parseAmount(msg.text?.trim());
+  if (amount === null) {
+    await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число, например: 1500 👇');
+    return true;
+  }
+
+  userStates.delete(telegramId);
+
+  const userId = await getUserId(telegramId);
+  if (!userId) {
+    await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start для регистрации.');
+    return true;
+  }
+
+  const access = await getUserAccess(userId);
+  const parsed = {
+    type: state.manualType,
+    amount,
+    category: state.manualCategory,
+    comment: null,
+    transaction_date: new Date().toISOString().split('T')[0],
+  };
+
+  const txId = await saveTransaction(userId, parsed, msg.text);
+  if (txId === null) {
+    await bot.sendMessage(chatId,
+      'Не удалось сохранить запись — попробуй ещё раз или напиши в обратную связь 🙏',
+      MENU_KEYBOARD
+    );
+    return true;
+  }
+  await sendConfirmation(bot, chatId, parsed, txId, access);
+  return true;
+}
+
+export async function handleManualCallback(bot, query) {
+  const chatId = query.message.chat.id;
+  const telegramId = query.from.id;
+  const action = query.data;
+
+  await bot.answerCallbackQuery(query.id);
+
+  if (action === 'manual:start') {
+    userStates.set(telegramId, { manualStep: 'type', createdAt: Date.now() });
+    await bot.sendMessage(chatId, 'Это расход или доход? 👇', {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '💸 Расход', callback_data: 'manual:type:expense' }],
+          [{ text: '💰 Доход', callback_data: 'manual:type:income' }],
+        ],
+      },
+    });
+    return;
+  }
+
+  if (action.startsWith('manual:type:')) {
+    const type = action.split(':')[2];
+    const state = userStates.get(telegramId) ?? {};
+    userStates.set(telegramId, { ...state, manualStep: 'group', manualType: type, createdAt: state.createdAt ?? Date.now() });
+
+    const groups = Object.keys(MANUAL_GROUPS[type] ?? {});
+    const keyboard = groups.map(g => [{ text: g, callback_data: `manual:group:${g}` }]);
+    await bot.sendMessage(chatId, 'Выбери группу категорий 👇', {
+      reply_markup: { inline_keyboard: keyboard },
+    });
+    return;
+  }
+
+  if (action.startsWith('manual:group:')) {
+    const group = action.slice('manual:group:'.length);
+    const state = userStates.get(telegramId) ?? {};
+    userStates.set(telegramId, { ...state, manualStep: 'category', manualGroup: group, createdAt: state.createdAt ?? Date.now() });
+
+    const type = state.manualType ?? 'expense';
+    const categories = MANUAL_GROUPS[type]?.[group] ?? [];
+    const keyboard = categories.map(c => [{ text: c, callback_data: `manual:cat:${c}` }]);
+    await bot.sendMessage(chatId, 'Выбери категорию 👇', {
+      reply_markup: { inline_keyboard: keyboard },
+    });
+    return;
+  }
+
+  if (action.startsWith('manual:cat:')) {
+    const category = action.slice('manual:cat:'.length);
+    const state = userStates.get(telegramId) ?? {};
+    userStates.set(telegramId, { ...state, manualStep: 'amount', manualCategory: category, createdAt: state.createdAt ?? Date.now() });
+
+    await bot.sendMessage(chatId, 'Введи сумму ₽ 👇');
+    return;
+  }
+}
+
 export async function handleMessage(bot, msg) {
   const text = msg.text;
   const telegramId = msg.from.id;
@@ -301,6 +426,7 @@ export async function handleMessage(bot, msg) {
   if (await handleFeedbackMessage(bot, msg)) return;
   if (await handleSubscriptionEmailState(bot, msg)) return;
   if (await handleCategoryNameState(bot, msg)) return;
+  if (await handleManualAmountState(bot, msg)) return;
 
   const state = userStates.get(telegramId);
 
@@ -449,14 +575,14 @@ export async function handleMessage(bot, msg) {
       return;
     }
     if (parsed.error === 'clarification_needed') {
-      await bot.sendMessage(chatId, parsed.message);
+      await bot.sendMessage(chatId, parsed.message, MANUAL_ERROR_KEYBOARD);
       return;
     }
     if (parsed.error === 'no_amount') {
-      await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число 👇');
+      await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число 👇', MANUAL_ERROR_KEYBOARD);
       return;
     }
-    await bot.sendMessage(chatId, 'Не смог распознать запись. Попробуй в формате: Продукты 2500 🤔');
+    await bot.sendMessage(chatId, 'Не смог распознать запись. Попробуй в формате: Продукты 2500 🤔', MANUAL_ERROR_KEYBOARD);
     return;
   }
 
