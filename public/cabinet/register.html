@@ -581,16 +581,6 @@
     const password = fieldPassword.value;
     const telegram = document.getElementById('fieldTelegram').value.trim().replace(/^@/, '');
 
-    // ── If no anon key: show dev message ──────────────────
-    if (SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg') {
-      setTimeout(() => {
-        submitBtn.classList.remove('is-loading');
-        submitBtn.textContent = 'Создать аккаунт';
-        showSuccess();
-      }, 800);
-      return;
-    }
-
     try {
       // 1. Sign up via Supabase Auth
       const authRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {

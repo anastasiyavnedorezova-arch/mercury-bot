@@ -527,12 +527,6 @@
     btnLogin.classList.add('is-loading');
     btnLogin.textContent = 'Входим…';
 
-    if (SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg') {
-      // Dev mode
-      setTimeout(() => { showToast('✅ Вход выполнен!'); setTimeout(() => window.location.href = DASHBOARD_URL, 1000); }, 800);
-      return;
-    }
-
     try {
       const res  = await supabasePost('/auth/v1/token?grant_type=password', {
         email:    loginEmail.value.trim().toLowerCase(),
@@ -584,11 +578,6 @@
     const btn = document.getElementById('btnResetSend');
     btn.disabled = true;
     btn.textContent = 'Отправляем…';
-
-    if (SUPABASE_ANON_KEY === 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg') {
-      setTimeout(() => { showPanel('reset-success'); }, 600);
-      return;
-    }
 
     try {
       await supabasePost('/auth/v1/recover', { email: resetEmail.value.trim().toLowerCase() });
