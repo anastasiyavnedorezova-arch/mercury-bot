@@ -1,0 +1,17 @@
+{
+  "name": "Меркури — Личный кабинет",
+  "short_name": "Меркури",
+  "description": "Личный финансовый помощник",
+  "start_url": "/cabinet/",
+  "display": "standalone",
+  "background_color": "#EEF2F6",
+  "theme_color": "#1E2A38",
+  "icons": [
+    {
+      "src": "/images/logo-mercury-main.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

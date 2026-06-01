@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1E2A38">
+  <title>Меркури — Личный кабинет</title>
+  <link rel="manifest" href="/cabinet/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Токены ── */
+    :root {
+      --c-dark:        #1E2A38;
+      --c-blue:        #4C9AFF;
+      --c-green:       #2FBF71;
+      --c-green-hover: #28A862;
+      --c-white:       #FFFFFF;
+      --c-bg:          #EEF2F6;
+      --c-card:        #FFFFFF;
+      --c-border:      #E2E8F0;
+      --c-text:        #2D3748;
+      --c-text-muted:  #6B7280;
+      --c-error:       #E5484D;
+      --c-warning:     #F59E0B;
+      --font: 'Manrope', sans-serif;
+      --r-sm: 8px; --r-md: 12px; --r-lg: 16px;
+      --shadow-sm: 0 2px 8px rgba(15,23,42,0.06);
+      --shadow-md: 0 8px 24px rgba(15,23,42,0.10);
+    }
+
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--c-bg);
+      color: var(--c-text);
+      min-height: 100dvh;
+    }
+    button { font-family: var(--font); cursor: pointer; border: none; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Layout ── */
+    #app { min-height: 100dvh; display: flex; flex-direction: column; }
+
+    /* ── Screen ── */
+    .screen { display: none; flex-direction: column; flex: 1; }
+    .screen.active { display: flex; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--c-dark);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .header-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--c-white);
+      letter-spacing: -0.3px;
+    }
+    .header-logo span { color: var(--c-green); }
+    .header-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-user img {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .header-user-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--c-white);
+    }
+    .btn-logout {
+      background: transparent;
+      color: var(--c-text-muted, #6B7280);
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: var(--r-sm);
+      transition: color 0.15s;
+    }
+    .btn-logout:hover { color: var(--c-error); }
+
+    /* ── Login screen ── */
+    #screen-login {
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 0;
+    }
+    .login-card {
+      background: var(--c-card);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-md);
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+    .login-logo {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--c-dark);
+      letter-spacing: -0.5px;
+    }
+    .login-logo span { color: var(--c-green); }
+    .login-subtitle {
+      font-size: 15px;
+      color: var(--c-text-muted);
+      line-height: 1.5;
+    }
+    .login-widget-wrap { min-height: 40px; }
+    .login-note {
+      font-size: 12px;
+      color: var(--c-text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── Dashboard ── */
+    #screen-dashboard { padding: 20px; gap: 16px; overflow-y: auto; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--c-border);
+      border-radius: var(--r-md);
+      padding: 3px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--c-text-muted);
+      background: transparent;
+      border-radius: calc(var(--r-md) - 3px);
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      background: var(--c-white);
+      color: var(--c-dark);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ── Month nav ── */
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .month-nav-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--c-white);
+      box-shadow: var(--shadow-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      color: var(--c-text);
+      transition: background 0.15s;
+    }
+    .month-nav-btn:hover { background: var(--c-border); }
+    .month-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--c-dark);
+      min-width: 130px;
+      text-align: center;
+    }
+
+    /* ── Summary cards ── */
+    .summary-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .summary-card {
+      background: var(--c-card);
+      border-radius: var(--r-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .summary-card-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--c-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .summary-card-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--c-dark);
+    }
+    .summary-card-value.income { color: var(--c-green); }
+    .summary-card-value.expense { color: var(--c-error); }
+
+    /* ── Section ── */
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--c-dark);
+      margin-bottom: 10px;
+    }
+
+    /* ── Transaction list ── */
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-item {
+      background: var(--c-card);
+      border-radius: var(--r-md);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .tx-left { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .tx-desc {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--c-dark);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tx-cat {
+      font-size: 12px;
+      color: var(--c-text-muted);
+    }
+    .tx-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+    .tx-amount {
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .tx-amount.income { color: var(--c-green); }
+    .tx-amount.expense { color: var(--c-error); }
+    .tx-date { font-size: 11px; color: var(--c-text-muted); }
+
+    /* ── Load more ── */
+    .btn-load-more {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--c-blue);
+      background: var(--c-white);
+      border-radius: var(--r-md);
+      box-shadow: var(--shadow-sm);
+      transition: background 0.15s;
+    }
+    .btn-load-more:hover { background: var(--c-bg); }
+
+    /* ── Goals ── */
+    .goals-list { display: flex; flex-direction: column; gap: 12px; }
+    .goal-card {
+      background: var(--c-card);
+      border-radius: var(--r-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .goal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .goal-name { font-size: 15px; font-weight: 700; color: var(--c-dark); }
+    .goal-pct {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--c-blue);
+    }
+    .goal-amounts {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--c-text-muted);
+      margin-bottom: 8px;
+    }
+    .goal-progress {
+      height: 6px;
+      background: var(--c-border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .goal-progress-bar {
+      height: 100%;
+      background: var(--c-green);
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+    .goal-deadline {
+      font-size: 12px;
+      color: var(--c-text-muted);
+      margin-top: 6px;
+    }
+
+    /* ── Budget ── */
+    .budget-list { display: flex; flex-direction: column; gap: 8px; }
+    .budget-item {
+      background: var(--c-card);
+      border-radius: var(--r-md);
+      padding: 14px 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .budget-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .budget-cat { font-size: 14px; font-weight: 600; color: var(--c-dark); }
+    .budget-amounts { font-size: 13px; color: var(--c-text-muted); }
+    .budget-progress {
+      height: 4px;
+      background: var(--c-border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .budget-progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+    .budget-progress-bar.ok { background: var(--c-green); }
+    .budget-progress-bar.warn { background: var(--c-warning); }
+    .budget-progress-bar.over { background: var(--c-error); }
+
+    /* ── Empty / Loading ── */
+    .state-msg {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--c-text-muted);
+      font-size: 14px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid var(--c-border);
+      border-top-color: var(--c-blue);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--c-dark);
+      color: var(--c-white);
+      font-size: 14px;
+      font-weight: 500;
+      padding: 12px 24px;
+      border-radius: var(--r-pill, 999px);
+      box-shadow: var(--shadow-md);
+      pointer-events: none;
+      transition: transform 0.25s ease;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    :root { --r-pill: 999px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ ЭКРАН: ВХОД ══ -->
+  <section id="screen-login" class="screen active">
+    <div class="login-card">
+      <div class="login-logo">Мерку<span>ри</span></div>
+      <p class="login-subtitle">Войдите через Telegram,<br>чтобы открыть личный кабинет</p>
+      <div class="login-widget-wrap" id="tg-widget"></div>
+      <p class="login-note">Мы используем официальную<br>авторизацию Telegram — пароль не нужен.</p>
+    </div>
+  </section>
+
+  <!-- ══ ЭКРАН: ДАШБОРД ══ -->
+  <section id="screen-dashboard" class="screen">
+    <div class="header">
+      <div class="header-logo">Мерку<span>ри</span></div>
+      <div class="header-user">
+        <img id="user-avatar" src="" alt="" style="display:none">
+        <span class="header-user-name" id="user-name"></span>
+        <button class="btn-logout" id="btn-logout">Выйти</button>
+      </div>
+    </div>
+
+    <div style="padding:20px;display:flex;flex-direction:column;gap:16px;flex:1;overflow-y:auto">
+
+      <!-- Табы -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="transactions">Транзакции</button>
+        <button class="tab-btn" data-tab="goals">Цели</button>
+        <button class="tab-btn" data-tab="budget">Бюджет</button>
+      </div>
+
+      <!-- ─── Таб: ТРАНЗАКЦИИ ─── -->
+      <div id="tab-transactions" class="tab-panel">
+        <div class="month-nav">
+          <button class="month-nav-btn" id="prev-month">&#8592;</button>
+          <div class="month-label" id="month-label"></div>
+          <button class="month-nav-btn" id="next-month">&#8594;</button>
+        </div>
+
+        <div class="summary-row" style="margin-top:12px">
+          <div class="summary-card">
+            <div class="summary-card-label">Доходы</div>
+            <div class="summary-card-value income" id="sum-income">—</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-card-label">Расходы</div>
+            <div class="summary-card-value expense" id="sum-expense">—</div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="section-title">История</div>
+          <div class="tx-list" id="tx-list"></div>
+          <button class="btn-load-more" id="btn-load-more" style="display:none;margin-top:8px">
+            Загрузить ещё
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── Таб: ЦЕЛИ ─── -->
+      <div id="tab-goals" class="tab-panel" style="display:none">
+        <div class="goals-list" id="goals-list"></div>
+      </div>
+
+      <!-- ─── Таб: БЮДЖЕТ ─── -->
+      <div id="tab-budget" class="tab-panel" style="display:none">
+        <div class="month-nav">
+          <button class="month-nav-btn" id="prev-month-b">&#8592;</button>
+          <div class="month-label" id="month-label-b"></div>
+          <button class="month-nav-btn" id="next-month-b">&#8594;</button>
+        </div>
+        <div class="budget-list" id="budget-list" style="margin-top:12px"></div>
+      </div>
+
+    </div>
+  </section>
+
+</div><!-- #app -->
+
+<div id="toast"></div>
+
+<!-- Telegram Login Widget script -->
+<script src="https://telegram.org/js/telegram-widget.js?22"
+        data-telegram-login="MercuryFinBot"
+        data-size="large"
+        data-radius="10"
+        data-onauth="onTelegramAuth(user)"
+        data-request-access="write"
+        async></script>
+
+<script>
+/* ══════════════════════════════════════════
+   СОСТОЯНИЕ
+══════════════════════════════════════════ */
+const state = {
+  token: localStorage.getItem('cabinet_token'),
+  user:  JSON.parse(localStorage.getItem('cabinet_user') || 'null'),
+  currentTab: 'transactions',
+  // транзакции
+  txMonth: new Date(),  // текущий выбранный месяц
+  txOffset: 0,
+  txTotal: 0,
+  // бюджет
+  budgetMonth: new Date(),
+};
+
+/* ══════════════════════════════════════════
+   УТИЛИТЫ
+══════════════════════════════════════════ */
+function fmt(n) {
+  return new Intl.NumberFormat('ru-RU').format(Math.round(n));
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+}
+function monthStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+function monthLabel(date) {
+  return date.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function apiFetch(path) {
+  const res = await fetch(path, {
+    headers: { Authorization: `Bearer ${state.token}` },
+  });
+  if (res.status === 401) { logout(); throw new Error('Unauthorized'); }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+/* ══════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════ */
+function onTelegramAuth(userData) {
+  fetch('/auth/telegram', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(userData),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.token) throw new Error(data.error || 'Auth failed');
+      state.token = data.token;
+      state.user  = data.user;
+      localStorage.setItem('cabinet_token', data.token);
+      localStorage.setItem('cabinet_user', JSON.stringify(data.user));
+      enterDashboard();
+    })
+    .catch(err => showToast('Ошибка входа: ' + err.message));
+}
+
+function logout() {
+  localStorage.removeItem('cabinet_token');
+  localStorage.removeItem('cabinet_user');
+  state.token = null;
+  state.user  = null;
+  showScreen('login');
+}
+
+/* ══════════════════════════════════════════
+   ЭКРАНЫ
+══════════════════════════════════════════ */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+}
+
+function enterDashboard() {
+  showScreen('dashboard');
+  const u = state.user;
+  const nameEl = document.getElementById('user-name');
+  const avatarEl = document.getElementById('user-avatar');
+  nameEl.textContent = [u.firstName, u.lastName].filter(Boolean).join(' ') || u.username || 'Пользователь';
+  if (u.photoUrl) { avatarEl.src = u.photoUrl; avatarEl.style.display = 'block'; }
+  loadTransactions(true);
+}
+
+/* ══════════════════════════════════════════
+   ТАБЫ
+══════════════════════════════════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    state.currentTab = tab;
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    document.getElementById(`tab-${tab}`).style.display = 'flex';
+    document.getElementById(`tab-${tab}`).style.flexDirection = 'column';
+    document.getElementById(`tab-${tab}`).style.gap = '12px';
+
+    if (tab === 'goals') loadGoals();
+    if (tab === 'budget') loadBudget();
+  });
+});
+
+/* ══════════════════════════════════════════
+   ТРАНЗАКЦИИ
+══════════════════════════════════════════ */
+function updateMonthLabel() {
+  document.getElementById('month-label').textContent = monthLabel(state.txMonth);
+}
+
+document.getElementById('prev-month').addEventListener('click', () => {
+  state.txMonth = new Date(state.txMonth.getFullYear(), state.txMonth.getMonth() - 1, 1);
+  loadTransactions(true);
+});
+document.getElementById('next-month').addEventListener('click', () => {
+  state.txMonth = new Date(state.txMonth.getFullYear(), state.txMonth.getMonth() + 1, 1);
+  loadTransactions(true);
+});
+
+async function loadTransactions(reset = false) {
+  if (reset) { state.txOffset = 0; state.txTotal = 0; }
+  updateMonthLabel();
+
+  const list = document.getElementById('tx-list');
+  if (reset) list.innerHTML = '<div class="state-msg"><div class="spinner"></div>Загрузка...</div>';
+
+  try {
+    const data = await apiFetch(
+      `/api/transactions?limit=20&offset=${state.txOffset}&month=${monthStr(state.txMonth)}`
+    );
+
+    if (reset) {
+      list.innerHTML = '';
+      // Считаем суммы по всему месяцу (только из загруженных данных за первый запрос)
+      let income = 0, expense = 0;
+      // Запросим отдельно весь месяц для суммирования
+      apiFetch(`/api/transactions?limit=500&offset=0&month=${monthStr(state.txMonth)}`).then(all => {
+        all.data.forEach(tx => {
+          if (tx.type === 'income') income += tx.amount;
+          else if (tx.type === 'expense') expense += tx.amount;
+        });
+        document.getElementById('sum-income').textContent = '+' + fmt(income) + ' ₽';
+        document.getElementById('sum-expense').textContent = '-' + fmt(expense) + ' ₽';
+      }).catch(() => {});
+    }
+
+    state.txTotal = data.total;
+
+    if (data.data.length === 0 && reset) {
+      list.innerHTML = '<div class="state-msg">Транзакций в этом месяце нет</div>';
+      document.getElementById('btn-load-more').style.display = 'none';
+      return;
+    }
+
+    data.data.forEach(tx => list.appendChild(renderTx(tx)));
+    state.txOffset += data.data.length;
+
+    const loadMore = document.getElementById('btn-load-more');
+    loadMore.style.display = state.txOffset < state.txTotal ? 'block' : 'none';
+  } catch (err) {
+    if (err.message !== 'Unauthorized') {
+      list.innerHTML = '<div class="state-msg">Ошибка загрузки</div>';
+    }
+  }
+}
+
+function renderTx(tx) {
+  const el = document.createElement('div');
+  el.className = 'tx-item';
+  const sign = tx.type === 'income' ? '+' : '-';
+  const cat = tx.categories?.name || '';
+  el.innerHTML = `
+    <div class="tx-left">
+      <div class="tx-desc">${escHtml(tx.description || cat || 'Без описания')}</div>
+      ${cat ? `<div class="tx-cat">${escHtml(cat)}</div>` : ''}
+    </div>
+    <div class="tx-right">
+      <div class="tx-amount ${tx.type}">${sign}${fmt(tx.amount)} ₽</div>
+      <div class="tx-date">${fmtDate(tx.transaction_date)}</div>
+    </div>`;
+  return el;
+}
+
+document.getElementById('btn-load-more').addEventListener('click', () => loadTransactions(false));
+
+/* ══════════════════════════════════════════
+   ЦЕЛИ
+══════════════════════════════════════════ */
+async function loadGoals() {
+  const list = document.getElementById('goals-list');
+  list.innerHTML = '<div class="state-msg"><div class="spinner"></div>Загрузка...</div>';
+  try {
+    const data = await apiFetch('/api/goals');
+    list.innerHTML = '';
+    if (!data.data.length) {
+      list.innerHTML = '<div class="state-msg">Целей пока нет</div>'; return;
+    }
+    data.data.forEach(g => list.appendChild(renderGoal(g)));
+  } catch (err) {
+    if (err.message !== 'Unauthorized') list.innerHTML = '<div class="state-msg">Ошибка загрузки</div>';
+  }
+}
+
+function renderGoal(g) {
+  const pct = g.target_amount > 0 ? Math.min(100, Math.round((g.current_amount / g.target_amount) * 100)) : 0;
+  const el = document.createElement('div');
+  el.className = 'goal-card';
+  const deadline = g.deadline ? new Date(g.deadline).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }) : null;
+  el.innerHTML = `
+    <div class="goal-header">
+      <div class="goal-name">${escHtml(g.name)}</div>
+      <div class="goal-pct">${pct}%</div>
+    </div>
+    <div class="goal-amounts">
+      <span>${fmt(g.current_amount)} ₽</span>
+      <span>из ${fmt(g.target_amount)} ₽</span>
+    </div>
+    <div class="goal-progress">
+      <div class="goal-progress-bar" style="width:${pct}%"></div>
+    </div>
+    ${deadline ? `<div class="goal-deadline">Срок: ${deadline}</div>` : ''}`;
+  return el;
+}
+
+/* ══════════════════════════════════════════
+   БЮДЖЕТ
+══════════════════════════════════════════ */
+function updateBudgetMonthLabel() {
+  document.getElementById('month-label-b').textContent = monthLabel(state.budgetMonth);
+}
+
+document.getElementById('prev-month-b').addEventListener('click', () => {
+  state.budgetMonth = new Date(state.budgetMonth.getFullYear(), state.budgetMonth.getMonth() - 1, 1);
+  loadBudget();
+});
+document.getElementById('next-month-b').addEventListener('click', () => {
+  state.budgetMonth = new Date(state.budgetMonth.getFullYear(), state.budgetMonth.getMonth() + 1, 1);
+  loadBudget();
+});
+
+async function loadBudget() {
+  updateBudgetMonthLabel();
+  const list = document.getElementById('budget-list');
+  list.innerHTML = '<div class="state-msg"><div class="spinner"></div>Загрузка...</div>';
+  try {
+    const data = await apiFetch(`/api/budget?month=${monthStr(state.budgetMonth)}`);
+    list.innerHTML = '';
+    if (!data.data.length) {
+      list.innerHTML = '<div class="state-msg">Бюджет не задан</div>'; return;
+    }
+    data.data.forEach(b => list.appendChild(renderBudget(b)));
+  } catch (err) {
+    if (err.message !== 'Unauthorized') list.innerHTML = '<div class="state-msg">Ошибка загрузки</div>';
+  }
+}
+
+function renderBudget(b) {
+  const spent = b.spent ?? 0;
+  const pct = b.amount > 0 ? Math.min(120, Math.round((spent / b.amount) * 100)) : 0;
+  const cls = pct >= 100 ? 'over' : pct >= 80 ? 'warn' : 'ok';
+  const el = document.createElement('div');
+  el.className = 'budget-item';
+  el.innerHTML = `
+    <div class="budget-row">
+      <div class="budget-cat">${escHtml(b.categories?.name || 'Категория')}</div>
+      <div class="budget-amounts">${fmt(spent)} / ${fmt(b.amount)} ₽</div>
+    </div>
+    <div class="budget-progress">
+      <div class="budget-progress-bar ${cls}" style="width:${Math.min(pct, 100)}%"></div>
+    </div>`;
+  return el;
+}
+
+/* ══════════════════════════════════════════
+   БЕЗОПАСНОСТЬ
+══════════════════════════════════════════ */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ══════════════════════════════════════════
+   ИНИЦИАЛИЗАЦИЯ
+══════════════════════════════════════════ */
+document.getElementById('btn-logout').addEventListener('click', logout);
+
+// Ставим виджет в нужный контейнер
+// (скрипт виджета уже загружен выше с data-onauth)
+document.getElementById('tg-widget').appendChild(
+  document.querySelector('iframe[src*="telegram"]') || document.createElement('div')
+);
+
+// Инициализируем начальный месяц
+state.txMonth = new Date();
+state.txMonth.setDate(1);
+state.budgetMonth = new Date();
+state.budgetMonth.setDate(1);
+
+// Если токен уже есть — сразу в дашборд
+if (state.token && state.user) {
+  enterDashboard();
+}
+</script>
+</body>
+</html>
