@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Как установить бота — Mercury</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --color-brand-main:               #1E2A38;
+  --color-brand-primary:            #4C9AFF;
+  --color-brand-primary-hover:      #2563EB;
+  --color-brand-accent-green:       #2FBF71;
+  --color-brand-accent-green-hover: #28A862;
+  --color-white:                    #FFFFFF;
+  --color-bg-main:                  #F5F7FA;
+  --color-bg-alt:                   #EEF2F6;
+  --color-border:                   #E2E8F0;
+  --color-border-hard:              #CBD5E1;
+  --color-text-main:                #2D3748;
+  --color-text-second:              #6B7280;
+  --color-text-disabled:            #9CA3AF;
+  --color-success-bg:               #E6F7EF;
+  --color-success-text:             #1F7A4C;
+  --color-info-bg:                  #EFF6FF;
+  --color-info-text:                #1E40AF;
+  --font-display: 'Manrope', sans-serif;
+  --font-body:    'Manrope', sans-serif;
+  --radius-sm:    8px;
+  --radius-md:    12px;
+  --radius-card:  20px;
+  --radius-pill:  999px;
+  --shadow-sm:    0 2px 8px rgba(15,23,42,.04);
+  --shadow-md:    0 8px 24px rgba(15,23,42,.08);
+  --shadow-card:  0 2px 8px rgba(0,0,0,.08);
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--color-text-main);
+  background: var(--color-bg-main);
+  -webkit-font-smoothing: antialiased;
+}
+a { color:inherit; text-decoration:none; }
+ul, ol { list-style:none; }
+button { cursor:pointer; border:none; background:none; font-family:inherit; }
+
+/* ============================================================
+   LAYOUT
+============================================================ */
+.shell { display:flex; flex-direction:column; min-height:100vh; }
+
+/* HEADER */
+.lk-header {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 20px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.lk-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.lk-logo-icon {
+  width: 36px; height: 36px;
+  background: var(--color-brand-main);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.lk-logo-text {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-brand-main);
+}
+.lk-userinfo { display:flex; flex-direction:column; gap:1px; flex:1; }
+.lk-username { font-size:14px; font-weight:600; color:var(--color-text-main); }
+.lk-username span { font-weight:400; color:var(--color-text-second); }
+.lk-subscription { font-size:12px; color:var(--color-text-second); font-weight:500; }
+.lk-header-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  border-radius: var(--radius-md);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 200ms ease;
+  padding: 8px 18px;
+  line-height: 20px;
+}
+.btn-secondary { background:var(--color-white); color:var(--color-text-main); border-color:var(--color-border-hard); }
+.btn-secondary:hover { border-color:var(--color-brand-primary); color:var(--color-brand-primary); }
+.btn-primary { background:var(--color-brand-primary); color:#fff; border-color:var(--color-brand-primary); }
+.btn-primary:hover { background:var(--color-brand-primary-hover); }
+.btn-sm { padding:5px 14px; font-size:13px; }
+.hamburger-btn {
+  display: none;
+  width: 36px; height: 36px;
+  align-items: center; justify-content: center;
+  border-radius: 8px;
+  background: var(--color-bg-alt);
+  flex-shrink: 0;
+}
+
+/* PAGE BODY */
+.page-body { display:flex; flex:1; overflow:hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 238px;
+  background: var(--color-white);
+  border-right: 1px solid var(--color-border);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  height: calc(100vh - 64px);
+  position: sticky;
+  top: 64px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-second);
+  text-decoration: none;
+  transition: all 180ms ease;
+  min-height: 38px;
+}
+.nav-item:hover { background:var(--color-bg-main); color:var(--color-text-main); }
+.nav-item.active {
+  background: var(--color-info-bg);
+  color: var(--color-brand-primary);
+  font-weight: 700;
+}
+.nav-item.active .nav-icon path,
+.nav-item.active .nav-icon rect { fill: var(--color-brand-primary); }
+.nav-icon { width:20px; height:20px; flex-shrink:0; }
+.nav-label { flex:1; }
+.nav-sep { height:1px; background:var(--color-border-hard); margin:8px 0; }
+.nav-item-soon { opacity:.5; pointer-events:none; }
+.nav-label-wrap { display:flex; flex-direction:column; gap:1px; }
+.nav-sublabel-soon { font-size:11px; font-weight:500; color:var(--color-text-disabled); }
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  padding: 28px 40px 120px;
+  overflow-y: auto;
+}
+
+/* ============================================================
+   PAGE: HOW-TO
+============================================================ */
+.page-title {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--color-text-main);
+  margin-bottom: 32px;
+  max-width: 650px;
+}
+
+.text-container {
+  max-width: 650px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Intro paragraph */
+.howto-intro {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-text-main);
+}
+
+/* Text block = section with heading */
+.text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.text-block-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--color-text-main);
+}
+.text-block-body {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-text-main);
+}
+.text-block-body b {
+  font-weight: 700;
+}
+.text-block-body p + p {
+  margin-top: 12px;
+}
+
+/* Steps list */
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-brand-main);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.step-text {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-text-main);
+}
+
+/* Platform cards */
+.platform-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.platform-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+.platform-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.platform-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.platform-icon-ios { background: #F2F2F7; }
+.platform-icon-android { background: #E8F5E9; }
+.platform-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--color-text-main);
+}
+
+/* What you get — feature chips */
+.features-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.feature-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.feature-check {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--color-success-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.feature-text {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-text-main);
+}
+
+/* Contact block */
+.contact-block {
+  background: var(--color-info-bg);
+  border: 1px solid rgba(76,154,255,.2);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.contact-icon {
+  width: 40px; height: 40px;
+  background: var(--color-brand-primary);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.contact-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: 2px;
+}
+.contact-desc {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-text-second);
+}
+.contact-desc a {
+  color: var(--color-brand-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.contact-desc a:hover { text-decoration: underline; }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 768px) {
+  .sidebar { display:none; }
+  .main-content { padding: 20px 16px 80px; }
+  .page-title { font-size:24px; line-height:32px; margin-bottom:24px; }
+  .text-block-title { font-size:16px; line-height:24px; }
+  .howto-intro,
+  .text-block-body,
+  .step-text,
+  .feature-text { font-size:15px; line-height:22px; }
+  .platform-card { padding:18px; }
+  .lk-header { padding:0 12px; gap:10px; }
+  .lk-logo-text { font-size:14px; }
+  .lk-header-actions .btn-secondary { display:none; }
+  .hamburger-btn { display:flex; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="lk-header">
+    <a href="#" class="lk-logo">
+      <div class="lk-logo-icon">
+        <svg width="22" height="20" viewBox="0 0 22 20" fill="none">
+          <path d="M4 8L8.5 14.5L11 11.5L13.5 14.5L18 8" stroke="#2FBF71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="11" cy="17.5" r="1.8" fill="white"/>
+        </svg>
+      </div>
+      <span class="lk-logo-text">mercury</span>
+    </a>
+    <div class="lk-userinfo">
+      <div class="lk-username"><span>Кабинет: </span>@nastya_v</div>
+      <div class="lk-subscription">Подписка до 01-11-2026</div>
+    </div>
+    <div class="lk-header-actions">
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-secondary btn-sm">Открыть в Telegram</a>
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-primary btn-sm">Запустить бота</a>
+      <button class="hamburger-btn" aria-label="Меню">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+          <rect width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="6" width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="12" width="18" height="2" rx="1" fill="#2D3748"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="7" height="17" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="11" y="9" width="7.5" height="9.5" rx="2" fill="#CBD5E1"/>
+          <rect x="11" y="1.5" width="7.5" height="6" rx="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Дашборд</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="8" y="1.5" width="4" height="17" rx="2" fill="#CBD5E1"/>
+          <rect x="2.5" y="6.5" width="4" height="12" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x="13.5" y="10.5" width="4" height="8" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x=".5" y="17" width="19" height="1.5" rx=".75" fill="#CBD5E1" opacity=".5"/>
+        </svg>
+        <span class="nav-label">Учёт по месяцам</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="3" width="17" height="5" rx="2" fill="#CBD5E1"/>
+          <rect x="1.5" y="10" width="17" height="8" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="4" y="12.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">История</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="6" width="16" height="13" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <path d="M7 6V4a3 3 0 016 0v2" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="12" r="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Категории</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/>
+          <path d="M10 6v4l2.5 2.5" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Мои цели</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="4" width="17" height="14" rx="2.5" fill="#CBD5E1" opacity=".5"/>
+          <path d="M10 1.5v3M6 1.5v3M14 1.5v3" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="11.5" y="8" width="5" height="6" rx="1.5" fill="#CBD5E1"/>
+          <rect x="3.5" y="8.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Мой бюджет</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7.5" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="14" cy="6" r="4.5" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Аналитика</span>
+      </a>
+      <a href="#" class="nav-item nav-item-soon">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8.5" stroke="#CBD5E1" stroke-width="1.5"/>
+          <path d="M7 10h6M10 7v6" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label-wrap">
+          <span class="nav-label">Семейный доступ</span>
+          <span class="nav-sublabel-soon">Скоро!</span>
+        </span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="10" cy="10" r="3" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Мой профиль</span>
+      </a>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="currentColor" opacity=".5"/>
+          <path d="M10 6v4M10 14h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Как установить бота</span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2.5L17.5 17.5H2.5L10 2.5Z" fill="#CBD5E1" opacity=".5"/>
+          <rect x="9" y="8" width="2" height="5" rx="1" fill="#CBD5E1"/>
+          <circle cx="10" cy="15" r="1" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Вопросы и ответы</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M3 4h14a1.5 1.5 0 010 3H3a1.5 1.5 0 010-3zM3 10h10" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="14" cy="15" r="3" fill="#CBD5E1"/>
+          <path d="M13 15l.8.8L15 14" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-label">Обратная связь</span>
+      </a>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+      <h1 class="page-title">Как установить виджет бота Меркури на телефон</h1>
+
+      <div class="text-container">
+
+        <!-- Intro -->
+        <p class="howto-intro">
+          Личный кабинет Меркури работает как приложение прямо в браузере — без App Store и Google Play. Установка занимает меньше минуты.
+        </p>
+
+        <!-- Platform cards -->
+        <div class="platform-cards">
+
+          <!-- iOS -->
+          <div class="platform-card">
+            <div class="platform-card-header">
+              <div class="platform-icon platform-icon-ios">
+                <!-- Apple logo -->
+                <svg width="22" height="26" viewBox="0 0 22 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18.07 13.75c-.03-3.22 2.63-4.77 2.75-4.84-1.5-2.2-3.83-2.5-4.66-2.53-1.98-.2-3.88 1.17-4.88 1.17-1.01 0-2.56-1.15-4.21-1.12-2.16.03-4.16 1.26-5.27 3.18-2.25 3.9-.58 9.68 1.62 12.85 1.07 1.55 2.34 3.28 4.01 3.22 1.62-.07 2.23-1.05 4.18-1.05 1.96 0 2.52 1.05 4.23 1.02 1.73-.03 2.83-1.57 3.88-3.13 1.23-1.79 1.73-3.53 1.76-3.62-.04-.02-3.38-1.3-3.41-5.15Z" fill="#1C1C1E"/>
+                  <path d="M14.8 4.27C15.67 3.2 16.26 1.73 16.1.25c-1.28.06-2.83.86-3.74 1.91-.82.93-1.54 2.42-1.35 3.85 1.43.11 2.89-.73 3.79-1.74Z" fill="#1C1C1E"/>
+                </svg>
+              </div>
+              <h2 class="platform-card-title">Для iPhone (iOS)</h2>
+            </div>
+            <div class="steps-list">
+              <div class="step">
+                <div class="step-num">1</div>
+                <p class="step-text">Открываете <b>Safari</b> на своём iPhone — <b>именно Safari, другие браузеры не поддерживают установку.</b></p>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <p class="step-text">Переходите на сайт Меркури и входите в личный кабинет.</p>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <p class="step-text">Нажимаете кнопку <b>«Поделиться»</b> внизу экрана — это значок квадрата со стрелкой вверх.</p>
+              </div>
+              <div class="step">
+                <div class="step-num">4</div>
+                <p class="step-text">В появившемся меню прокручиваете список вниз и выбираете <b>«На экран «Домой»</b>.</p>
+              </div>
+              <div class="step">
+                <div class="step-num">5</div>
+                <p class="step-text">Нажимаете <b>«Добавить»</b> в правом верхнем углу.</p>
+              </div>
+              <div class="step">
+                <div class="step-num">6</div>
+                <p class="step-text">Готово — иконка Меркури появится на вашем рабочем столе. Теперь бот открывается как обычное приложение, без адресной строки браузера.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Android -->
+          <div class="platform-card">
+            <div class="platform-card-header">
+              <div class="platform-icon platform-icon-android">
+                <!-- Android logo -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.23l-1.88 3.24A10.92 10.92 0 0012 8c-1.64 0-3.2.39-4.47 1.07L5.65 5.83a.636.636 0 00-.87-.2.635.635 0 00-.2.87l1.84 3.18A9.617 9.617 0 002 18h20a9.617 9.617 0 00-4.4-8.52zM7 15.25a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5zm10 0a1.25 1.25 0 110-2.5 1.25 1.25 0 010 2.5z" fill="#3DDC84"/>
+                </svg>
+              </div>
+              <h2 class="platform-card-title">Для Android</h2>
+            </div>
+            <div class="steps-list">
+              <div class="step">
+                <div class="step-num">1</div>
+                <p class="step-text">Открываете <b>Chrome</b> и переходите на сайт Меркури, входите в личный кабинет.</p>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <p class="step-text">Через несколько секунд внизу экрана появится <b>баннер «Добавить Меркури на главный экран»</b> — нажмите <b>«Установить»</b>.</p>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <p class="step-text">Если баннер не появился — нажмите три точки в правом верхнем углу браузера, выберите «Добавить на главный экран» и подтвердите.</p>
+              </div>
+              <div class="step">
+                <div class="step-num">4</div>
+                <p class="step-text">Иконка Меркури появится на рабочем столе. Приложение работает даже без постоянного подключения к интернету — ваши данные сохраняются.</p>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /platform-cards -->
+
+        <!-- What you get -->
+        <div class="text-block">
+          <h2 class="text-block-title">Что вы получаете после установки</h2>
+          <div class="features-grid">
+            <div class="feature-row">
+              <div class="feature-check">
+                <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                  <path d="M1 4L4.5 7.5L11 1" stroke="#2FBF71" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p class="feature-text">Полный доступ к боту без Telegram — записывайте расходы и доходы прямо в приложении, смотрите аналитику, отслеживайте цели и бюджет.</p>
+            </div>
+            <div class="feature-row">
+              <div class="feature-check">
+                <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                  <path d="M1 4L4.5 7.5L11 1" stroke="#2FBF71" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p class="feature-text">Приложение работает быстро и не занимает место на телефоне как обычные приложения.</p>
+            </div>
+            <div class="feature-row">
+              <div class="feature-check">
+                <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                  <path d="M1 4L4.5 7.5L11 1" stroke="#2FBF71" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <p class="feature-text">Если у вас есть аккаунт в Telegram-боте Меркури — все ваши данные автоматически появятся в личном кабинете, ничего переносить не нужно.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="text-block">
+          <h2 class="text-block-title">Возникли вопросы?</h2>
+          <div class="contact-block">
+            <div class="contact-icon">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M17 4H3a1 1 0 00-1 1v10a1 1 0 001 1h14a1 1 0 001-1V5a1 1 0 00-1-1z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2.5 5.5l7.5 5.5 7.5-5.5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div>
+              <p class="contact-title">Напишите нам</p>
+              <p class="contact-desc">
+                <a href="mailto:mercury.finbot@yandex.com">mercury.finbot@yandex.com</a>
+                &nbsp;— ответим в течение суток.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /text-container -->
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

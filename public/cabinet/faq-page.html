@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Вопросы и ответы — Mercury</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --color-brand-main:               #1E2A38;
+  --color-brand-primary:            #4C9AFF;
+  --color-brand-primary-hover:      #2563EB;
+  --color-brand-accent-green:       #2FBF71;
+  --color-white:                    #FFFFFF;
+  --color-bg-main:                  #F5F7FA;
+  --color-bg-alt:                   #EEF2F6;
+  --color-border:                   #E2E8F0;
+  --color-border-hard:              #CBD5E1;
+  --color-text-main:                #2D3748;
+  --color-text-second:              #6B7280;
+  --color-text-disabled:            #9CA3AF;
+  --color-info-bg:                  #EFF6FF;
+  --color-info-text:                #1E40AF;
+  --font-display: 'Manrope', sans-serif;
+  --font-body:    'Manrope', sans-serif;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-card: 20px;
+  --radius-pill: 999px;
+  --shadow-sm:   0 2px 8px rgba(15,23,42,.04);
+  --shadow-card: 0 2px 8px rgba(0,0,0,.08);
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--color-text-main);
+  background: var(--color-bg-main);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--color-brand-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { list-style: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+/* ============================================================
+   LAYOUT
+============================================================ */
+.shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* HEADER */
+.lk-header {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 20px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.lk-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; flex-shrink: 0; }
+.lk-logo-icon {
+  width: 36px; height: 36px;
+  background: var(--color-brand-main);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.lk-logo-text { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--color-brand-main); }
+.lk-userinfo { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+.lk-username { font-size: 14px; font-weight: 600; color: var(--color-text-main); }
+.lk-username span { font-weight: 400; color: var(--color-text-second); }
+.lk-subscription { font-size: 12px; color: var(--color-text-second); font-weight: 500; }
+.lk-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: var(--font-body); font-size: 14px; font-weight: 600; letter-spacing: .01em;
+  border-radius: var(--radius-md); border: 1.5px solid transparent;
+  cursor: pointer; white-space: nowrap; transition: all 200ms ease;
+  padding: 8px 18px; line-height: 20px; text-decoration: none;
+}
+.btn-secondary { background: var(--color-white); color: var(--color-text-main); border-color: var(--color-border-hard); }
+.btn-secondary:hover { border-color: var(--color-brand-primary); color: var(--color-brand-primary); text-decoration: none; }
+.btn-primary { background: var(--color-brand-primary); color: #fff; border-color: var(--color-brand-primary); }
+.btn-primary:hover { background: var(--color-brand-primary-hover); text-decoration: none; }
+.btn-sm { padding: 5px 14px; font-size: 13px; }
+.hamburger-btn {
+  display: none; width: 36px; height: 36px;
+  align-items: center; justify-content: center;
+  border-radius: 8px; background: var(--color-bg-alt); flex-shrink: 0;
+}
+
+/* PAGE BODY */
+.page-body { display: flex; flex: 1; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 238px;
+  background: var(--color-white);
+  border-right: 1px solid var(--color-border);
+  padding: 20px 16px;
+  display: flex; flex-direction: column; gap: 2px;
+  flex-shrink: 0; overflow-y: auto;
+  height: calc(100vh - 64px);
+  position: sticky; top: 64px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 400; color: var(--color-text-second);
+  text-decoration: none; transition: all 180ms ease; min-height: 38px;
+}
+.nav-item:hover { background: var(--color-bg-main); color: var(--color-text-main); text-decoration: none; }
+.nav-item.active { background: var(--color-info-bg); color: var(--color-brand-primary); font-weight: 700; }
+.nav-item.active .nav-icon path,
+.nav-item.active .nav-icon rect { fill: var(--color-brand-primary); }
+.nav-item.active .nav-icon circle[stroke] { stroke: var(--color-brand-primary); }
+.nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
+.nav-label { flex: 1; }
+.nav-sublabel { font-size: 11px; font-weight: 600; color: #E5484D; }
+.nav-sep { height: 1px; background: var(--color-border-hard); margin: 8px 0; }
+.nav-item-soon { opacity: .5; pointer-events: none; }
+.nav-label-wrap { display: flex; flex-direction: column; gap: 1px; }
+.nav-sublabel-soon { font-size: 11px; font-weight: 500; color: var(--color-text-disabled); }
+
+/* MAIN */
+.main-content {
+  flex: 1;
+  padding: 28px 40px 80px;
+  overflow-y: auto;
+}
+.page-title {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 600; line-height: 40px;
+  color: var(--color-text-main);
+  margin-bottom: 24px;
+}
+
+/* ============================================================
+   FAQ TABS
+============================================================ */
+.faq-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.faq-tab {
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-second);
+  background: transparent;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all 180ms ease;
+  white-space: nowrap;
+}
+.faq-tab:hover {
+  color: var(--color-text-main);
+  background: var(--color-bg-alt);
+}
+.faq-tab.active {
+  background: var(--color-info-bg);
+  color: var(--color-brand-primary);
+  border-color: rgba(76,154,255,.25);
+  font-weight: 600;
+}
+
+/* ============================================================
+   FAQ ACCORDION
+============================================================ */
+.faq-group { display: none; max-width: 760px; }
+.faq-group.visible { display: block; }
+
+.faq-item {
+  border-bottom: 1px solid var(--color-border);
+}
+.faq-item:first-child { border-top: 1px solid var(--color-border); }
+
+.faq-question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--color-text-main);
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.faq-question:hover { color: var(--color-brand-primary); }
+
+.faq-question.is-open { color: var(--color-text-main); }
+
+/* Arrow icon */
+.faq-arrow {
+  width: 20px; height: 20px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-second);
+  transition: transform 250ms ease;
+}
+.faq-question.is-open .faq-arrow { transform: rotate(180deg); }
+
+.faq-answer {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-text-second);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 300ms ease, padding 250ms ease;
+  padding-bottom: 0;
+}
+.faq-answer.is-open {
+  max-height: 600px;
+  padding-bottom: 20px;
+}
+.faq-answer a { color: var(--color-brand-primary); }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { padding: 20px 16px 60px; }
+  .page-title { font-size: 24px; line-height: 32px; }
+  .lk-header { padding: 0 12px; gap: 10px; }
+  .lk-logo-text { font-size: 14px; }
+  .lk-header-actions .btn-secondary { display: none; }
+  .hamburger-btn { display: flex; }
+  .faq-tabs { gap: 6px; margin-bottom: 20px; }
+  .faq-tab { padding: 6px 14px; font-size: 13px; }
+  .faq-question { font-size: 15px; padding: 16px 0; }
+  .faq-answer { font-size: 15px; line-height: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="lk-header">
+    <a href="#" class="lk-logo">
+      <div class="lk-logo-icon">
+        <svg width="22" height="20" viewBox="0 0 22 20" fill="none">
+          <path d="M4 8L8.5 14.5L11 11.5L13.5 14.5L18 8" stroke="#2FBF71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="11" cy="17.5" r="1.8" fill="white"/>
+        </svg>
+      </div>
+      <span class="lk-logo-text">mercury</span>
+    </a>
+    <div class="lk-userinfo">
+      <div class="lk-username"><span>Кабинет: </span>@nastya_v</div>
+      <div class="lk-subscription">Подписка до 01-11-2026</div>
+    </div>
+    <div class="lk-header-actions">
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-secondary btn-sm">Открыть в Telegram</a>
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-primary btn-sm">Запустить бота</a>
+      <button class="hamburger-btn" aria-label="Меню">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+          <rect width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="6" width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="12" width="18" height="2" rx="1" fill="#2D3748"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="7" height="17" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="11" y="9" width="7.5" height="9.5" rx="2" fill="#CBD5E1"/>
+          <rect x="11" y="1.5" width="7.5" height="6" rx="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Дашборд</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="8" y="1.5" width="4" height="17" rx="2" fill="#CBD5E1"/>
+          <rect x="2.5" y="6.5" width="4" height="12" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x="13.5" y="10.5" width="4" height="8" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x=".5" y="17" width="19" height="1.5" rx=".75" fill="#CBD5E1" opacity=".5"/>
+        </svg>
+        <span class="nav-label">Учёт по месяцам</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="3" width="17" height="5" rx="2" fill="#CBD5E1"/>
+          <rect x="1.5" y="10" width="17" height="8" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="4" y="12.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">История</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="6" width="16" height="13" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <path d="M7 6V4a3 3 0 016 0v2" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="12" r="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Категории</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/>
+          <path d="M10 6v4l2.5 2.5" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Мои цели</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="4" width="17" height="14" rx="2.5" fill="#CBD5E1" opacity=".5"/>
+          <path d="M10 1.5v3M6 1.5v3M14 1.5v3" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="11.5" y="8" width="5" height="6" rx="1.5" fill="#CBD5E1"/>
+          <rect x="3.5" y="8.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label" id="nav-budget-label">Мой бюджет</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7.5" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="14" cy="6" r="4.5" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Аналитика</span>
+      </a>
+      <a href="#" class="nav-item nav-item-soon">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8.5" stroke="#CBD5E1" stroke-width="1.5"/>
+          <path d="M7 10h6M10 7v6" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label-wrap">
+          <span class="nav-label">Семейный доступ</span>
+          <span class="nav-sublabel-soon">Скоро!</span>
+        </span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="10" cy="10" r="3" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Мой профиль</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <path d="M10 6v4M10 14h.01" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Как установить бота</span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8" fill="none"/>
+          <path d="M10 6v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="10" cy="14" r="1.2" fill="currentColor"/>
+        </svg>
+        <span class="nav-label">Вопросы и ответы</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M3 4h14a1.5 1.5 0 010 3H3a1.5 1.5 0 010-3zM3 10h10" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="14" cy="15" r="3" fill="#CBD5E1"/>
+          <path d="M13 15l.8.8L15 14" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-label">Обратная связь</span>
+      </a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <h1 class="page-title">Вопросы и ответы</h1>
+
+      <!-- TABS -->
+      <div class="faq-tabs" role="tablist" aria-label="Категории вопросов">
+        <button class="faq-tab active" data-tab="bot" role="tab" aria-selected="true">Бот и подписка</button>
+        <button class="faq-tab" data-tab="expenses" role="tab" aria-selected="false">Учет расходов</button>
+        <button class="faq-tab" data-tab="goals" role="tab" aria-selected="false">Цели</button>
+        <button class="faq-tab" data-tab="budget" role="tab" aria-selected="false">Бюджет и аналитика</button>
+      </div>
+
+      <!-- ===== БОТ И ПОДПИСКА ===== -->
+      <div class="faq-group visible" id="tab-bot" role="tabpanel">
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Нужно ли устанавливать приложение?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Вы можете пользоваться ботом в Телеграмм или зарегистрировать аккаунт на сайте и получить доступ к своему личному кабинету с полной информацией. Установить мини-приложение на экран своего телефона можно <a href="#">по этой инструкции</a>.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            У меня не работает Телеграмм. Как пользоваться ботом?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Зарегистрируйте аккаунт на сайте и установите быстрый доступ к боту на экран своего телефона.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Можно ли пользоваться бесплатно?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Да, в бесплатном тарифе доступны базовые функции учета, одна финансовая цель и ежемесячная аналитика.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Что дает Пробный период?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Пробный период на 30 дней открывает весь функционал подписки бесплатно.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Как происходит оплата?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Оплата проходит через платежный сервис ЮКасса. Бот пришлет ссылку на выбранный тариф. Проверка оплаты автоматическая — после оплаты просто перезайдите в чат-бота.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Есть ли автопродление?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Нет, автопродление отключено. Мы осознанно хотим, чтобы вы самостоятельно решали, хотите ли вы дальше платить за полный доступ.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Как отменить подписку?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Подписка автоматически завершится по окончании оплаченного периода. Если вы хотите отменить подписку раньше, пожалуйста, напишите нам на почту с темой письма «Отмена подписки»: <a href="mailto:mercury.finbot@yandex.com">mercury.finbot@yandex.com</a>
+          </div>
+        </div>
+
+      </div><!-- /bot -->
+
+      <!-- ===== УЧЕТ РАСХОДОВ ===== -->
+      <div class="faq-group" id="tab-expenses" role="tabpanel">
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Можно ли редактировать или удалять записи?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Да, эта функция доступна и в боте, и в личном кабинете. В личном кабинете вы можете отредактировать или удалить любую историческую запись.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Как посмотреть мои записи о расходах и доходах?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            В личном кабинете в разделе «История транзакций» или в боте по кнопке.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Можно ли интегрировать бот с банковским приложением?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Нет, интеграции с банковскими приложениями у бота нет. Но боту можно прислать историю транзакций из банковского приложения — он расшифрует её и сделает нужные записи.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Как вести семейный бюджет вместе?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Раздел сейчас в разработке. Бот пришлет сообщение, когда функция «Семейный бюджет» будет доступна.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Можно ли добавлять свои категории?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Да, создание собственных категорий доступно в тарифе с подпиской.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Можно ли изменить валюту?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Пока доступна только валюта рубли. Если вам необходима мультивалютность — напишите нам об этом.
+          </div>
+        </div>
+
+      </div><!-- /expenses -->
+
+      <!-- ===== ЦЕЛИ ===== -->
+      <div class="faq-group" id="tab-goals" role="tabpanel">
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Можно ли вести несколько финансовых целей или отредактировать существующие?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            В Пробном тарифе и подписке — до 3 целей. На любом тарифе вы можете отредактировать цель: название, сумму, срок.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Как рассчитывается ежемесячный платеж для достижения цели?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            На бесплатном тарифе доступен расчет с учетом инфляции. Вы задаете боту сумму и желаемую дату — бот считает, сколько нужно накопить с учётом сегодняшних цен и уровня инфляции. По подписке вы можете рассчитать ежемесячный платёж как с учётом инфляции, так и с учётом потенциальной доходности (например, если инвестируете или откладываете на вклад).
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Может бот подсказать, как лучше инвестировать или выбрать вклад?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Нет, бот не дает инвестиционных советов.
+          </div>
+        </div>
+
+      </div><!-- /goals -->
+
+      <!-- ===== БЮДЖЕТ И АНАЛИТИКА ===== -->
+      <div class="faq-group" id="tab-budget" role="tabpanel">
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Зачем устанавливать бюджет?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Бюджет — это ваш личный лимит расходов на месяц. Когда он установлен, Меркури отслеживает темп трат и предупреждает заранее, если вы рискуете выйти за рамки. Без бюджета бот просто фиксирует расходы.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Я не знаю, какой бюджет установить на месяц
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Начните с наблюдения: поведите расходы без бюджета 2–3 месяца, посмотрите на аналитику по категориям и поймёте реальную картину. Либо возьмите за основу доход минус обязательные платежи (аренда, кредиты, коммунальные услуги).
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Где посмотреть аналитику по моим финансам?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Нажмите кнопку «Аналитика» в главном меню бота. По подписке доступна аналитика в любой момент: расходы и доходы за месяц, топ категорий трат, сравнение с прошлым месяцем и прогноз до конца месяца.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Как вести семейный бюджет?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Сейчас каждый член семьи ведёт свой личный бюджет. Семейный общий бюджет — в ближайшем обновлении. Пока удобный способ: каждый записывает свои расходы, а в конце месяца сравниваете результаты.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-question" aria-expanded="false">
+            Что может проанализировать бот?
+            <span class="faq-arrow"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 6l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          </button>
+          <div class="faq-answer">
+            Меркури умеет показывать: общую сумму доходов и расходов за месяц, разбивку трат по категориям, топ-5 категорий, сравнение расходов с доходами, прогноз — уложитесь ли вы в бюджет до конца месяца.
+          </div>
+        </div>
+
+      </div><!-- /budget -->
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ---- TABS ----
+const tabs = document.querySelectorAll('.faq-tab');
+const groups = document.querySelectorAll('.faq-group');
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab;
+
+    tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+
+    groups.forEach(g => g.classList.remove('visible'));
+    document.getElementById('tab-' + target).classList.add('visible');
+
+    // Close all open answers when switching tabs
+    document.querySelectorAll('.faq-question.is-open').forEach(q => {
+      q.classList.remove('is-open');
+      q.setAttribute('aria-expanded', 'false');
+      q.nextElementSibling.classList.remove('is-open');
+    });
+  });
+});
+
+// ---- ACCORDION ----
+document.querySelectorAll('.faq-question').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const answer = btn.nextElementSibling;
+    const isOpen = btn.classList.contains('is-open');
+
+    // Close all in current group
+    const group = btn.closest('.faq-group');
+    group.querySelectorAll('.faq-question.is-open').forEach(q => {
+      q.classList.remove('is-open');
+      q.setAttribute('aria-expanded', 'false');
+      q.nextElementSibling.classList.remove('is-open');
+    });
+
+    // Open clicked (toggle)
+    if (!isOpen) {
+      btn.classList.add('is-open');
+      btn.setAttribute('aria-expanded', 'true');
+      answer.classList.add('is-open');
+    }
+  });
+});
+</script>
+
+</body>
+</html>

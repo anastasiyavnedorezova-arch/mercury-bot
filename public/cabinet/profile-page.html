@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Мой профиль — Mercury</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --color-brand-main:          #1E2A38;
+  --color-brand-primary:       #4C9AFF;
+  --color-brand-primary-hover: #3B82F6;
+  --color-brand-accent-green:  #2FBF71;
+  --color-white:               #FFFFFF;
+  --color-bg-main:             #F5F7FA;
+  --color-bg-alt:              #EEF2F6;
+  --color-border:              #E2E8F0;
+  --color-border-hard:         #CBD5E1;
+  --color-text-main:           #2D3748;
+  --color-text-second:         #6B7280;
+  --color-text-disabled:       #9CA3AF;
+  --color-success-bg:          #E6F7EF;
+  --color-success-text:        #1F7A4C;
+  --color-success-main:        #2FBF71;
+  --color-error-main:          #E5484D;
+  --color-error-bg:            #FDECEC;
+  --color-error-text:          #9B2C2C;
+  --color-info-bg:             #EFF6FF;
+  --color-info-text:           #1E40AF;
+  --font-display: 'Manrope', sans-serif;
+  --font-body:    'Manrope', sans-serif;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-card: 20px;
+  --radius-pill: 999px;
+  --shadow-card: 0 2px 8px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);font-size:16px;line-height:24px;color:var(--color-text-main);background:var(--color-bg-main);-webkit-font-smoothing:antialiased}
+a{color:var(--color-brand-primary);text-decoration:none}
+a:hover{text-decoration:underline}
+ul,ol{list-style:none}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+
+/* ============================================================ DEMO NAV */
+.demo-nav{position:sticky;top:0;z-index:300;background:var(--color-brand-main);padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.demo-nav span{color:rgba(255,255,255,.5);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-right:4px}
+.demo-btn{padding:5px 14px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);transition:all 180ms ease;white-space:nowrap}
+.demo-btn:hover,.demo-btn.active{background:var(--color-brand-primary);border-color:var(--color-brand-primary);color:#fff}
+
+/* ============================================================ LAYOUT */
+.shell{display:flex;flex-direction:column;min-height:100vh}
+.lk-header{background:var(--color-white);border-bottom:1px solid var(--color-border);padding:0 20px;height:64px;display:flex;align-items:center;gap:20px;flex-shrink:0;position:sticky;top:44px;z-index:100}
+.lk-logo{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
+.lk-logo-icon{width:36px;height:36px;background:var(--color-brand-main);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.lk-logo-text{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--color-brand-main)}
+.lk-userinfo{display:flex;flex-direction:column;gap:1px;flex:1}
+.lk-username{font-size:14px;font-weight:600;color:var(--color-text-main)}
+.lk-username span{font-weight:400;color:var(--color-text-second)}
+.lk-subscription{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-second);font-weight:500}
+.lk-sub-badge{padding:2px 7px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;background:var(--color-info-bg);color:var(--color-info-text)}
+.lk-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-body);font-size:14px;font-weight:600;letter-spacing:.01em;border-radius:var(--radius-md);border:1.5px solid transparent;cursor:pointer;white-space:nowrap;transition:all 200ms ease;padding:8px 18px;line-height:20px;text-decoration:none}
+.btn-secondary{background:var(--color-white);color:var(--color-text-main);border-color:var(--color-border-hard)}
+.btn-secondary:hover{border-color:var(--color-brand-primary);color:var(--color-brand-primary);text-decoration:none}
+.btn-primary{background:var(--color-brand-primary);color:#fff;border-color:var(--color-brand-primary)}
+.btn-primary:hover{background:var(--color-brand-primary-hover);text-decoration:none}
+.btn-sm{padding:5px 14px;font-size:13px}
+.hamburger-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-bg-alt);flex-shrink:0}
+
+/* mini-buttons in cards */
+.mini-btn{height:24px;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;line-height:16px;white-space:nowrap;cursor:pointer;border:none;transition:background 150ms ease}
+.mini-btn-dark{background:var(--color-brand-main);color:#fff}
+.mini-btn-dark:hover{background:#2a3a4d}
+.mini-btn-blue{background:var(--color-brand-primary);color:#fff}
+.mini-btn-blue:hover{background:var(--color-brand-primary-hover)}
+.mini-btn-green{background:var(--color-brand-accent-green);color:#fff}
+.mini-btn-green:hover{background:#28A862}
+.mini-btn-text-red{background:transparent;color:var(--color-error-main);font-size:12px;font-weight:500;padding:4px 0}
+.mini-btn-text-red:hover{text-decoration:underline}
+
+/* PAGE BODY */
+.page-body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:238px;background:var(--color-white);border-right:1px solid var(--color-border);padding:20px 16px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;overflow-y:auto;height:calc(100vh - 108px);position:sticky;top:108px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius-sm);font-size:14px;font-weight:400;color:var(--color-text-second);text-decoration:none;transition:all 180ms ease;min-height:38px}
+.nav-item:hover{background:var(--color-bg-main);color:var(--color-text-main);text-decoration:none}
+.nav-item.active{background:var(--color-info-bg);color:var(--color-brand-primary);font-weight:700}
+.nav-item.active .nav-icon path,.nav-item.active .nav-icon rect{fill:var(--color-brand-primary)}
+.nav-icon{width:20px;height:20px;flex-shrink:0}
+.nav-label{flex:1}
+.nav-sep{height:1px;background:var(--color-border-hard);margin:8px 0}
+.nav-item-soon{opacity:.5;pointer-events:none}
+.nav-label-wrap{display:flex;flex-direction:column;gap:1px}
+.nav-sublabel-soon{font-size:11px;font-weight:500;color:var(--color-text-disabled)}
+.nav-sublabel-locked{font-size:11px;font-weight:600;color:#E5484D}
+
+/* MAIN */
+.main-content{flex:1;padding:28px 40px 80px;overflow-y:auto}
+.page-title{font-family:var(--font-display);font-size:32px;font-weight:600;line-height:40px;color:var(--color-text-main);margin-bottom:24px}
+
+/* ============================================================ PROFILE CARDS GRID */
+.profile-top-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.profile-card{background:var(--color-white);border:1px solid var(--color-border);border-radius:24px;box-shadow:var(--shadow-card);padding:24px;display:flex;flex-direction:column;gap:12px}
+
+/* Card header */
+.card-header{display:flex;align-items:center;gap:10px}
+.card-title{flex:1;font-size:14px;font-weight:700;line-height:20px;color:var(--color-text-second)}
+
+/* Data rows */
+.card-fields{display:flex;flex-direction:column;gap:4px}
+.card-field{padding:4px 0;display:flex;flex-direction:column;gap:2px}
+.field-label{font-size:12px;font-weight:500;line-height:16px;color:var(--color-text-disabled)}
+.field-value{font-size:18px;font-weight:600;line-height:26px;color:var(--color-text-main)}
+.field-value.empty{opacity:0}
+
+/* Status row (label + badge inline) */
+.field-label-row{display:flex;justify-content:space-between;align-items:center}
+.sub-status-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;line-height:16px}
+.sub-status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-active-outer{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--color-success-bg);flex-shrink:0}
+.status-active-inner{width:10px;height:10px;border-radius:50%;background:var(--color-success-main)}
+.status-error-outer{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--color-error-bg);flex-shrink:0}
+.status-error-inner{width:10px;height:10px;border-radius:50%;background:var(--color-error-main)}
+
+/* Telegram avatar */
+.tg-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(180deg,#2AABEE 0%,#229ED9 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:4px}
+
+/* ============================================================ NOTIFICATIONS CARD */
+.notif-card{background:var(--color-white);border:1px solid var(--color-border);border-radius:24px;box-shadow:var(--shadow-card);padding:24px;margin-bottom:16px;max-width:520px}
+.notif-rows{display:flex;flex-direction:column}
+.notif-row{display:flex;align-items:center;gap:10px;padding:8px 0}
+.notif-label-wrap{flex:1;display:flex;flex-direction:column;gap:2px}
+.notif-label{font-size:14px;font-weight:400;line-height:20px;color:var(--color-text-main)}
+.notif-label.locked{color:var(--color-text-disabled)}
+.notif-sublabel{font-size:12px;font-weight:500;line-height:16px;color:var(--color-error-main)}
+
+/* Toggle */
+.toggle{position:relative;width:45px;height:25px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;border-radius:999px;background:var(--color-border-hard);transition:background 200ms ease;cursor:pointer}
+.toggle input:checked + .toggle-track{background:var(--color-brand-accent-green)}
+.toggle-knob{position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 3px 1px rgba(0,0,0,.06),0 3px 8px rgba(0,0,0,.15);transition:transform 200ms ease;pointer-events:none}
+.toggle input:checked ~ .toggle-knob{transform:translateX(20px)}
+.toggle.disabled{opacity:.5;pointer-events:none}
+
+/* ============================================================ DANGER + DOCS ZONE */
+.danger-zone{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.delete-btn{height:36px;padding:8px 20px;border-radius:var(--radius-sm);border:1.5px solid var(--color-error-main);background:transparent;color:var(--color-error-main);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 180ms ease;flex-shrink:0}
+.delete-btn:hover{background:var(--color-error-bg)}
+.danger-desc{font-size:14px;font-weight:400;line-height:20px;color:var(--color-text-second)}
+
+.docs-block{background:var(--color-bg-alt);border-radius:var(--radius-card);padding:20px 24px;display:flex;flex-direction:column;gap:10px}
+.docs-title{font-size:14px;font-weight:600;color:var(--color-text-second)}
+.docs-links{display:flex;flex-wrap:wrap;gap:16px}
+.docs-link{font-size:14px;color:var(--color-brand-primary)}
+.docs-link:hover{text-decoration:underline}
+.docs-email{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;color:var(--color-text-main)}
+
+/* ============================================================ MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.48);display:flex;align-items:center;justify-content:center;z-index:500;opacity:0;pointer-events:none;transition:opacity 250ms ease}
+.modal-overlay.visible{opacity:1;pointer-events:all}
+.modal-box{background:var(--color-white);border-radius:24px;padding:32px;max-width:480px;width:calc(100% - 32px);box-shadow:0 16px 40px rgba(15,23,42,.15);position:relative;max-height:90vh;overflow-y:auto}
+.modal-close{position:absolute;top:20px;right:20px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--color-bg-alt);color:var(--color-text-second);font-size:16px;cursor:pointer;transition:background 150ms ease;border:none;font-family:inherit;line-height:1}
+.modal-close:hover{background:var(--color-border)}
+.modal-title{font-family:var(--font-display);font-size:22px;font-weight:700;line-height:28px;color:var(--color-text-main);margin-bottom:16px;padding-right:32px}
+
+/* sub modal */
+.sub-description{font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:20px}
+.sub-description b{color:var(--color-text-main);font-weight:700}
+.sub-plans{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+.plan-card{background:var(--color-white);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:16px 20px;display:flex;align-items:center;gap:12px}
+.plan-info{flex:1;display:flex;flex-direction:column;gap:2px}
+.plan-period{font-size:14px;font-weight:600;color:var(--color-text-main)}
+.plan-price-row{display:flex;align-items:center;gap:8px}
+.plan-old-price{font-size:14px;color:var(--color-text-disabled);text-decoration:line-through}
+.plan-new-price{font-size:20px;font-weight:700;color:var(--color-text-main)}
+.plan-discount{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--color-error-main)}
+.plan-discount-dot{width:7px;height:7px;border-radius:50%;background:var(--color-error-main);flex-shrink:0}
+.pay-btn{height:36px;padding:8px 18px;background:var(--color-brand-primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 180ms ease}
+.pay-btn:hover{background:var(--color-brand-primary-hover)}
+
+/* ============================================================ RESPONSIVE */
+@media(max-width:1100px){.profile-top-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main-content{padding:20px 16px 60px}
+  .page-title{font-size:24px;line-height:32px;text-align:center}
+  .lk-header{padding:0 12px;gap:10px;top:44px}
+  .lk-logo-text{display:none}
+  .lk-header-actions .btn-secondary{display:none}
+  .hamburger-btn{display:flex}
+  .profile-top-grid{grid-template-columns:1fr}
+  .profile-card{border-radius:var(--radius-card);padding:20px}
+  .card-title{font-size:13px}
+  .field-value{font-size:16px;line-height:24px}
+  .notif-card{max-width:100%;border-radius:var(--radius-card);padding:20px}
+  .danger-zone{flex-direction:column;align-items:flex-start;gap:8px}
+  .modal-box{padding:20px;border-radius:20px}
+  .modal-title{font-size:18px}
+}
+
+/* Modal form inputs */
+.modal-input{width:100%;padding:10px 14px;font-family:var(--font-body);font-size:16px;font-weight:400;line-height:24px;color:var(--color-text-main);background:var(--color-white);border:1px solid var(--color-border-hard);border-radius:var(--radius-md);outline:none;transition:border-color 200ms ease,box-shadow 200ms ease;-webkit-appearance:none}
+.modal-input::placeholder{color:var(--color-text-disabled)}
+.modal-input:focus{border-color:var(--color-brand-primary);box-shadow:0 0 0 3px rgba(76,154,255,.15)}
+.modal-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.modal-field-label{font-size:12px;font-weight:600;color:var(--color-text-second);margin-bottom:4px}
+/* Modal action row */
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-btn-primary{height:40px;padding:10px 20px;background:var(--color-brand-primary);color:#fff;border:none;border-radius:var(--radius-md);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:background 180ms ease;white-space:nowrap}
+.modal-btn-primary:hover{background:var(--color-brand-primary-hover)}
+.modal-btn-secondary{height:40px;padding:10px 20px;background:var(--color-white);color:var(--color-text-main);border:1.5px solid var(--color-border-hard);border-radius:var(--radius-md);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:all 180ms ease;white-space:nowrap}
+.modal-btn-secondary:hover{border-color:var(--color-brand-primary);color:var(--color-brand-primary)}
+.modal-btn-danger{height:40px;padding:10px 20px;background:var(--color-error-main);color:#fff;border:none;border-radius:var(--radius-md);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;transition:background 180ms ease;white-space:nowrap}
+.modal-btn-danger:hover{background:#C93B3F}
+/* Success modal */
+.modal-success-icon{width:56px;height:56px;border-radius:50%;background:var(--color-success-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.modal-success-text{text-align:center;font-size:16px;font-weight:400;line-height:24px;color:var(--color-text-second);margin-top:8px}
+/* Telegram connect modal */
+.tg-connect-block{background:var(--color-info-bg);border-radius:var(--radius-md);padding:16px;display:flex;align-items:flex-start;gap:12px;margin-bottom:20px}
+.tg-connect-icon{width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,#2AABEE 0%,#229ED9 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tg-connect-text{font-size:14px;font-weight:400;line-height:22px;color:var(--color-text-main)}
+/* Delete modal */
+.delete-warn{background:var(--color-error-bg);border-radius:var(--radius-md);padding:14px 16px;font-size:14px;line-height:22px;color:var(--color-error-text);margin-bottom:20px}
+.delete-warn b{font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- DEMO NAV -->
+<div class="demo-nav">
+  <span>Сценарий:</span>
+  <button class="demo-btn active" onclick="setScenario('free')">Бесплатный / без Telegram</button>
+  <button class="demo-btn" onclick="setScenario('trial')">Пробный / Telegram подключён</button>
+  <button class="demo-btn" onclick="setScenario('active')">Подписка активна</button>
+</div>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="lk-header" id="lkHeader">
+    <a href="#" class="lk-logo">
+      <div class="lk-logo-icon">
+        <svg width="22" height="20" viewBox="0 0 22 20" fill="none">
+          <path d="M4 8L8.5 14.5L11 11.5L13.5 14.5L18 8" stroke="#2FBF71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="11" cy="17.5" r="1.8" fill="white"/>
+        </svg>
+      </div>
+      <span class="lk-logo-text">mercury</span>
+    </a>
+    <div class="lk-userinfo">
+      <div class="lk-username"><span>Кабинет: </span>@nastya_v</div>
+      <div class="lk-subscription" id="headerSub"><!-- filled by JS --></div>
+    </div>
+    <div class="lk-header-actions">
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-secondary btn-sm">Открыть в Telegram</a>
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-primary btn-sm">Запустить бота</a>
+      <button class="hamburger-btn" aria-label="Меню">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+          <rect width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="6" width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="12" width="18" height="2" rx="1" fill="#2D3748"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="7" height="17" rx="2" fill="#CBD5E1" opacity=".5"/><rect x="11" y="9" width="7.5" height="9.5" rx="2" fill="#CBD5E1"/><rect x="11" y="1.5" width="7.5" height="6" rx="2" fill="#CBD5E1"/></svg><span class="nav-label">Дашборд</span></a>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="8" y="1.5" width="4" height="17" rx="2" fill="#CBD5E1"/><rect x="2.5" y="6.5" width="4" height="12" rx="2" fill="#CBD5E1" opacity=".7"/><rect x="13.5" y="10.5" width="4" height="8" rx="2" fill="#CBD5E1" opacity=".7"/></svg><span class="nav-label">Учёт по месяцам</span></a>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="3" width="17" height="5" rx="2" fill="#CBD5E1"/><rect x="1.5" y="10" width="17" height="8" rx="2" fill="#CBD5E1" opacity=".5"/></svg><span class="nav-label">История</span></a>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="6" width="16" height="13" rx="3" fill="#CBD5E1" opacity=".5"/><path d="M7 6V4a3 3 0 016 0v2" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="12" r="2" fill="#CBD5E1"/></svg><span class="nav-label">Категории</span></a>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/><path d="M10 6v4l2.5 2.5" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/></svg><span class="nav-label">Мои цели</span></a>
+      <a href="#" class="nav-item" id="nav-budget">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="4" width="17" height="14" rx="2.5" fill="#CBD5E1" opacity=".5"/><path d="M10 1.5v3M6 1.5v3M14 1.5v3" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/><rect x="11.5" y="8" width="5" height="6" rx="1.5" fill="#CBD5E1"/><rect x="3.5" y="8.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/></svg>
+        <span class="nav-label-wrap"><span class="nav-label">Мой бюджет</span><span class="nav-sublabel-locked" id="navBudgetSub">Только в подписке</span></span>
+      </a>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" fill="#CBD5E1" opacity=".5"/><circle cx="14" cy="6" r="4.5" fill="#CBD5E1"/></svg><span class="nav-label">Аналитика</span></a>
+      <a href="#" class="nav-item nav-item-soon"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="#CBD5E1" stroke-width="1.5"/><path d="M7 10h6M10 7v6" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nav-label-wrap"><span class="nav-label">Семейный доступ</span><span class="nav-sublabel-soon">Скоро!</span></span></a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="currentColor" opacity=".5"/><circle cx="10" cy="10" r="3" fill="currentColor"/></svg><span class="nav-label">Мой профиль</span></a>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/><path d="M10 6v4M10 14h.01" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/></svg><span class="nav-label">Как установить бота</span></a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/><path d="M10 6v5" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1.2" fill="#CBD5E1"/></svg><span class="nav-label">Вопросы и ответы</span></a>
+      <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M3 4h14a1.5 1.5 0 010 3H3a1.5 1.5 0 010-3zM3 10h10" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/><circle cx="14" cy="15" r="3" fill="#CBD5E1"/><path d="M13 15l.8.8L15 14" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="nav-label">Обратная связь</span></a>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-content">
+      <h1 class="page-title">Мой профиль</h1>
+
+      <!-- TOP CARDS GRID -->
+      <div class="profile-top-grid">
+
+        <!-- PERSONAL DATA CARD -->
+        <div class="profile-card">
+          <div class="card-header">
+            <span class="card-title">Личные данные</span>
+            <button class="mini-btn mini-btn-dark" onclick="openEditProfile()">Редактировать</button>
+          </div>
+          <div class="card-fields">
+            <div class="card-field">
+              <span class="field-label">Имя:</span>
+              <span class="field-value" id="personalName">Настя</span>
+            </div>
+            <div class="card-field">
+              <span class="field-label">E-mail:</span>
+              <span class="field-value" id="personalEmail">mail-to-nastya@yandex.ru</span>
+            </div>
+            <div class="card-field">
+              <span class="field-label">Дата регистрации:</span>
+              <span class="field-value">29 апреля 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TELEGRAM CARD -->
+        <div class="profile-card">
+          <div class="card-header">
+            <span class="card-title">Telegram</span>
+            <button class="mini-btn" id="tgBtn">...</button>
+          </div>
+          <div class="card-fields">
+            <div class="tg-avatar" id="tgAvatar">
+              <!-- Telegram logo SVG -->
+              <svg width="30" height="25" viewBox="0 0 30 25" fill="none">
+                <path d="M29.7 2.3L25.2 23.1C24.9 24.4 24.1 24.7 23 24.1L16.4 19.2L13.2 22.3C12.9 22.6 12.6 22.7 12.2 22.7L12.7 15.9L24.3 5.4C24.8 4.9 24.2 4.7 23.5 5.2L9.1 14.3L2.7 12.3C1.4 11.9 1.4 11 3 10.4L27.8 0.8C28.9 0.4 29.9 1.1 29.7 2.3Z" fill="white"/>
+              </svg>
+            </div>
+            <div class="card-field">
+              <span class="field-label">Имя пользователя:</span>
+              <span class="field-value" id="tgUsername">ananas_i_martini</span>
+            </div>
+            <div class="card-field">
+              <span class="field-label">Статус:</span>
+              <span class="field-value" id="tgStatus">✅ Telegram подключён</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBSCRIPTION CARD -->
+        <div class="profile-card">
+          <div class="card-header">
+            <span class="card-title">Подписка</span>
+            <button class="mini-btn" id="subBtn">...</button>
+          </div>
+          <div class="card-fields">
+            <div class="card-field">
+              <div class="field-label-row">
+                <span class="field-label">Тариф:</span>
+                <span id="subStatusBadge"></span>
+              </div>
+              <span class="field-value" id="subPlan">—</span>
+            </div>
+            <div class="card-field">
+              <span class="field-label">Действует до:</span>
+              <span class="field-value" id="subUntil">—</span>
+            </div>
+            <div class="card-field">
+              <span class="field-label">Осталось:</span>
+              <span class="field-value" id="subLeft">—</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /profile-top-grid -->
+
+      <!-- NOTIFICATIONS CARD -->
+      <div class="notif-card">
+        <div class="card-header" style="margin-bottom:8px">
+          <span class="card-title">Уведомления</span>
+        </div>
+        <div class="notif-rows">
+          <div class="notif-row">
+            <div class="notif-label-wrap"><span class="notif-label">Напоминать о финансовой цели</span></div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-knob"></span></label>
+          </div>
+          <div class="notif-row">
+            <div class="notif-label-wrap"><span class="notif-label">Напоминать вносить записи</span></div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-knob"></span></label>
+          </div>
+          <div class="notif-row">
+            <div class="notif-label-wrap"><span class="notif-label">Ежемесячная аналитика</span></div>
+            <label class="toggle"><input type="checkbox" checked/><span class="toggle-track"></span><span class="toggle-knob"></span></label>
+          </div>
+          <div class="notif-row" id="notif-budget-row">
+            <div class="notif-label-wrap">
+              <span class="notif-label" id="notif-budget-label">Напоминать задать бюджет</span>
+              <span class="notif-sublabel" id="notif-budget-sub" style="display:none">Только в подписке</span>
+            </div>
+            <label class="toggle" id="notif-budget-toggle"><input type="checkbox" id="notif-budget-cb" checked/><span class="toggle-track"></span><span class="toggle-knob"></span></label>
+          </div>
+          <div class="notif-row" id="notif-alerts-row">
+            <div class="notif-label-wrap">
+              <span class="notif-label" id="notif-alerts-label">Алерты о превышении бюджета</span>
+              <span class="notif-sublabel" id="notif-alerts-sub" style="display:none">Только в подписке</span>
+            </div>
+            <label class="toggle" id="notif-alerts-toggle"><input type="checkbox" id="notif-alerts-cb" checked/><span class="toggle-track"></span><span class="toggle-knob"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- DANGER ZONE -->
+      <div class="danger-zone">
+        <button class="delete-btn" onclick="openModal('modalDeleteAccount')">Удалить аккаунт</button>
+        <span class="danger-desc">Удаление аккаунта безвозвратно уничтожит все записи по вашему аккаунту. Это действие невозможно отменить.</span>
+      </div>
+
+      <!-- DOCS BLOCK -->
+      <div class="docs-block">
+        <span class="docs-title">Документы и поддержка</span>
+        <div class="docs-links">
+          <a href="https://telegra.ph/Politika-konfidencialnosti-servisa-Merkuri-03-31" target="_blank" class="docs-link">Политика конфиденциальности</a>
+          <a href="https://telegra.ph/Polzovatelskoe-soglashenie-servisa-Merkuri-03-31" target="_blank" class="docs-link">Пользовательское соглашение</a>
+        </div>
+        <div class="docs-email">
+          <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg"><path opacity="0.5" d="M15.1467 3.2H10.4533C6.02843 3.2 3.81597 3.2 2.44133 4.60588C1.06668 6.01177 1.06668 8.27451 1.06668 12.8C1.06668 17.3255 1.06668 19.5882 2.44133 20.9941C3.81597 22.4 6.02843 22.4 10.4533 22.4H15.1467C19.5716 22.4 21.7841 22.4 23.1587 20.9941C24.5333 19.5882 24.5333 17.3255 24.5333 12.8C24.5333 8.27451 24.5333 6.01177 23.1587 4.60588C21.7841 3.2 19.5716 3.2 15.1467 3.2Z" fill="#1E2A38"/><path d="M20.4036 8.5696C20.777 8.25846 20.8274 7.70357 20.5163 7.3302C20.2051 6.95684 19.6502 6.90639 19.2769 7.21753L16.7438 9.32845C15.6491 10.2407 14.8891 10.872 14.2474 11.2846C13.6263 11.6841 13.2051 11.8182 12.8002 11.8182C12.3954 11.8182 11.9741 11.6841 11.353 11.2846C10.7114 10.872 9.95138 10.2407 8.85671 9.32845L6.3236 7.21753C5.95024 6.90639 5.39534 6.95684 5.08421 7.3302C4.77307 7.70357 4.82351 8.25846 5.19688 8.5696L7.7741 10.7173C8.81409 11.584 9.65702 12.2864 10.401 12.7649C11.176 13.2634 11.9307 13.5782 12.8002 13.5782C13.6698 13.5782 14.4245 13.2634 15.1995 12.7649C15.9435 12.2864 16.7864 11.584 17.8264 10.7173L20.4036 8.5696Z" fill="#1E2A38"/></svg>
+          <a href="mailto:help@mercuryfinbot.ru" style="color:var(--color-text-main);font-weight:700;font-size:18px;text-decoration:none">help@mercuryfinbot.ru</a>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================ MODAL: ОФОРМЛЕНИЕ ПОДПИСКИ -->
+<div class="modal-overlay" id="modalSubscribe">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modalSubscribe')">✕</button>
+    <h2 class="modal-title">Оформление подписки</h2>
+    <div class="sub-description">
+      Подписка для тех, кто хочет полный контроль над финансами.<br>
+      После оплаты вам дополнительно будут доступны:<br><br>
+      <b>Финансовые цели:</b><br>
+      ✓ До 3 целей одновременно<br>
+      ✓ Выбор расчёта: с учётом инфляции или доходности<br><br>
+      <b>Учёт операций:</b><br>
+      ✓ Создание собственных категорий<br><br>
+      <b>Аналитика и бюджет:</b><br>
+      ✓ Аналитика по запросу<br>
+      ✓ Бюджет на месяц и Контроль сальдо<br>
+      ✓ Предупреждения о риске превышения бюджета
+    </div>
+    <div class="sub-plans">
+      <div class="plan-card">
+        <div class="plan-info">
+          <span class="plan-period">1 месяц</span>
+          <div class="plan-price-row"><span class="plan-new-price">499 руб.</span></div>
+        </div>
+        <button class="pay-btn" onclick="closeModal('modalSubscribe')">Оплатить</button>
+      </div>
+      <div class="plan-card">
+        <div class="plan-info">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="plan-period">6 месяцев</span>
+            <span class="plan-discount"><span class="plan-discount-dot"></span>скидка 17%</span>
+          </div>
+          <div class="plan-price-row">
+            <span class="plan-old-price">2 994 руб.</span>
+            <span class="plan-new-price" style="color:#E5484D">2 490 руб.</span>
+          </div>
+        </div>
+        <button class="pay-btn" onclick="closeModal('modalSubscribe')">Оплатить</button>
+      </div>
+      <div class="plan-card">
+        <div class="plan-info">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="plan-period">12 месяцев</span>
+            <span class="plan-discount"><span class="plan-discount-dot"></span>скидка 20%</span>
+          </div>
+          <div class="plan-price-row">
+            <span class="plan-old-price">5 988 руб.</span>
+            <span class="plan-new-price" style="color:#E5484D">4 490 руб.</span>
+          </div>
+        </div>
+        <button class="pay-btn" onclick="closeModal('modalSubscribe')">Оплатить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ MODAL: ПРОДЛЕНИЕ / ВЫБОР ТАРИФА -->
+<div class="modal-overlay" id="modalRenew">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modalRenew')">✕</button>
+    <h2 class="modal-title">Выберите тариф</h2>
+    <div class="sub-plans">
+      <div class="plan-card">
+        <div class="plan-info">
+          <span class="plan-period">1 месяц</span>
+          <div class="plan-price-row"><span class="plan-new-price">499 руб.</span></div>
+        </div>
+        <button class="pay-btn" onclick="closeModal('modalRenew')">Оплатить</button>
+      </div>
+      <div class="plan-card">
+        <div class="plan-info">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="plan-period">6 месяцев</span>
+            <span class="plan-discount"><span class="plan-discount-dot"></span>скидка 17%</span>
+          </div>
+          <div class="plan-price-row">
+            <span class="plan-old-price">2 994 руб.</span>
+            <span class="plan-new-price" style="color:#E5484D">2 490 руб.</span>
+          </div>
+        </div>
+        <button class="pay-btn" onclick="closeModal('modalRenew')">Оплатить</button>
+      </div>
+      <div class="plan-card">
+        <div class="plan-info">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="plan-period">12 месяцев</span>
+            <span class="plan-discount"><span class="plan-discount-dot"></span>скидка 20%</span>
+          </div>
+          <div class="plan-price-row">
+            <span class="plan-old-price">5 988 руб.</span>
+            <span class="plan-new-price" style="color:#E5484D">4 490 руб.</span>
+          </div>
+        </div>
+        <button class="pay-btn" onclick="closeModal('modalRenew')">Оплатить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---- SCENARIOS ---- */
+const SCENARIOS = {
+  free: {
+    headerSub: '',
+    tgConnected: false,
+    tgUsername: '',
+    sub: 'free',
+    personalName: 'Настя',
+    personalEmail: 'mail-to-nastya@yandex.ru',
+  },
+  trial: {
+    headerSub: 'Пробный период до 09-05-2026',
+    headerBadge: '24 дня',
+    tgConnected: true,
+    tgUsername: 'ananas_i_martini',
+    sub: 'trial',
+    personalName: 'Настя',
+    personalEmail: 'mail-to-nastya@yandex.ru',
+  },
+  active: {
+    headerSub: 'Подписка до 09-05-2026',
+    headerBadge: '24 дня',
+    tgConnected: true,
+    tgUsername: 'ananas_i_martini',
+    sub: 'active',
+    personalName: 'Настя',
+    personalEmail: 'mail-to-nastya@yandex.ru',
+  }
+};
+
+function setScenario(key) {
+  const s = SCENARIOS[key];
+
+  // demo nav highlight
+  document.querySelectorAll('.demo-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes("'" + key + "'"));
+  });
+
+  // header subscription line
+  const headerSub = document.getElementById('headerSub');
+  if (s.headerSub) {
+    headerSub.innerHTML = s.headerSub + (s.headerBadge ? ` <span class="lk-sub-badge">${s.headerBadge}</span>` : '');
+  } else {
+    headerSub.innerHTML = '';
+  }
+
+  // personal data (name/email shown for trial/active, hidden for free)
+  const showPersonal = (key !== 'free');
+  document.getElementById('personalName').style.opacity = showPersonal ? '1' : '0';
+  document.getElementById('personalEmail').style.opacity = showPersonal ? '1' : '0';
+
+  // telegram card
+  const tgBtn = document.getElementById('tgBtn');
+  const tgUsername = document.getElementById('tgUsername');
+  const tgStatus = document.getElementById('tgStatus');
+  const tgAvatar = document.getElementById('tgAvatar');
+
+  if (s.tgConnected) {
+    tgBtn.textContent = 'Отключить';
+    tgBtn.className = 'mini-btn mini-btn-text-red';
+    tgUsername.textContent = s.tgUsername;
+    tgUsername.style.opacity = '1';
+    tgStatus.innerHTML = '✅ Telegram подключён';
+    tgAvatar.style.opacity = '1';
+  } else {
+    tgBtn.textContent = 'Подключить';
+    tgBtn.className = 'mini-btn mini-btn-dark';
+    tgUsername.textContent = '';
+    tgUsername.style.opacity = '0';
+    tgStatus.innerHTML = '❌ Telegram не подключён';
+    tgAvatar.style.opacity = '1';
+  }
+
+  // subscription card
+  const subBtn = document.getElementById('subBtn');
+  const subPlan = document.getElementById('subPlan');
+  const subUntil = document.getElementById('subUntil');
+  const subLeft = document.getElementById('subLeft');
+  const subStatusBadge = document.getElementById('subStatusBadge');
+  const navBudgetSub = document.getElementById('navBudgetSub');
+
+  if (s.sub === 'free') {
+    subBtn.textContent = 'Активировать пробный период';
+    subBtn.className = 'mini-btn mini-btn-blue';
+    subBtn.onclick = () => openModal('modalTrialSuccess');
+    subPlan.textContent = 'Бесплатный тариф';
+    subUntil.textContent = 'бессрочно';
+    subLeft.textContent = '—';
+    subStatusBadge.innerHTML = '';
+    navBudgetSub.style.display = 'block';
+    // lock notif
+    setNotifLocked(true);
+  } else if (s.sub === 'trial') {
+    subBtn.textContent = 'Оформить подписку';
+    subBtn.className = 'mini-btn mini-btn-green';
+    subBtn.onclick = () => openModal('modalSubscribe');
+    subPlan.textContent = 'Пробный тариф';
+    subUntil.textContent = '15 мая 2026';
+    subLeft.textContent = '16 дней';
+    subStatusBadge.innerHTML = '';
+    navBudgetSub.style.display = 'none';
+    setNotifLocked(false);
+  } else if (s.sub === 'active') {
+    subBtn.textContent = 'Продлить подписку';
+    subBtn.className = 'mini-btn mini-btn-dark';
+    subBtn.onclick = () => openModal('modalRenew');
+    subPlan.textContent = '1 месяц — 499 ₽';
+    subUntil.textContent = '15 мая 2026';
+    subLeft.textContent = '24 дня';
+    subStatusBadge.innerHTML = `<span class="sub-status-badge">
+      <span class="status-active-outer"><span class="status-active-inner"></span></span>
+      <span style="color:#1F7A4C;font-size:12px;font-weight:500">Подписка активна</span>
+    </span>`;
+    navBudgetSub.style.display = 'none';
+    setNotifLocked(false);
+  }
+}
+
+function setNotifLocked(locked) {
+  const labels = ['budget', 'alerts'];
+  labels.forEach(id => {
+    const label = document.getElementById(`notif-${id}-label`);
+    const sub = document.getElementById(`notif-${id}-sub`);
+    const toggle = document.getElementById(`notif-${id}-toggle`);
+    const cb = document.getElementById(`notif-${id}-cb`);
+    if (locked) {
+      label.classList.add('locked');
+      sub.style.display = 'block';
+      toggle.classList.add('disabled');
+      cb.checked = false;
+      cb.disabled = true;
+    } else {
+      label.classList.remove('locked');
+      sub.style.display = 'none';
+      toggle.classList.remove('disabled');
+      cb.checked = true;
+      cb.disabled = false;
+    }
+  });
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('visible');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeModal(overlay.id);
+  });
+});
+
+// Init with free scenario
+setScenario('free');
+
+// Open edit profile modal and pre-fill fields
+function openEditProfile() {
+  const name = document.getElementById('personalName').style.opacity === '0'
+    ? '' : document.getElementById('personalName').textContent;
+  const email = document.getElementById('personalEmail').style.opacity === '0'
+    ? '' : document.getElementById('personalEmail').textContent;
+  document.getElementById('editName').value = name.trim();
+  document.getElementById('editEmail').value = email.trim();
+  openModal('modalEditProfile');
+}
+
+// Save profile (demo — just close modal)
+function saveProfile() {
+  const name = document.getElementById('editName').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  if (name) {
+    document.getElementById('personalName').textContent = name;
+    document.getElementById('personalName').style.opacity = '1';
+  }
+  if (email) {
+    document.getElementById('personalEmail').textContent = email;
+    document.getElementById('personalEmail').style.opacity = '1';
+  }
+  closeModal('modalEditProfile');
+}
+
+// Wire Telegram "connect" button to modal
+document.getElementById('tgBtn').addEventListener('click', function() {
+  if (this.textContent.trim() === 'Подключить') {
+    openModal('modalConnectTg');
+  } else if (this.textContent.trim() === 'Отключить') {
+    openModal('modalDisconnectTg');
+  }
+});
+
+
+
+</script>
+
+
+<!-- MODAL: РЕДАКТИРОВАНИЕ ЛИЧНЫХ ДАННЫХ -->
+<div class="modal-overlay" id="modalEditProfile">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modalEditProfile')">✕</button>
+    <h2 class="modal-title">Личные данные</h2>
+    <div class="modal-fields">
+      <div>
+        <div class="modal-field-label">Имя</div>
+        <input class="modal-input" type="text" id="editName" placeholder="Ваше имя"/>
+      </div>
+      <div>
+        <div class="modal-field-label">E-mail</div>
+        <input class="modal-input" type="email" id="editEmail" placeholder="mail@example.com"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn-secondary" onclick="closeModal('modalEditProfile')">Отменить</button>
+      <button class="modal-btn-primary" onclick="saveProfile()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ПОДКЛЮЧЕНИЕ TELEGRAM -->
+<div class="modal-overlay" id="modalConnectTg">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modalConnectTg')">✕</button>
+    <h2 class="modal-title">Подключение Telegram</h2>
+    <div class="tg-connect-block">
+      <div class="tg-connect-icon">
+        <svg width="24" height="20" viewBox="0 0 30 25" fill="none">
+          <path d="M29.7 2.3L25.2 23.1C24.9 24.4 24.1 24.7 23 24.1L16.4 19.2L13.2 22.3C12.9 22.6 12.6 22.7 12.2 22.7L12.7 15.9L24.3 5.4C24.8 4.9 24.2 4.7 23.5 5.2L9.1 14.3L2.7 12.3C1.4 11.9 1.4 11 3 10.4L27.8 0.8C28.9 0.4 29.9 1.1 29.7 2.3Z" fill="white"/>
+        </svg>
+      </div>
+      <div class="tg-connect-text">
+        Чтобы подключить Telegram, нужно открыть бота Меркури и отправить ему любое сообщение. После этого аккаунт привяжется автоматически.
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn-secondary" onclick="closeModal('modalConnectTg')">Отменить</button>
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="modal-btn-primary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none" onclick="closeModal('modalConnectTg')">
+        Перейти в Telegram
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: АКТИВАЦИЯ ПРОБНОГО ПЕРИОДА — УСПЕХ -->
+<div class="modal-overlay" id="modalTrialSuccess">
+  <div class="modal-box" style="text-align:center;padding-bottom:36px">
+    <button class="modal-close" onclick="closeModal('modalTrialSuccess')">✕</button>
+    <div style="margin-top:8px">
+      <div class="modal-success-icon">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M6 14l6 6L22 8" stroke="#2FBF71" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 class="modal-title" style="text-align:center;padding-right:0">Готово!</h2>
+      <p class="modal-success-text">Пробный период активируется<br>в течение суток.</p>
+      <p class="modal-success-text" style="margin-top:8px;color:var(--color-text-disabled);font-size:14px">Вы получите уведомление в боте,<br>как только всё будет готово.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: УДАЛЕНИЕ АККАУНТА -->
+<div class="modal-overlay" id="modalDeleteAccount">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modalDeleteAccount')">✕</button>
+    <h2 class="modal-title">Удалить аккаунт?</h2>
+    <div class="delete-warn">
+      <b>Это действие необратимо.</b> Все ваши данные — записи о расходах и доходах, финансовые цели, история бюджета — будут безвозвратно удалены. Восстановить их будет невозможно.
+    </div>
+    <p style="font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:24px">Вы уверены, что хотите удалить аккаунт?</p>
+    <div class="modal-actions">
+      <button class="modal-btn-secondary" onclick="closeModal('modalDeleteAccount')">Отменить</button>
+      <button class="modal-btn-danger" onclick="closeModal('modalDeleteAccount')">Да, удалить</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: ОТКЛЮЧИТЬ TELEGRAM -->
+<div class="modal-overlay" id="modalDisconnectTg">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modalDisconnectTg')">✕</button>
+    <h2 class="modal-title">Отключить Telegram?</h2>
+    <div class="delete-warn">
+      <b>Обратите внимание.</b> После отключения новые записи из Telegram-бота перестанут попадать в этот личный кабинет. Исторические данные сохранятся, но синхронизация прекратится.
+    </div>
+    <p style="font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:24px">Вы уверены, что хотите отвязать Telegram от аккаунта?</p>
+    <div class="modal-actions">
+      <button class="modal-btn-secondary" onclick="closeModal('modalDisconnectTg')">Отменить</button>
+      <button class="modal-btn-danger" onclick="closeModal('modalDisconnectTg')">Да, отключить</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

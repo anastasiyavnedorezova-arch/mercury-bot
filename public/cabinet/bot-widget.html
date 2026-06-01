@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Меркури — виджет бота</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --color-brand-main:    #1E2A38;
+  --color-brand-primary: #4C9AFF;
+  --color-accent-green:  #2FBF71;
+  --color-white:         #FFFFFF;
+  --color-bg-main:       #F5F7FA;
+  --color-bg-alt:        #EEF2F6;
+  --color-border:        #E2E8F0;
+  --color-border-hard:   #CBD5E1;
+  --color-text-main:     #2D3748;
+  --color-text-second:   #6B7280;
+  --color-text-disabled: #9CA3AF;
+  --font: 'Manrope', sans-serif;
+  --radius-widget: 24px;
+  --radius-bubble: 18px;
+  --radius-cta:    10px;
+  --shadow-widget: 0 2px 8px rgba(0,0,0,.08);
+  --shadow-lg:     0 16px 40px rgba(15,23,42,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);background:var(--color-bg-main);-webkit-font-smoothing:antialiased}
+
+/* ---- DEMO NAV ---- */
+.demo-nav{background:var(--color-brand-main);padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:200}
+.demo-nav span{color:rgba(255,255,255,.5);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-right:4px}
+.demo-btn{padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);background:none;cursor:pointer;transition:all 180ms;white-space:nowrap}
+.demo-btn:hover,.demo-btn.active{background:var(--color-brand-primary);border-color:var(--color-brand-primary);color:#fff}
+
+/* ---- DEMO VIEWPORT WRAPPER ---- */
+.viewport{display:flex;justify-content:center;align-items:flex-start;padding:40px 24px;min-height:calc(100vh - 44px)}
+body.mode-adaptive .demo-nav{display:none}
+body.mode-adaptive .viewport{padding:0;min-height:100vh;align-items:stretch}
+body.mode-adaptive{overflow:hidden}
+
+/* ====================================================
+   WIDGET — base shell
+==================================================== */
+.widget{
+  background:var(--color-white);
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-widget);
+  box-shadow:var(--shadow-widget);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  /* size set per variant via JS */
+}
+
+/* ---- HEADER ---- */
+.widget-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--color-bg-alt);
+  border-radius:12px;
+  padding:8px 16px;
+  margin:16px 16px 0;
+  flex-shrink:0;
+}
+.widget-header.compact{border-radius:8px;padding:6px 12px}
+.header-bot{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.header-bot-name{font-size:18px;font-weight:600;color:var(--color-text-main);line-height:26px}
+.header-bot-name.sm{font-size:16px;line-height:24px}
+.header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mini-btn{height:24px;padding:4px 8px;border-radius:4px;background:var(--color-brand-main);color:#fff;font-family:var(--font);font-size:12px;font-weight:500;line-height:16px;border:none;cursor:pointer;white-space:nowrap;transition:background 150ms}
+.mini-btn:hover{background:#2a3a4d}
+.close-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;transition:background 150ms;border:none;background:none}
+.close-btn:hover{background:rgba(0,0,0,.06)}
+
+/* ---- CHAT AREA ---- */
+.chat-area{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  scroll-behavior:smooth;
+}
+.chat-area::-webkit-scrollbar{width:4px}
+.chat-area::-webkit-scrollbar-track{background:transparent}
+.chat-area::-webkit-scrollbar-thumb{background:var(--color-border);border-radius:4px}
+
+/* ---- TIME LABEL ---- */
+.time-label{
+  font-size:11px;
+  font-weight:500;
+  line-height:13px;
+  letter-spacing:.06px;
+  color:var(--color-text-main);
+  opacity:.5;
+  margin-bottom:12px;
+}
+.time-label.right{text-align:right}
+
+/* ---- BUBBLE ---- */
+.bubble-wrap{display:flex;flex-direction:column;margin-bottom:10px}
+.bubble-wrap.from-bot{align-items:flex-start}
+.bubble-wrap.from-user{align-items:flex-end}
+
+.bubble{
+  position:relative;
+  padding:6px 12px;
+  border-radius:var(--radius-bubble);
+  font-size:14px;
+  font-weight:400;
+  line-height:20px;
+  max-width:85%;
+  word-break:break-word;
+}
+.bubble.bot{
+  background:var(--color-bg-alt);
+  color:var(--color-text-main);
+  border-bottom-left-radius:4px;
+}
+.bubble.user{
+  background:var(--color-brand-primary);
+  color:#fff;
+  border-bottom-right-radius:4px;
+}
+
+/* Tail for bot bubble (left side) */
+.bubble.bot::before{
+  content:'';
+  position:absolute;
+  left:-8px;
+  bottom:6px;
+  width:0;
+  height:0;
+  border-top:10px solid transparent;
+  border-right:10px solid var(--color-bg-alt);
+  border-bottom:0px solid transparent;
+}
+/* Tail for user bubble (right side) */
+.bubble.user::before{
+  content:'';
+  position:absolute;
+  right:-8px;
+  bottom:6px;
+  width:0;
+  height:0;
+  border-top:10px solid transparent;
+  border-left:10px solid var(--color-brand-primary);
+  border-bottom:0px solid transparent;
+}
+
+/* ---- CTA BUTTONS (inline after bot message) ---- */
+.cta-wrap{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:12px;
+  padding-left:0;
+}
+.cta-btn{
+  height:40px;
+  padding:10px 16px;
+  background:var(--color-white);
+  border:1px solid var(--color-border);
+  border-radius:var(--radius-cta);
+  font-family:var(--font);
+  font-size:14px;
+  font-weight:600;
+  line-height:20px;
+  letter-spacing:.01em;
+  color:var(--color-text-main);
+  cursor:pointer;
+  white-space:nowrap;
+  transition:background 150ms, border-color 150ms;
+}
+.cta-btn:hover{background:var(--color-bg-alt);border-color:var(--color-border-hard)}
+.cta-btn:active{transform:scale(.98)}
+
+/* ---- INPUT BAR ---- */
+.input-bar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 16px;
+  flex-shrink:0;
+  border-top:1px solid var(--color-border);
+  background:var(--color-white);
+}
+.input-bar.adaptive{gap:6px}
+.chat-input{
+  flex:1;
+  padding:10px 14px;
+  background:var(--color-white);
+  border:1px solid var(--color-border-hard);
+  border-radius:12px;
+  font-family:var(--font);
+  font-size:16px;
+  font-weight:400;
+  line-height:24px;
+  color:var(--color-text-main);
+  outline:none;
+  transition:border-color 200ms, box-shadow 200ms;
+}
+.chat-input::placeholder{color:var(--color-text-disabled)}
+.chat-input:focus{
+  border-color:var(--color-brand-primary);
+  box-shadow:0 0 0 3px rgba(76,154,255,.15);
+}
+
+/* ---- ROUND ICON BUTTONS ---- */
+.icon-btn{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--color-bg-alt);
+  display:flex;align-items:center;justify-content:center;
+  border:none;cursor:pointer;flex-shrink:0;
+  transition:background 150ms;
+}
+.icon-btn:hover{background:var(--color-border)}
+
+/* ====================================================
+   WIDGET SIZE VARIANTS
+==================================================== */
+/* Desktop full — 600×720 */
+.widget.full{width:600px;height:720px}
+/* Desktop compact — 450×720 */
+.widget.compact{width:450px;height:720px}
+/* Adaptive / page /bot — full height */
+.widget.adaptive{width:100%;max-width:100%;height:100vh;min-height:100vh;border-radius:0;}
+
+/* Typing indicator */
+.typing-indicator{display:flex;align-items:center;gap:4px;padding:10px 14px;background:var(--color-bg-alt);border-radius:18px;border-bottom-left-radius:4px;width:fit-content;margin-bottom:10px}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--color-text-second);animation:blink 1.2s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* Scroll-to-bottom fade */
+.chat-area::after{
+  content:'';
+  position:sticky;
+  bottom:0;
+  display:block;
+  height:16px;
+  background:linear-gradient(to bottom, transparent, var(--color-white));
+  pointer-events:none;
+  flex-shrink:0;
+}
+
+/* Entrance animation for new messages */
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.bubble-wrap{animation:slideUp 200ms ease forwards}
+.cta-wrap{animation:slideUp 240ms ease forwards}
+
+/* Adaptive full-screen overrides */
+body.mode-adaptive .widget-header {
+  margin: 12px 12px 0;
+  border-radius: 8px;
+}
+body.mode-adaptive .chat-area {
+  padding: 16px 16px 8px;
+}
+body.mode-adaptive .input-bar {
+  padding: 10px 16px 16px;
+}
+
+.adaptive-exit-bar{
+  display:none;
+  background:var(--color-brand-main);
+  padding:8px 16px;
+  font-size:12px;
+  font-weight:600;
+  color:rgba(255,255,255,.7);
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  gap:8px;
+  align-items:center;
+  flex-shrink:0;
+}
+.adaptive-exit-bar button{
+  margin-left:auto;
+  padding:4px 12px;
+  border-radius:999px;
+  border:1.5px solid rgba(255,255,255,.3);
+  background:none;
+  color:rgba(255,255,255,.8);
+  font-family:var(--font);
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 150ms;
+}
+.adaptive-exit-bar button:hover{background:rgba(255,255,255,.1)}
+body.mode-adaptive .adaptive-exit-bar{display:flex}
+</style>
+</head>
+<body>
+
+<!-- DEMO NAV -->
+<div class="demo-nav">
+  <span>Вариант:</span>
+  <button class="demo-btn active" onclick="setVariant('full')">Desktop полный (600px)</button>
+  <button class="demo-btn" onclick="setVariant('compact')">Desktop компактный (450px)</button>
+  <button class="demo-btn" onclick="setVariant('adaptive')">Адаптивный /bot</button>
+</div>
+
+<div class="adaptive-exit-bar"><span>Режим /bot (адаптив)</span><button onclick="setVariant('compact')">← Выйти</button></div>
+<div class="viewport" id="viewport">
+
+  <!-- WIDGET -->
+  <div class="widget full" id="widget">
+
+    <!-- HEADER -->
+    <div class="widget-header" id="widgetHeader">
+      <div class="header-bot">
+        <!-- Bot avatar — SVG inline, swapped via JS -->
+        <div id="botAvatar" style="width:50px;height:50px;flex-shrink:0"><!-- filled by JS --></div>
+        <span class="header-bot-name" id="botName">Меркури бот</span>
+      </div>
+      <div class="header-actions">
+        <button class="mini-btn" onclick="alert('Открывает меню бота в Telegram')">Меню бота</button>
+        <button class="close-btn" id="closeBtn" style="display:none" onclick="alert('Закрыть виджет')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M1 1l12 12M13 1L1 13" stroke="#1E2A38" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- CHAT AREA -->
+    <div class="chat-area" id="chatArea">
+      <!-- Messages rendered by JS -->
+    </div>
+
+    <!-- INPUT BAR -->
+    <div class="input-bar" id="inputBar">
+      <input class="chat-input" type="text" placeholder="Начните писать здесь" id="chatInput" autocomplete="off"/>
+      <!-- Audio button -->
+      <button class="icon-btn" title="Голосовое сообщение">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path opacity="0.5" fill-rule="evenodd" clip-rule="evenodd" d="M16.1607 13.4643C16.1607 12.4792 16.5521 11.5345 17.2486 10.8379C17.9452 10.1413 18.8899 9.75 19.875 9.75C20.8601 9.75 21.8049 10.1413 22.5014 10.8379C23.198 11.5345 23.5893 12.4792 23.5893 13.4643V20.3214C23.5893 21.3065 23.198 22.2513 22.5014 22.9478C21.8049 23.6444 20.8601 24.0357 19.875 24.0357C18.8899 24.0357 17.9452 23.6444 17.2486 22.9478C16.5521 22.2513 16.1607 21.3065 16.1607 20.3214V13.4643ZM19.875 11.4643C19.3446 11.4643 18.8359 11.675 18.4608 12.0501C18.0857 12.4251 17.875 12.9339 17.875 13.4643V20.3214C17.875 20.8519 18.0857 21.3606 18.4608 21.7356C18.8359 22.1107 19.3446 22.3214 19.875 22.3214C20.4055 22.3214 20.9142 22.1107 21.2892 21.7356C21.6643 21.3606 21.875 20.8519 21.875 20.3214V13.4643C21.875 12.9339 21.6643 12.4251 21.2892 12.0501C20.9142 11.675 20.4055 11.4643 19.875 11.4643ZM14.1607 19.4643C14.3881 19.4643 14.6061 19.5546 14.7668 19.7153C14.9276 19.8761 15.0179 20.0941 15.0179 20.3214C15.0179 21.6096 15.5296 22.8451 16.4405 23.7559C17.3514 24.6668 18.5868 25.1786 19.875 25.1786C21.1632 25.1786 22.3986 24.6668 23.3095 23.7559C24.2204 22.8451 24.7322 21.6096 24.7322 20.3214C24.7322 20.0941 24.8225 19.8761 24.9832 19.7153C25.144 19.5546 25.362 19.4643 25.5893 19.4643C25.8166 19.4643 26.0347 19.5546 26.1954 19.7153C26.3561 19.8761 26.4464 20.0941 26.4464 20.3214C26.4465 21.9158 25.8668 23.4559 24.8155 24.6546C23.7642 25.8533 22.313 26.6289 20.7322 26.8369V28.0357H23.3036C23.5309 28.0357 23.7489 28.126 23.9097 28.2868C24.0704 28.4475 24.1607 28.6655 24.1607 28.8929C24.1607 29.1202 24.0704 29.3382 23.9097 29.4989C23.7489 29.6597 23.5309 29.75 23.3036 29.75H16.4464C16.2191 29.75 16.0011 29.6597 15.8404 29.4989C15.6796 29.3382 15.5893 29.1202 15.5893 28.8929C15.5893 28.6655 15.6796 28.4475 15.8404 28.2868C16.0011 28.126 16.2191 28.0357 16.4464 28.0357H19.0179V26.8369C17.4371 26.6289 15.9858 25.8533 14.9345 24.6546C13.8832 23.4559 13.3036 21.9158 13.3036 20.3214C13.3036 20.0941 13.3939 19.8761 13.5546 19.7153C13.7154 19.5546 13.9334 19.4643 14.1607 19.4643Z" fill="#2D3748"/>
+        </svg>
+      </button>
+      <!-- Attachment button -->
+      <button class="icon-btn" title="Прикрепить изображение">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path opacity="0.5" d="M25.7136 15.5305C25.7136 14.8568 25.4461 14.2107 24.9696 13.7343C24.4929 13.2578 23.8461 12.9899 23.172 12.9899C22.498 12.99 21.8517 13.2579 21.3751 13.7343L14.193 20.9135C13.4231 21.6831 12.9904 22.7268 12.9904 23.8152C12.9904 24.9036 13.4231 25.9473 14.193 26.7169C14.963 27.4865 16.0071 27.919 17.0959 27.919C18.1848 27.919 19.2289 27.4865 19.9988 26.7169L27.1815 19.5377C27.4104 19.3092 27.7813 19.309 28.0101 19.5377C28.239 19.7666 28.239 20.1379 28.0101 20.3667L20.8281 27.5459C19.8383 28.5353 18.4957 29.0908 17.0959 29.0908C15.6962 29.0908 14.3535 28.5353 13.3637 27.5459C12.374 26.5565 11.8182 25.2144 11.8182 23.8152C11.8182 22.416 12.374 21.0739 13.3637 20.0845L20.5464 12.9053C21.2428 12.2093 22.1872 11.8182 23.172 11.8181C24.1569 11.8181 25.1018 12.2092 25.7982 12.9053C26.4947 13.6015 26.8859 14.5459 26.8859 15.5305C26.8859 16.4537 26.5422 17.3414 25.9252 18.0225L25.7982 18.1557L18.6086 25.3349C18.409 25.5345 18.1715 25.6928 17.9107 25.8008C17.65 25.9087 17.3705 25.9643 17.0883 25.9644C16.806 25.9644 16.5262 25.9088 16.2653 25.8008C16.0045 25.6928 15.7677 25.5344 15.568 25.3349C15.3685 25.1354 15.21 24.8985 15.1019 24.6379C14.9939 24.3771 14.9383 24.0974 14.9383 23.8152C14.9383 23.533 14.9939 23.2533 15.1019 22.9925C15.21 22.7319 15.3685 22.495 15.568 22.2955L22.2031 15.6707C22.4321 15.442 22.803 15.4424 23.0318 15.6713C23.2605 15.9002 23.2607 16.271 23.0318 16.4996L16.3967 23.1245L16.3961 23.1239C16.3054 23.2146 16.2342 23.323 16.1851 23.4414C16.136 23.56 16.1106 23.6869 16.1106 23.8152C16.1106 23.9435 16.136 24.0704 16.1851 24.189C16.2343 24.3075 16.3059 24.4158 16.3967 24.5065C16.4874 24.5972 16.5953 24.6689 16.7138 24.718C16.8324 24.7672 16.9599 24.7925 17.0883 24.7925C17.2167 24.7925 17.3437 24.7671 17.4622 24.718C17.5809 24.6689 17.6892 24.5967 17.7799 24.5059L24.9696 17.3267C25.4461 16.8503 25.7136 16.2042 25.7136 15.5305Z" fill="#2D3748" stroke="#2D3748" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SVG AVATARS
+============================================================ */
+const BOT_SVGS = {
+  glad: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1641C34.523 10.1642 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8358 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80678 33.0318 7.75727 29.2218 7.75727 25C7.75731 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24946 19.127C7.37831 20.9924 6.93697 22.9668 6.93696 25C6.93696 27.035 7.37809 29.0085 8.24946 30.873C5.92153 30.1076 4.227 28.5923 4.227 25C4.22703 21.5926 5.92134 19.8924 8.24946 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7172 20.5703C35.0761 19.8597 34.187 20.5703 33.2299 20.5703H16.77C15.8244 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.482 30.3291 35.0818 31.0293 35.7172 30.3291C37.5164 28.3465 38.5883 27.7107 38.5883 25C38.5883 22.3005 37.5032 22.549 35.7172 20.5703Z" fill="#2FBF71"/><path d="M35.124 31.1907H14.9151C12.0769 31.1907 9.77597 28.8898 9.77597 26.0515V24.4535C9.77597 21.6152 12.0769 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.7651 26.5954C27.0867 26.5954 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0124 28.679C24.02 28.679 23.1824 28.017 22.9163 27.1104C22.8258 26.8022 22.9308 26.5954 23.2519 26.5954C23.573 26.5954 23.6604 27.2868 24.0665 27.5798C24.383 27.8081 24.6222 27.9011 25.0124 27.9022C25.4061 27.9034 25.6488 27.811 25.9674 27.5798C26.3712 27.2867 26.4435 26.5954 26.7651 26.5954Z" fill="#1E2A38"/><path d="M18.286 25.4023C18.286 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.286 24.1959 18.286 25.4023Z" fill="#1E2A38"/><path d="M16.6391 25.7678C16.7735 25.7678 16.8822 25.8769 16.8823 26.011C16.8823 26.1452 16.7735 26.2542 16.6391 26.2542C16.5049 26.2539 16.3969 26.1451 16.3969 26.011C16.397 25.877 16.5049 25.768 16.6391 25.7678ZM15.519 24.1614C15.9095 24.1614 16.226 24.478 16.226 24.8684C16.226 25.2587 15.9095 25.5754 15.519 25.5754C15.1284 25.5754 14.812 25.2588 14.812 24.8684C14.812 24.478 15.1284 24.1614 15.519 24.1614Z" fill="white"/><path d="M36.1083 25.4023C36.1083 26.6087 35.1303 27.5867 33.9239 27.5867C32.7175 27.5867 31.7394 26.6087 31.7394 25.4023C31.7394 24.1959 32.7175 23.218 33.9239 23.218C35.1303 23.218 36.1083 24.1959 36.1083 25.4023Z" fill="#1E2A38"/><path d="M34.4619 25.7676C34.5955 25.7676 34.705 25.8766 34.7051 26.0107C34.7051 26.145 34.5956 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1448 34.2188 26.0107C34.2189 25.8768 34.3275 25.7678 34.4619 25.7676ZM33.3418 24.1611C33.7318 24.1613 34.0489 24.4778 34.0489 24.8682C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8682C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/><path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/></svg>`,
+
+  happy: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.0541 37.0215 13.0961 35.7334C9.80679 33.0318 7.75728 29.2218 7.75728 25C7.75731 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24947 19.127C7.37832 20.9924 6.93698 22.9668 6.93697 25C6.93697 27.035 7.3781 29.0085 8.24947 30.873C5.92153 30.1076 4.22701 28.5923 4.22701 25C4.22703 21.5926 5.92135 19.8924 8.24947 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7163 20.5703C35.0751 19.8601 34.1869 20.5703 33.2299 20.5703H16.77C15.8244 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.4819 30.3291 35.0808 31.0291 35.7163 30.3291C37.5156 28.3462 38.5883 27.7109 38.5883 25C38.5883 22.3004 37.5024 22.5492 35.7163 20.5703Z" fill="#2FBF71"/><path d="M35.124 31.1907H14.9151C12.0769 31.1907 9.77597 28.8898 9.77597 26.0515V24.4535C9.77597 21.6152 12.0769 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.6419 26.4946C26.9635 26.4946 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0124 28.679C24.02 28.679 23.1824 28.017 22.9163 27.1104C22.8258 26.8022 23.0623 26.4946 23.3834 26.4946H26.6419Z" fill="#1E2A38"/><path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/><path d="M16.6391 25.7678C16.7735 25.7678 16.8822 25.8769 16.8823 26.011C16.8823 26.1452 16.7735 26.2542 16.6391 26.2542C16.5049 26.2539 16.3969 26.1451 16.3969 26.011C16.397 25.877 16.5049 25.768 16.6391 25.7678ZM15.519 24.1614C15.9095 24.1614 16.226 24.478 16.226 24.8684C16.226 25.2587 15.9095 25.5754 15.519 25.5754C15.1284 25.5754 14.812 25.2588 14.812 24.8684C14.812 24.478 15.1284 24.1614 15.519 24.1614Z" fill="white"/><path d="M36.1083 25.4023C36.1083 26.6087 35.1303 27.5867 33.9239 27.5867C32.7175 27.5867 31.7394 26.6087 31.7394 25.4023C31.7394 24.1959 32.7175 23.218 33.9239 23.218C35.1303 23.218 36.1083 24.1959 36.1083 25.4023Z" fill="#1E2A38"/><path d="M34.4619 25.7676C34.5955 25.7676 34.705 25.8766 34.7051 26.0107C34.7051 26.145 34.5956 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1448 34.2188 26.0107C34.2189 25.8768 34.3275 25.7678 34.4619 25.7676ZM33.3418 24.1611C33.7318 24.1613 34.0489 24.4778 34.0489 24.8682C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8682C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/><path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/></svg>`,
+
+  sad: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80677 33.0318 7.75726 29.2218 7.75726 25C7.7573 16.8065 15.4777 10.1641 25.0004 10.1641Z" fill="#2FBF71"/><path d="M35.124 31.1907H14.9151C12.0768 31.1907 9.77596 28.8898 9.77596 26.0515V24.4535C9.77596 21.6152 12.0768 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.6419 28.6789C26.9635 28.6789 27.1996 28.3713 27.109 28.0631C26.8429 27.1566 26.0053 26.4946 25.0124 26.4946C24.02 26.4946 23.1824 27.1566 22.9163 28.0631C22.8258 28.3713 23.0623 28.6789 23.3834 28.6789H26.6419Z" fill="#1E2A38"/><path d="M18.286 25.4023C18.286 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.286 24.1959 18.286 25.4023Z" fill="#1E2A38"/><path d="M36.1083 25.4026C36.1083 26.6089 35.1302 27.5869 33.9238 27.5869C32.7174 27.5869 31.7394 26.6089 31.7394 25.4026C31.7394 24.1962 32.7174 23.2182 33.9238 23.2182C35.1302 23.2182 36.1083 24.1962 36.1083 25.4026Z" fill="#1E2A38"/><path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/></svg>`,
+
+  love: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80677 33.0318 7.75726 29.2218 7.75726 25C7.7573 16.8065 15.4777 10.1641 25.0004 10.1641Z" fill="#2FBF71"/><path d="M35.124 31.1907H14.9151C12.0768 31.1907 9.77594 28.8898 9.77594 26.0515V24.4535C9.77594 21.6152 12.0768 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.6419 26.4946C26.9635 26.4946 27.1995 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0124 28.679C24.02 28.679 23.1824 28.017 22.9163 27.1104C22.8257 26.8022 23.0623 26.4946 23.3834 26.4946H26.6419Z" fill="#1E2A38"/><path d="M18.8322 22.8841C19.4651 23.2548 19.9104 24.0074 19.8907 24.8855C19.849 26.7396 17.3235 28.1059 16.8703 28.1059C16.4172 28.1059 13.8913 26.7396 13.8499 24.8855C13.8303 24.0074 14.2756 23.2551 14.9085 22.8841C15.5006 22.5377 16.2444 22.5355 16.8703 23.0471C17.4963 22.5355 18.2401 22.5373 18.8322 22.8841Z" fill="#1E2A38"/><path d="M35.1254 22.8841C35.7584 23.2548 36.2037 24.0074 36.184 24.8855C36.1423 26.7396 33.6167 28.1059 33.1636 28.1059C32.7104 28.1059 30.1846 26.7396 30.1432 24.8855C30.1235 24.0074 30.5688 23.2551 31.2017 22.8841C31.7939 22.5377 32.5376 22.5355 33.1636 23.0471C33.7895 22.5355 34.5333 22.5373 35.1254 22.8841Z" fill="#1E2A38"/><ellipse cx="33.1636" cy="28.106" rx="2.47794" ry="1.15411" fill="#F2B6B6"/><ellipse cx="16.8703" cy="28.0721" rx="2.47794" ry="1.15411" fill="#F2B6B6"/></svg>`,
+
+  sleep: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1641C34.523 10.1642 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8358 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80678 33.0318 7.75727 29.2218 7.75727 25C7.75731 16.8065 15.4777 10.1641 25.0004 10.1641Z" fill="#2FBF71"/><path d="M35.348 30.8765H15.1392C12.3009 30.8765 10 28.5756 10 25.7373V24.1393C10 21.301 12.3009 19.0001 15.1392 19.0001H35.348C38.1863 19.0001 40.4872 21.301 40.4872 24.1393V25.7373C40.4872 28.5756 38.1863 30.8765 35.348 30.8765Z" fill="white"/><path d="M35.88 23.9164C36.2015 23.9164 36.3144 24.1233 36.2239 24.4315C35.9578 25.338 35.1202 26 34.1273 26C33.1349 26 32.2973 25.338 32.0312 24.4315C31.9406 24.1233 32.0457 23.9164 32.3668 23.9164C32.6879 23.9164 32.7753 24.6079 33.1814 24.9008C33.4979 25.1291 33.737 25.2221 34.1273 25.2233C34.5209 25.2244 34.7637 25.132 35.0823 24.9008C35.4861 24.6077 35.5584 23.9164 35.88 23.9164Z" fill="#1E2A38"/><path d="M17.88 23.9164C18.2015 23.9164 18.3144 24.1233 18.2239 24.4315C17.9578 25.338 17.1202 26 16.1273 26C15.1349 26 14.2973 25.338 14.0312 24.4315C13.9406 24.1233 14.0457 23.9164 14.3668 23.9164C14.6879 23.9164 14.7753 24.6079 15.1814 24.9008C15.4979 25.1291 15.737 25.2221 16.1273 25.2233C16.5209 25.2244 16.7637 25.132 17.0823 24.9008C17.4861 24.6077 17.5584 23.9164 17.88 23.9164Z" fill="#1E2A38"/><ellipse cx="25" cy="27.5" rx="1" ry="1.5" fill="#1E2A38"/></svg>`,
+
+  surprised: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80677 33.0318 7.75726 29.2218 7.75726 25C7.7573 16.8065 15.4777 10.1641 25.0004 10.1641Z" fill="#2FBF71"/><path d="M35.124 31.1907H14.9151C12.0769 31.1907 9.77597 28.8898 9.77597 26.0515V24.4535C9.77597 21.6152 12.0769 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.4245 27.8344C26.7056 27.8344 26.9121 28.1403 26.8329 28.4469C26.6002 29.3485 25.8679 30.0068 24.9998 30.0068C24.1321 30.0068 23.3997 29.3485 23.1671 28.4469C23.0879 28.1403 23.2947 27.8344 23.5755 27.8344H26.4245Z" fill="#1E2A38"/><path d="M18.286 25.4023C18.286 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.286 24.1959 18.286 25.4023Z" fill="#1E2A38"/><path d="M36.1083 25.4023C36.1083 26.6087 35.1302 27.5867 33.9238 27.5867C32.7174 27.5867 31.7394 26.6087 31.7394 25.4023C31.7394 24.1959 32.7174 23.218 33.9238 23.218C35.1302 23.218 36.1083 24.1959 36.1083 25.4023Z" fill="#1E2A38"/></svg>`
+};
+
+/* ============================================================
+   CHAT RENDER ENGINE
+============================================================ */
+const chatArea = document.getElementById('chatArea');
+const chatInput = document.getElementById('chatInput');
+
+function setAvatar(emotion) {
+  document.getElementById('botAvatar').innerHTML = BOT_SVGS[emotion] || BOT_SVGS.glad;
+}
+
+function addTimeLabel(text, right = false) {
+  const el = document.createElement('div');
+  el.className = 'time-label' + (right ? ' right' : '');
+  el.textContent = text;
+  chatArea.appendChild(el);
+}
+
+function addBubble(sender, html, opts = {}) {
+  const wrap = document.createElement('div');
+  wrap.className = `bubble-wrap from-${sender}`;
+  // reset animation
+  wrap.style.animation = 'none';
+  requestAnimationFrame(() => { wrap.style.animation = ''; });
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${sender}`;
+  bubble.innerHTML = html;
+  wrap.appendChild(bubble);
+  chatArea.appendChild(wrap);
+  scrollBottom();
+  return wrap;
+}
+
+function addCTA(buttons) {
+  const wrap = document.createElement('div');
+  wrap.className = 'cta-wrap';
+  wrap.style.animation = 'none';
+  requestAnimationFrame(() => { wrap.style.animation = ''; });
+
+  buttons.forEach(label => {
+    const btn = document.createElement('button');
+    btn.className = 'cta-btn';
+    btn.textContent = label;
+    btn.onclick = () => handleCTA(label, wrap);
+    wrap.appendChild(btn);
+  });
+  chatArea.appendChild(wrap);
+  scrollBottom();
+  return wrap;
+}
+
+function addTyping() {
+  const el = document.createElement('div');
+  el.className = 'typing-indicator';
+  el.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+  chatArea.appendChild(el);
+  scrollBottom();
+  return el;
+}
+
+function removeTyping(el) {
+  if (el && el.parentNode) el.parentNode.removeChild(el);
+}
+
+function scrollBottom() {
+  setTimeout(() => { chatArea.scrollTop = chatArea.scrollHeight; }, 50);
+}
+
+function botReply(html, delay = 900, ctaBtns = [], emotion = null) {
+  return new Promise(resolve => {
+    const typing = addTyping();
+    setTimeout(() => {
+      removeTyping(typing);
+      if (emotion) setAvatar(emotion);
+      addBubble('bot', html);
+      if (ctaBtns.length) addCTA(ctaBtns);
+      resolve();
+    }, delay);
+  });
+}
+
+/* ============================================================
+   SCENARIO: ONBOARDING (default)
+============================================================ */
+async function loadOnboarding() {
+  chatArea.innerHTML = '';
+  setAvatar('glad');
+  addTimeLabel('Сегодня 10:23');
+  await botReply(
+    `Привет! Я Меркури — твой личный финансовый помощник 👋<br><br>
+    Помогу тебе:<br>
+    💰 понять, куда уходят деньги;<br>
+    🎯 поставить финансовую цель и двигаться к ней;<br>
+    📊 видеть понятную аналитику по доходам и расходам.<br><br>
+    Просто пиши мне в свободной форме — например, <b>«продукты 2500»</b> или <b>«зарплата 120000»</b> — и я всё запишу.<br><br>
+    У тебя есть <b>30 дней бесплатного доступа</b> ко всем функциям. Активировать сразу или сначала подробнее рассказать о моих возможностях?`,
+    600,
+    ['Как записывать расходы?', 'Расскажи о целях', 'Об аналитике', 'Зачем нужен бюджет?', 'Активировать пробный период'],
+    'glad'
+  );
+}
+
+/* ============================================================
+   SCENARIO: EXPENSE RECORDING
+============================================================ */
+async function loadExpense() {
+  chatArea.innerHTML = '';
+  setAvatar('happy');
+  addTimeLabel('Сегодня 14:15');
+  addBubble('bot',
+    'Привет! Готова записывать. Пиши расходы и доходы в свободной форме — например, <b>«продукты 1800»</b> или <b>«зарплата 85000»</b> 😊'
+  );
+
+  await sleep(600);
+  addTimeLabel('14:16', true);
+  addBubble('user', 'продукты 2340');
+
+  await botReply(
+    `Записал ✅<br>
+    📅 Дата: ${today()}<br>
+    📌 Тип: расход<br>
+    📂 Категория: Продукты<br>
+    💸 Сумма: 2 340 ₽`,
+    800, ['✏️ Исправить', '🗑 Удалить'], 'happy'
+  );
+
+  await sleep(400);
+  addBubble('user', 'зарплата 85000');
+
+  await botReply(
+    `Записал ✅<br>
+    📅 Дата: ${today()}<br>
+    📌 Тип: доход<br>
+    📂 Категория: Зарплата<br>
+    💰 Сумма: 85 000 ₽`,
+    800, ['✏️ Исправить', '🗑 Удалить'], 'love'
+  );
+}
+
+/* ============================================================
+   SCENARIO: ANALYTICS
+============================================================ */
+async function loadAnalytics() {
+  chatArea.innerHTML = '';
+  setAvatar('happy');
+  addTimeLabel('Сегодня 09:00');
+  addBubble('bot', 'Привет! Чем могу помочь сегодня? 😊',);
+  addCTA(['📊 Аналитика', '🎯 Моя цель', '💰 Бюджет', '📋 История', '☰ Меню']);
+
+  await sleep(500);
+  addBubble('user', '📊 Аналитика');
+
+  await botReply(
+    `📊 <b>Аналитика за май 2026</b><br><br>
+    💸 <b>Расходы:</b> 32 640 ₽<br>
+    💰 <b>Доходы:</b> 85 000 ₽<br>
+    📈 <b>Баланс:</b> +52 360 ₽<br><br>
+    <b>Топ категорий расходов:</b><br>
+    🛒 Продукты — 14 200 ₽ (43%)<br>
+    🚗 Транспорт — 8 500 ₽ (26%)<br>
+    ☕ Кафе и рестораны — 6 100 ₽ (19%)<br>
+    📦 Прочее — 3 840 ₽ (12%)`,
+    1000, ['📅 За апрель', '📅 За год', '🔙 Назад'], 'glad'
+  );
+}
+
+/* ============================================================
+   CTA HANDLER
+============================================================ */
+async function handleCTA(label, ctaWrap) {
+  // disable all buttons in that wrap
+  ctaWrap.querySelectorAll('.cta-btn').forEach(b => { b.disabled = true; b.style.opacity = '.5'; });
+
+  addTimeLabel(nowTime(), true);
+  addBubble('user', label);
+
+  if (label.includes('Активировать')) {
+    await botReply('Отлично! 🎉 Пробный период на 30 дней активирован. Теперь доступны все функции — бюджет, расширенные цели, аналитика по запросу и уведомления. Удачи! 💛', 900, ['☰ Меню'], 'love');
+  } else if (label.includes('Исправить')) {
+    await botReply('Что исправить — дату, сумму, категорию или тип?', 700, ['📅 Дату', '💸 Сумму', '📂 Категорию', '↩️ Отмена'], 'surprised');
+  } else if (label.includes('Удалить')) {
+    await botReply('Запись удалена 🗑', 600, [], 'sad');
+  } else if (label.includes('расходы') || label.includes('Как записывать')) {
+    await botReply('Просто пиши в свободной форме — <b>«кофе 250»</b>, <b>«такси 450»</b>, <b>«аренда 35000»</b>. Я сам определю тип, категорию и запишу. Можно голосовым или скриншотом из банка 📸', 900, ['Попробовать', '← Назад']);
+  } else if (label.includes('целях') || label.includes('цел')) {
+    await botReply('Финансовые цели помогают откладывать к конкретной дате. Я сам рассчитаю ежемесячный взнос с учётом инфляции или доходности вклада. Можно иметь до 3 целей одновременно 🎯', 900, ['Поставить цель', '← Назад']);
+  } else if (label.includes('аналитик')) {
+    await botReply('Аналитика показывает куда уходят деньги по категориям, динамику доходов и расходов, и предупреждает о риске превышения бюджета. На пробном и платном тарифе — запрос в любое время 📊', 900, ['Смотреть аналитику', '← Назад']);
+  } else if (label.includes('бюджет')) {
+    await botReply('Месячный бюджет помогает не тратить больше, чем планировалось. Я уведомлю когда достигнешь 50%, 80%, и если прогноз превысит 100% 💰', 900, ['Установить бюджет', '← Назад']);
+  } else if (label.includes('Меню') || label.includes('меню')) {
+    await botReply('Главное меню:', 600, ['📊 Аналитика', '🎯 Моя цель', '💰 Мой бюджет', '📋 История', '⚙️ Настройки', '💬 Обратная связь'], 'happy');
+  } else {
+    await botReply('Понял! Скоро отвечу подробнее 😊', 600, []);
+  }
+}
+
+/* ============================================================
+   INPUT SEND
+============================================================ */
+chatInput.addEventListener('keydown', async (e) => {
+  if (e.key === 'Enter' && chatInput.value.trim()) {
+    const text = chatInput.value.trim();
+    chatInput.value = '';
+    addTimeLabel(nowTime(), true);
+    addBubble('user', text);
+
+    // Simple intent matching
+    const t = text.toLowerCase();
+    if (/\d+/.test(t) && (t.includes('руб') || /[а-я]+\s*\d+|\d+\s*[а-я]+/.test(t))) {
+      // Looks like an expense
+      const amount = text.match(/\d+/)?.[0] || '???';
+      await botReply(
+        `Записал ✅<br>📅 Дата: ${today()}<br>📌 Тип: расход<br>📂 Категория: Прочее<br>💸 Сумма: ${Number(amount).toLocaleString('ru')} ₽`,
+        900, ['✏️ Исправить', '🗑 Удалить'], 'happy'
+      );
+    } else if (t.includes('привет') || t.includes('hello')) {
+      await botReply('Привет! 👋 Как дела? Что записать сегодня?', 700, ['Записать расход', 'Записать доход', '☰ Меню'], 'love');
+    } else if (t.includes('аналит')) {
+      await botReply('Открываю аналитику за текущий месяц...', 600, [], 'glad');
+    } else {
+      await botReply('Не совсем понял 🤔 Попробуй написать в формате <b>«категория сумма»</b>, например <b>«продукты 1500»</b>', 800, [], 'sad');
+    }
+  }
+});
+
+/* ============================================================
+   VARIANT SWITCHER
+============================================================ */
+function setVariant(v) {
+  const widget = document.getElementById('widget');
+  const header = document.getElementById('widgetHeader');
+  const botName = document.getElementById('botName');
+  const closeBtn = document.getElementById('closeBtn');
+  const inputBar = document.getElementById('inputBar');
+
+  widget.className = `widget ${v}`;
+  document.querySelectorAll('.demo-btn').forEach(b => b.classList.toggle('active',
+    b.textContent.toLowerCase().includes(v === 'full' ? 'полный' : v === 'compact' ? 'компактный' : 'адаптив')
+  ));
+
+  // body class drives full-screen mode
+  document.body.classList.toggle('mode-adaptive', v === 'adaptive');
+
+  if (v === 'full') {
+    header.className = 'widget-header';
+    botName.className = 'header-bot-name';
+    closeBtn.style.display = 'none';
+    inputBar.className = 'input-bar';
+    // restore demo-nav visibility handled by CSS
+  } else if (v === 'compact') {
+    header.className = 'widget-header compact';
+    botName.className = 'header-bot-name';
+    closeBtn.style.display = 'flex';
+    inputBar.className = 'input-bar';
+  } else { // adaptive
+    header.className = 'widget-header compact';
+    botName.className = 'header-bot-name sm';
+    // In adaptive the close btn acts as "back" — hide it, navigation handled outside
+    closeBtn.style.display = 'none';
+    inputBar.className = 'input-bar adaptive';
+  }
+}
+
+/* ============================================================
+   SCENARIO SWITCHER (from demo nav)
+============================================================ */
+function loadScenario(s) {
+  document.querySelectorAll('.demo-btn[data-scenario]').forEach(b => b.classList.toggle('active', b.dataset.scenario === s));
+  if (s === 'expense') loadExpense();
+  else if (s === 'analytics') loadAnalytics();
+  else loadOnboarding();
+}
+
+/* ============================================================
+   UTILS
+============================================================ */
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function today() {
+  return new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+function nowTime() {
+  return new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+// Add scenario buttons to demo nav
+const nav = document.querySelector('.demo-nav');
+const sep = document.createElement('span');
+sep.style.cssText = 'color:rgba(255,255,255,.2);margin:0 8px';
+sep.textContent = '|';
+nav.appendChild(sep);
+
+const scenLabel = document.createElement('span');
+scenLabel.textContent = 'Сценарий:';
+nav.appendChild(scenLabel);
+
+[['onboarding', 'Онбординг', true], ['expense', 'Запись расхода', false], ['analytics', 'Аналитика', false]].forEach(([key, label, active]) => {
+  const btn = document.createElement('button');
+  btn.className = 'demo-btn' + (active ? ' active' : '');
+  btn.dataset.scenario = key;
+  btn.textContent = label;
+  btn.onclick = () => loadScenario(key);
+  nav.appendChild(btn);
+});
+
+loadOnboarding();
+</script>
+</body>
+</html>

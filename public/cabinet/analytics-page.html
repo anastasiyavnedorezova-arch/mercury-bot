@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Аналитика — Mercury</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --c-brand:#1E2A38;--c-primary:#4C9AFF;--c-green:#2FBF71;
+  --c-white:#fff;--c-bg:#F5F7FA;--c-bg-alt:#EEF2F6;
+  --c-border:#E2E8F0;--c-border-hard:#CBD5E1;
+  --c-text:#2D3748;--c-second:#6B7280;--c-disabled:#9CA3AF;
+  --c-success-bg:#E6F7EF;--c-success-text:#1F7A4C;--c-success-main:#2FBF71;
+  --c-error-bg:#FDECEC;--c-error-text:#9B2C2C;--c-error-main:#E5484D;
+  --c-info-bg:#EFF6FF;--c-info-text:#1E40AF;--c-info-main:#3B82F6;
+  --c-warn-bg:#FFF7E6;--c-warn-text:#92400E;
+  --font:'Manrope',sans-serif;
+  --r-card:24px;--r-card-m:20px;--r-sm:8px;--r-pill:999px;
+  --shadow-card:0 2px 8px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:var(--font);background:var(--c-bg);color:var(--c-text);-webkit-font-smoothing:antialiased}
+a{color:var(--c-primary);text-decoration:none}
+ul,ol{list-style:none}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+
+/* HEADER */
+.lk-header{background:#fff;border-bottom:1px solid var(--c-border);padding:0 20px;height:64px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:100}
+.lk-logo{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
+.lk-logo-icon{width:36px;height:36px;background:var(--c-brand);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.lk-logo-text{font-size:16px;font-weight:700;color:var(--c-brand)}
+.lk-userinfo{flex:1;display:flex;flex-direction:column;gap:1px}
+.lk-username{font-size:14px;font-weight:600} .lk-username span{font-weight:400;color:var(--c-second)}
+.lk-sub{font-size:12px;color:var(--c-second);font-weight:500}
+.hdr-btns{display:flex;gap:10px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font);font-size:14px;font-weight:600;border-radius:var(--r-sm);border:1.5px solid transparent;cursor:pointer;white-space:nowrap;transition:all 200ms;padding:8px 18px;line-height:20px;text-decoration:none}
+.btn-secondary{background:#fff;color:var(--c-text);border-color:var(--c-border-hard)}
+.btn-secondary:hover{border-color:var(--c-primary);color:var(--c-primary)}
+.btn-primary{background:var(--c-primary);color:#fff;border-color:var(--c-primary)}
+.btn-primary:hover{background:#3B82F6}
+.btn-sm{padding:5px 14px;font-size:13px}
+.hamburger-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:8px;background:var(--c-bg-alt);flex-shrink:0}
+
+/* LAYOUT */
+.page-body{display:flex;min-height:calc(100vh - 64px)}
+.sidebar{width:238px;background:#fff;border-right:1px solid var(--c-border);padding:20px 16px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;overflow-y:auto;position:sticky;top:64px;height:calc(100vh - 64px)}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--r-sm);font-size:14px;font-weight:400;color:var(--c-second);text-decoration:none;transition:all 180ms;min-height:38px}
+.nav-item:hover{background:var(--c-bg);color:var(--c-text)}
+.nav-item.active{background:var(--c-info-bg);color:var(--c-primary);font-weight:700}
+.nav-icon{width:20px;height:20px;flex-shrink:0}
+.nav-sep{height:1px;background:var(--c-border-hard);margin:8px 0}
+.nav-soon{opacity:.5;pointer-events:none}
+.nav-lbl-wrap{display:flex;flex-direction:column;gap:1px}
+.nav-sub-locked{font-size:11px;font-weight:600;color:#E5484D}
+.nav-sub-soon{font-size:11px;font-weight:500;color:var(--c-disabled)}
+.main-content{flex:1;padding:28px 40px 80px;overflow-y:auto;min-width:0}
+.page-title{font-size:32px;font-weight:600;line-height:40px;margin-bottom:20px}
+
+/* ====================================================
+   FILTERS / CHIPS
+==================================================== */
+.filters-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.filter-chip{padding:6px 16px;border-radius:var(--r-pill);font-size:13px;font-weight:600;border:1.5px solid var(--c-border-hard);color:var(--c-second);background:#fff;cursor:pointer;transition:all 180ms;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.filter-chip:hover{border-color:var(--c-primary);color:var(--c-primary)}
+.filter-chip.active{background:var(--c-brand);color:#fff;border-color:var(--c-brand)}
+.filter-chip.locked{opacity:.5;cursor:default;pointer-events:none}
+.filter-chip .lock-icon{font-size:11px;opacity:.7}
+
+/* Date picker */
+.date-picker-wrap{position:relative;margin-left:auto}
+.date-picker-btn{padding:6px 14px;border-radius:var(--r-sm);font-size:13px;font-weight:600;border:1.5px solid var(--c-border-hard);color:var(--c-second);background:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 180ms}
+.date-picker-btn:hover{border-color:var(--c-primary);color:var(--c-primary)}
+.date-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--c-border);border-radius:var(--r-card);box-shadow:0 8px 24px rgba(15,23,42,.12);padding:16px;display:none;z-index:50;min-width:260px}
+.date-dropdown.open{display:block}
+.date-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.date-input-group label{font-size:11px;font-weight:600;color:var(--c-second);display:block;margin-bottom:4px}
+.date-input-group input{width:100%;padding:7px 10px;border:1px solid var(--c-border-hard);border-radius:8px;font-family:var(--font);font-size:13px;color:var(--c-text);outline:none;transition:border-color 180ms}
+.date-input-group input:focus{border-color:var(--c-primary)}
+.date-apply{width:100%;padding:8px;border-radius:8px;background:var(--c-primary);color:#fff;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;border:none;transition:background 180ms}
+.date-apply:hover{background:#3B82F6}
+
+/* ====================================================
+   KPI CARDS (top row: доходы / расходы / баланс)
+==================================================== */
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.kpi-card{background:#fff;border:1px solid var(--c-border);border-radius:var(--r-card);box-shadow:var(--shadow-card);padding:24px;display:flex;flex-direction:column;gap:12px}
+.kpi-header{display:flex;align-items:center;gap:8px}
+.kpi-title{flex:1;font-size:14px;font-weight:700;color:var(--c-second)}
+.kpi-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border-radius:4px;font-size:12px;font-weight:500;line-height:16px;flex-shrink:0}
+.kpi-badge-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.kpi-badge.success{background:var(--c-success-bg);color:var(--c-success-text)}
+.kpi-badge.success .kpi-badge-dot{background:var(--c-success-main)}
+.kpi-badge.error{background:var(--c-error-bg);color:var(--c-error-text)}
+.kpi-badge.error .kpi-badge-dot{background:var(--c-error-main)}
+.kpi-badge.info{background:var(--c-info-bg);color:var(--c-info-text)}
+.kpi-badge.info .kpi-badge-dot{background:var(--c-info-main)}
+.kpi-badge.hidden{opacity:0;pointer-events:none}
+.kpi-value{font-size:28px;font-weight:600;line-height:38px;letter-spacing:.02em;color:var(--c-text)}
+.kpi-bot-row{display:flex;align-items:flex-end;gap:8px;margin-top:auto}
+.kpi-bot-avatar{width:50px;height:50px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.bot-bubble{flex:1;background:var(--c-bg-alt);border-radius:18px;border-bottom-left-radius:4px;padding:6px 12px;font-size:14px;font-weight:400;line-height:20px;color:var(--c-text);position:relative}
+.bot-bubble::before{content:'';position:absolute;left:-8px;bottom:6px;border-top:10px solid transparent;border-right:10px solid var(--c-bg-alt);border-bottom:0 solid transparent}
+
+/* ====================================================
+   CHART CARDS (bar + line)
+==================================================== */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-card{background:#fff;border:1px solid var(--c-border);border-radius:var(--r-card);box-shadow:var(--shadow-card);padding:24px;display:flex;flex-direction:column;gap:20px}
+.chart-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.chart-title{font-size:14px;font-weight:700;color:var(--c-second);flex:1}
+.chart-legend{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+.legend-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:var(--r-pill);font-size:12px;font-weight:500}
+.legend-chip.error{background:var(--c-error-bg);color:var(--c-error-text)}
+.legend-chip.success{background:var(--c-success-bg);color:var(--c-success-text)}
+.legend-chip.info{background:var(--c-info-bg);color:var(--c-info-text)}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+
+/* Chart area */
+.chart-area{position:relative;border-radius:20px;overflow:hidden}
+
+/* Lock overlay */
+.chart-lock-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(3px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:5}
+.chart-lock-overlay.hidden{display:none}
+.chart-lock-icon{display:flex;align-items:center;justify-content:center;color:#fff}
+.chart-lock-text{color:#fff;font-size:18px;font-weight:600;line-height:26px;text-align:center;max-width:200px}
+
+/* Bar chart */
+.bar-chart{height:226px;position:relative}
+.bar-grid{position:absolute;inset:0}
+.bar-grid-line{position:absolute;left:0;right:0;height:1px;background:var(--c-border)}
+.bar-data{position:absolute;bottom:30px;left:0;right:0;display:flex;align-items:flex-end;justify-content:space-around;padding:0 8px;gap:4px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:0;flex:1;max-width:40px}
+.bar-fill{width:100%;background:var(--c-primary);border-radius:4px 4px 0 0;position:relative;min-height:4px;transition:height 400ms ease}
+.bar-label-inside{position:absolute;top:6px;left:50%;transform:translateX(-50%) rotate(-90deg);font-size:11px;font-weight:500;color:#fff;white-space:nowrap;transform-origin:center;writing-mode:vertical-lr;text-orientation:mixed;letter-spacing:.01em}
+.bar-timeline{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:space-around;padding:0 8px}
+.bar-tick{flex:1;text-align:center;font-size:10px;font-weight:500;color:var(--c-second);max-width:40px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Line chart tooltip */
+.line-tt{
+  position:absolute;pointer-events:none;z-index:20;
+  display:none;flex-direction:column;align-items:center;
+  transform:translateX(-50%);
+}
+.line-tt.visible{display:flex}
+.line-tt__bubble{
+  padding:6px 12px;border-radius:8px;
+  font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;
+  line-height:18px;white-space:nowrap;
+}
+.line-tt__bubble.expense{ background:#FDECEC; color:#9B2C2C; }
+.line-tt__bubble.income { background:#E6F7EF; color:#1F7A4C; }
+.line-tt__bubble.balance{ background:#EFF6FF; color:#1E40AF; }
+/* notch — triangle pointing down, same color as bubble */
+.line-tt__notch{
+  width:0;height:0;
+  border-left:8px solid transparent;
+  border-right:8px solid transparent;
+  border-top:7px solid transparent; /* color set inline */
+}
+
+/* Line chart */
+.line-chart{height:260px;position:relative;overflow:hidden}
+.line-svg{position:absolute;inset:0;width:100%;height:100%}
+.line-timeline{position:absolute;bottom:6px;left:0;right:0;display:flex;justify-content:space-around}
+.line-tick{font-size:10px;font-weight:500;color:var(--c-second);text-align:center;flex:1}
+
+/* ====================================================
+   CATEGORY CARDS (bottom row)
+==================================================== */
+.bottom-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.cat-card{background:#fff;border:1px solid var(--c-border);border-radius:var(--r-card);box-shadow:var(--shadow-card);padding:24px;display:flex;flex-direction:column;gap:12px}
+.cat-card-title{font-size:14px;font-weight:700;color:var(--c-second)}
+.cat-list{display:flex;flex-direction:column;gap:0}
+.cat-row{display:flex;align-items:center;gap:10px;height:56px}
+.cat-icon{width:40px;height:40px;background:var(--c-info-bg);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.cat-info{flex:1;display:flex;flex-direction:column;gap:4px}
+.cat-name{font-size:14px;font-weight:700;color:var(--c-text);line-height:19px}
+.cat-amount{font-size:12px;font-weight:500;color:var(--c-second);line-height:16px}
+.cat-progress{width:100%;height:4px;position:relative}
+.cat-progress-bg{position:absolute;inset:0;background:var(--c-info-bg);border-radius:1000px}
+.cat-progress-fill{position:absolute;left:0;top:0;height:100%;background:var(--c-info-main);border-radius:1000px;transition:width 400ms ease}
+
+/* System expenses card — uses blue bars */
+.sys-cat-card .cat-progress-fill{background:var(--c-info-main)}
+
+/* ====================================================
+   RESPONSIVE
+==================================================== */
+@media(max-width:1100px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .kpi-row .kpi-card:last-child{grid-column:span 2}
+  .charts-row{grid-template-columns:1fr}
+  .bottom-row{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main-content{padding:20px 16px 60px}
+  .page-title{font-size:24px;line-height:32px}
+  .lk-header{padding:0 12px;gap:10px}
+  .lk-logo-text{display:none}
+  .hdr-btns .btn-secondary{display:none}
+  .hamburger-btn{display:flex}
+  .kpi-row{grid-template-columns:1fr}
+  .kpi-row .kpi-card:last-child{grid-column:auto}
+  .kpi-card{border-radius:var(--r-card-m);padding:20px}
+  .kpi-value{font-size:22px;line-height:30px}
+  .charts-row{grid-template-columns:1fr}
+  .chart-card{border-radius:var(--r-card-m);padding:20px}
+  .chart-lock-text{font-size:15px}
+  .bottom-row{grid-template-columns:1fr}
+  .cat-card{border-radius:var(--r-card-m);padding:20px}
+  .filters-row{gap:6px}
+  .date-picker-wrap{margin-left:0;width:100%}
+  .date-picker-btn{width:100%;justify-content:center}
+}
+
+/* ══ FILTER BAR (from history) ══ */
+.filter-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:#EAF2FF;opacity:.4;font-size:15px;font-weight:600;color:#1E2A38;line-height:20px;text-transform:uppercase;cursor:pointer;border:none;font-family:'Manrope',sans-serif;transition:opacity 150ms ease;white-space:nowrap}
+.filter-chip:hover{opacity:.65}
+.filter-chip.is-active{opacity:1!important;background:#1E2A38;color:#fff}
+.filter-chip__arrow{width:10px;height:6px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #1E2A38;display:inline-block;transition:transform 150ms}
+.filter-chip.is-active .filter-chip__arrow{border-top-color:#fff}
+.filter-chip.is-open .filter-chip__arrow{transform:rotate(180deg)}
+/* active filter chips row */
+.active-chips-row{display:none;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.active-chips-row.has-chips{display:flex}
+.active-chip{display:inline-flex;align-items:center;gap:2px;padding:4px 8px 4px 12px;border-radius:999px;outline:1px solid #E2E8F0;outline-offset:-1px;font-size:14px;font-weight:400;color:#2D3748;line-height:20px;font-family:'Manrope',sans-serif;white-space:nowrap}
+.active-chip--clear{padding:4px 12px;color:#9B2C2C;cursor:pointer;background:none;border:none;outline:1px solid #E2E8F0;outline-offset:-1px;border-radius:999px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:400}
+.active-chip--clear:hover{background:#FFF5F5}
+.active-chip__x{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:.7;transition:opacity 150ms;background:none;border:none;padding:0;font-size:11px;color:#2D3748;line-height:1}
+.active-chip__x:hover{opacity:1}
+/* date dropdown */
+.date-dropdown-wrap{position:relative}
+.date-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:300;width:340px;background:#fff;border-radius:20px;outline:1px solid #E2E8F0;outline-offset:-1px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:20px;flex-direction:column;gap:4px}
+.date-dropdown.is-open{display:flex}
+.dp-header{display:flex;align-items:center;justify-content:space-between;height:44px;padding:7px 0}
+.dp-month-label{font-size:18px;font-weight:600;color:#2D3748;line-height:26px}
+.dp-arrows{display:flex;align-items:center;gap:16px}
+.dp-arrow{background:none;border:none;cursor:pointer;width:24px;height:24px;display:flex;align-items:center;justify-content:center;padding:0;color:#9CA3AF;font-size:18px;line-height:1;transition:color 150ms}
+.dp-arrow.is-active{color:#4C9AFF}
+.dp-dow-row{display:grid;grid-template-columns:repeat(7,40px);justify-content:space-between;margin-bottom:2px}
+.dp-dow-cell{text-align:center;font-size:12px;font-weight:500;color:#6B7280;line-height:16px;padding:4px 0}
+.dp-grid{display:flex;flex-direction:column;gap:6px}
+.dp-week{display:grid;grid-template-columns:repeat(7,40px);justify-content:space-between}
+.dp-day{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:400;color:#2D3748;line-height:24px;border-radius:100px;cursor:pointer;transition:background 120ms,color 120ms;position:relative;user-select:none}
+.dp-day:hover:not(.dp-day--disabled):not(.dp-day--empty){background:#EAF2FF}
+.dp-day--empty{visibility:hidden;pointer-events:none}
+.dp-day--disabled{color:#9CA3AF;cursor:default}
+.dp-day--today{color:#4C9AFF}
+.dp-day--range{background:#EAF2FF;color:#2D3748;font-weight:700;border-radius:100px}
+.dp-day--selected{background:#4C9AFF;color:#fff;font-weight:700;border-radius:100px}
+.dp-day--selected:hover{background:#3B82F6}
+.dp-footer{padding-top:12px;display:flex;justify-content:flex-end}
+.btn-dp-confirm{height:32px;padding:8px 14px;background:#EEF2F6;color:#9CA3AF;border:none;border-radius:6px;font-family:'Manrope',sans-serif;font-size:12px;font-weight:500;cursor:default;transition:background 150ms,color 150ms}
+.btn-dp-confirm.is-ready{background:#1E2A38;color:#fff;cursor:pointer}
+.btn-dp-confirm.is-ready:hover{background:#2D3748}
+/* category dropdown */
+.cat-dropdown-wrap{position:relative}
+.cat-dropdown{display:none;position:absolute;top:calc(100% + 8px);left:0;z-index:300;width:378px;max-height:500px;background:#fff;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 20px 20px;flex-direction:column;gap:24px}
+.cat-dropdown.is-open{display:flex}
+.cat-dropdown__list{flex:1;overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;max-height:350px}
+.cat-dropdown__list::-webkit-scrollbar{width:4px}
+.cat-dropdown__list::-webkit-scrollbar-thumb{background:#EAF2FF;border-radius:2px}
+.cat-option{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 10px 0;border-top:.5px solid #E2E8F0;cursor:pointer;font-size:14px;font-weight:400;color:#2D3748;line-height:20px;user-select:none}
+.cat-option:first-child{border-top:none}
+.cat-option:hover{background:#F8FAFC}
+.cat-option.is-selected{font-weight:700}
+.cat-check{width:14px;height:14px;flex-shrink:0;background:#2FBF71;border-radius:2px;display:none}
+.cat-option.is-selected .cat-check{display:block}
+.cat-dropdown__footer{display:flex;flex-direction:column;gap:12px;flex-shrink:0}
+.btn-cat-confirm{width:100%;height:48px;background:#EEF2F6;color:#9CA3AF;border:none;border-radius:12px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;cursor:default;transition:background 150ms,color 150ms}
+.btn-cat-confirm.has-selection{background:#4C9AFF;color:#fff;cursor:pointer}
+.btn-cat-confirm.has-selection:hover{background:#3B82F6}
+.btn-cat-select-all{width:100%;height:40px;background:#fff;color:#2D3748;border:none;outline:1px solid #E2E8F0;outline-offset:-1px;border-radius:10px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;cursor:pointer}
+.btn-cat-select-all:hover{background:#F8FAFC}
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="lk-header">
+  <a href="#" class="lk-logo">
+    <div class="lk-logo-icon">
+      <svg width="22" height="20" viewBox="0 0 22 20" fill="none">
+        <path d="M4 8L8.5 14.5L11 11.5L13.5 14.5L18 8" stroke="#2FBF71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="11" cy="17.5" r="1.8" fill="white"/>
+      </svg>
+    </div>
+    <span class="lk-logo-text">mercury</span>
+  </a>
+  <div class="lk-userinfo">
+    <div class="lk-username"><span>Кабинет: </span>@nastya_v</div>
+    <div class="lk-sub" id="hdrSubLine"></div>
+  </div>
+  <div class="hdr-btns">
+    <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-secondary btn-sm">Открыть в Telegram</a>
+    <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-primary btn-sm">Запустить бота</a>
+    <button class="hamburger-btn">
+      <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+        <rect width="18" height="2" rx="1" fill="#2D3748"/>
+        <rect y="6" width="18" height="2" rx="1" fill="#2D3748"/>
+        <rect y="12" width="18" height="2" rx="1" fill="#2D3748"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<div class="page-body">
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="7" height="17" rx="2" fill="#CBD5E1" opacity=".5"/><rect x="11" y="9" width="7.5" height="9.5" rx="2" fill="#CBD5E1"/><rect x="11" y="1.5" width="7.5" height="6" rx="2" fill="#CBD5E1"/></svg><span>Дашборд</span></a>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="8" y="1.5" width="4" height="17" rx="2" fill="#CBD5E1"/><rect x="2.5" y="6.5" width="4" height="12" rx="2" fill="#CBD5E1" opacity=".7"/><rect x="13.5" y="10.5" width="4" height="8" rx="2" fill="#CBD5E1" opacity=".7"/></svg><span>Учёт по месяцам</span></a>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="3" width="17" height="5" rx="2" fill="#CBD5E1"/><rect x="1.5" y="10" width="17" height="8" rx="2" fill="#CBD5E1" opacity=".5"/></svg><span>История</span></a>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="6" width="16" height="13" rx="3" fill="#CBD5E1" opacity=".5"/><path d="M7 6V4a3 3 0 016 0v2" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="12" r="2" fill="#CBD5E1"/></svg><span>Категории</span></a>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/><path d="M10 6v4l2.5 2.5" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/></svg><span>Мои цели</span></a>
+  <a href="#" class="nav-item" id="nav-budget">
+    <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="4" width="17" height="14" rx="2.5" fill="#CBD5E1" opacity=".5"/><path d="M10 1.5v3M6 1.5v3M14 1.5v3" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/><rect x="11.5" y="8" width="5" height="6" rx="1.5" fill="#CBD5E1"/><rect x="3.5" y="8.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/></svg>
+    <span class="nav-lbl-wrap"><span>Мой бюджет</span><span class="nav-sub-locked" id="navBudgetLocked" style="display:none">Только в подписке</span></span>
+  </a>
+  <a href="#" class="nav-item active"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" fill="currentColor" opacity=".5"/><circle cx="14" cy="6" r="4.5" fill="currentColor"/></svg><span>Аналитика</span></a>
+  <a href="#" class="nav-item nav-soon"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8.5" stroke="#CBD5E1" stroke-width="1.5"/><path d="M7 10h6M10 7v6" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/></svg><span class="nav-lbl-wrap"><span>Семейный доступ</span><span class="nav-sub-soon">Скоро!</span></span></a>
+  <div class="nav-sep"></div>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/><circle cx="10" cy="10" r="3" fill="#CBD5E1"/></svg><span>Мой профиль</span></a>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/><path d="M10 6v4M10 14h.01" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/></svg><span>Как установить бота</span></a>
+  <div class="nav-sep"></div>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/><path d="M10 6v5" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14" r="1.2" fill="#CBD5E1"/></svg><span>Вопросы и ответы</span></a>
+  <a href="#" class="nav-item"><svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M3 4h14a1.5 1.5 0 010 3H3a1.5 1.5 0 010-3zM3 10h10" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/><circle cx="14" cy="15" r="3" fill="#CBD5E1"/><path d="M13 15l.8.8L15 14" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Обратная связь</span></a>
+</nav>
+
+<!-- MAIN -->
+<main class="main-content">
+  <h1 class="page-title">Аналитика</h1>
+
+  <!-- FILTERS (history-style) -->
+  <div class="filter-bar" id="filtersRow" style="margin-bottom:12px">
+    <button class="filter-chip is-active" id="chipMonth" data-period="month">ЭТОТ МЕСЯЦ</button>
+    <button class="filter-chip" id="chipPrev"  data-period="prev">ПРОШЛЫЙ МЕСЯЦ</button>
+    <button class="filter-chip" id="chip3m"    data-period="3m">3 МЕСЯЦА</button>
+    <!-- Categories dropdown -->
+    <div class="cat-dropdown-wrap">
+      <button class="filter-chip" id="chipCat" data-period="cat">КАТЕГОРИИ <span class="filter-chip__arrow" id="catArrow"></span></button>
+      <div class="cat-dropdown" id="catDropdown">
+        <div class="cat-dropdown__list" id="catDropdownList"></div>
+        <div class="cat-dropdown__footer">
+          <button class="btn-cat-select-all" id="btnCatSelectAll">Выбрать все</button>
+          <button class="btn-cat-confirm" id="btnCatConfirm">Применить</button>
+        </div>
+      </div>
+    </div>
+    <!-- Date dropdown -->
+    <div class="date-dropdown-wrap">
+      <button class="filter-chip" id="chipDates">ДАТЫ <span class="filter-chip__arrow" id="datesArrow"></span></button>
+      <div class="date-dropdown" id="dateDropdown">
+        <div class="dp-header">
+          <span class="dp-month-label" id="dpMonthLabel"></span>
+          <div class="dp-arrows">
+            <button class="dp-arrow is-active" id="dpPrev">&#8249;</button>
+            <button class="dp-arrow is-active" id="dpNext">&#8250;</button>
+          </div>
+        </div>
+        <div class="dp-dow-row" id="dpDow"></div>
+        <div class="dp-grid" id="dpGrid"></div>
+        <div class="dp-footer">
+          <button class="btn-dp-confirm" id="btnDpConfirm">Применить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Active filter chips -->
+  <div class="active-chips-row" id="activeChipsRow"></div>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row" id="kpiRow">
+    <!-- Income -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Доходы</span>
+        <span class="kpi-badge hidden" id="incomeBadge"><span class="kpi-badge-dot"></span><span id="incomeBadgeText"></span></span>
+      </div>
+      <div class="kpi-value" id="incomeValue">122 039.00 ₽</div>
+      <div class="kpi-bot-row">
+        <div class="kpi-bot-avatar" id="incomeBot"></div>
+        <div class="bot-bubble" id="incomeMsg">Я умею анализировать тренд по доходам в подписке</div>
+      </div>
+    </div>
+    <!-- Expenses -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Расходы</span>
+        <span class="kpi-badge hidden" id="expBadge"><span class="kpi-badge-dot"></span><span id="expBadgeText"></span></span>
+      </div>
+      <div class="kpi-value" id="expValue">69 000.00 ₽</div>
+      <div class="kpi-bot-row">
+        <div class="kpi-bot-avatar" id="expBot"></div>
+        <div class="bot-bubble" id="expMsg">Если хочешь, я могу анализировать для тебя тренды по расходам в подписке</div>
+      </div>
+    </div>
+    <!-- Balance -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">Баланс</span>
+        <span class="kpi-badge hidden" id="balBadge"><span class="kpi-badge-dot"></span><span id="balBadgeText"></span></span>
+      </div>
+      <div class="kpi-value" id="balValue">53 039.00 ₽</div>
+      <div class="kpi-bot-row">
+        <div class="kpi-bot-avatar" id="balBot"></div>
+        <div class="bot-bubble" id="balMsg">Хочешь, чтобы я отслеживал тренды по балансу? Я умею. Но нужна оплаченная подписка</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="charts-row">
+    <!-- Bar chart -->
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <span class="chart-title">График расходов по неделям за выбранный период</span>
+      </div>
+      <div class="chart-area">
+        <div class="bar-chart" id="barChart">
+          <div class="bar-grid">
+            <div class="bar-grid-line" style="top:0%"></div>
+            <div class="bar-grid-line" style="top:20%"></div>
+            <div class="bar-grid-line" style="top:40%"></div>
+            <div class="bar-grid-line" style="top:60%"></div>
+            <div class="bar-grid-line" style="top:80%"></div>
+          </div>
+          <div class="bar-data" id="barData"></div>
+          <div class="bar-timeline" id="barTimeline"></div>
+
+        </div>
+        <div class="chart-lock-overlay hidden" id="barLock">
+          <div class="chart-lock-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="10" width="20" height="12" rx="2.5" fill="white" opacity=".5"/><path d="M17 10V7a5 5 0 00-10 0v3" stroke="white" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16" r="2" fill="white"/></svg>
+          </div>
+          <div class="chart-lock-text">Разблокируй функционал в подписке</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Line chart -->
+    <div class="chart-card">
+      <div class="chart-title-row">
+        <span class="chart-title">Динамика за последние 3 месяца</span>
+        <div class="chart-legend">
+          <span class="legend-chip error"><span class="legend-dot" style="background:var(--c-error-main)"></span>расходы</span>
+          <span class="legend-chip success"><span class="legend-dot" style="background:var(--c-success-main)"></span>доходы</span>
+          <span class="legend-chip info"><span class="legend-dot" style="background:var(--c-info-main)"></span>баланс</span>
+        </div>
+      </div>
+      <div class="chart-area">
+        <div class="line-chart" id="lineChart">
+          <svg class="line-svg" id="lineSvg" viewBox="0 0 400 220" preserveAspectRatio="none">
+            <!-- grid lines -->
+            <line x1="0" y1="20" x2="400" y2="20" stroke="#E2E8F0" stroke-width="1"/>
+            <line x1="0" y1="60" x2="400" y2="60" stroke="#E2E8F0" stroke-width="1"/>
+            <line x1="0" y1="100" x2="400" y2="100" stroke="#E2E8F0" stroke-width="1"/>
+            <line x1="0" y1="140" x2="400" y2="140" stroke="#E2E8F0" stroke-width="1"/>
+            <line x1="0" y1="180" x2="400" y2="180" stroke="#E2E8F0" stroke-width="1"/>
+            <!-- lines drawn by JS -->
+            <g id="lineGroup"></g>
+          </svg>
+          <div class="line-timeline" id="lineTimeline"></div>
+          <!-- line chart tooltip -->
+          <div class="line-tt" id="lineTooltip">
+            <div class="line-tt__bubble" id="lineTooltipBubble"></div>
+            <div class="line-tt__notch" id="lineTooltipNotch"></div>
+          </div>
+        </div>
+        <div class="chart-lock-overlay hidden" id="lineLock">
+          <div class="chart-lock-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="10" width="20" height="12" rx="2.5" fill="white" opacity=".5"/><path d="M17 10V7a5 5 0 00-10 0v3" stroke="white" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16" r="2" fill="white"/></svg>
+          </div>
+          <div class="chart-lock-text">Разблокируй функционал в подписке</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row" id="bottomRow">
+    <!-- Top expenses -->
+    <div class="cat-card">
+      <div class="cat-card-title" id="topExpTitle">Топ-5 категорий расходов за выбранный период</div>
+      <div class="cat-list" id="topExpList"></div>
+    </div>
+    <!-- Top income -->
+    <div class="cat-card">
+      <div class="cat-card-title">Топ-5 категорий доходов за выбранный период</div>
+      <div class="cat-list" id="topIncList"></div>
+    </div>
+    <!-- System expenses -->
+    <div class="cat-card sys-cat-card">
+      <div class="cat-card-title">Расходы на системные категории за выбранный период</div>
+      <div class="cat-list" id="sysExpList"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+/* ====================================================
+   BOT SVG PATHS (simplified inline)
+==================================================== */
+const BOT_SVGS = {
+  glad: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.1641C34.523 10.1642 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8358 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80678 33.0318 7.75727 29.2218 7.75727 25C7.75731 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24946 19.127C7.37831 20.9924 6.93697 22.9668 6.93696 25C6.93696 27.035 7.37809 29.0085 8.24946 30.873C5.92153 30.1076 4.227 28.5923 4.227 25C4.22703 21.5926 5.92134 19.8924 8.24946 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7172 20.5703C35.0761 19.8597 34.187 20.5703 33.2299 20.5703H16.77C15.8244 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.482 30.3291 35.0818 31.0293 35.7172 30.3291C37.5164 28.3465 38.5883 27.7107 38.5883 25C38.5883 22.3005 37.5032 22.549 35.7172 20.5703Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9151C12.0769 31.1907 9.77597 28.8898 9.77597 26.0515V24.4535C9.77597 21.6152 12.0769 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.7651 26.5954C27.0867 26.5954 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0124 28.679C24.02 28.679 23.1824 28.017 22.9163 27.1104C22.8258 26.8022 22.9308 26.5954 23.2519 26.5954C23.573 26.5954 23.6604 27.2868 24.0665 27.5798C24.383 27.8081 24.6222 27.9011 25.0124 27.9022C25.4061 27.9034 25.6488 27.811 25.9674 27.5798C26.3712 27.2867 26.4435 26.5954 26.7651 26.5954Z" fill="#1E2A38"/>
+<path d="M18.286 25.4023C18.286 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.286 24.1959 18.286 25.4023Z" fill="#1E2A38"/>
+<path d="M16.6391 25.7678C16.7735 25.7678 16.8822 25.8769 16.8823 26.011C16.8823 26.1452 16.7735 26.2542 16.6391 26.2542C16.5049 26.2539 16.3969 26.1451 16.3969 26.011C16.397 25.877 16.5049 25.768 16.6391 25.7678ZM15.519 24.1614C15.9095 24.1614 16.226 24.478 16.226 24.8684C16.226 25.2587 15.9095 25.5754 15.519 25.5754C15.1284 25.5754 14.812 25.2588 14.812 24.8684C14.812 24.478 15.1284 24.1614 15.519 24.1614Z" fill="white"/>
+<path d="M36.1083 25.4023C36.1083 26.6087 35.1303 27.5867 33.9239 27.5867C32.7175 27.5867 31.7394 26.6087 31.7394 25.4023C31.7394 24.1959 32.7175 23.218 33.9239 23.218C35.1303 23.218 36.1083 24.1959 36.1083 25.4023Z" fill="#1E2A38"/>
+<path d="M34.4619 25.7676C34.5955 25.7676 34.705 25.8766 34.7051 26.0107C34.7051 26.145 34.5956 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1448 34.2188 26.0107C34.2189 25.8768 34.3275 25.7678 34.4619 25.7676ZM33.3418 24.1611C33.7318 24.1613 34.0489 24.4778 34.0489 24.8682C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8682C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>`,
+  happy: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.0541 37.0215 13.0961 35.7334C9.80679 33.0318 7.75728 29.2218 7.75728 25C7.75731 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24947 19.127C7.37832 20.9924 6.93698 22.9668 6.93697 25C6.93697 27.035 7.3781 29.0085 8.24947 30.873C5.92153 30.1076 4.22701 28.5923 4.22701 25C4.22703 21.5926 5.92135 19.8924 8.24947 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7163 20.5703C35.0751 19.8601 34.1869 20.5703 33.2299 20.5703H16.77C15.8244 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.4819 30.3291 35.0808 31.0291 35.7163 30.3291C37.5156 28.3462 38.5883 27.7109 38.5883 25C38.5883 22.3004 37.5024 22.5492 35.7163 20.5703Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9151C12.0769 31.1907 9.77597 28.8898 9.77597 26.0515V24.4535C9.77597 21.6152 12.0769 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.6419 26.4946C26.9635 26.4946 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0124 28.679C24.02 28.679 23.1824 28.017 22.9163 27.1104C22.8258 26.8022 23.0623 26.4946 23.3834 26.4946H26.6419Z" fill="#1E2A38"/>
+<path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/>
+<path d="M16.6391 25.7678C16.7735 25.7678 16.8822 25.8769 16.8823 26.011C16.8823 26.1452 16.7735 26.2542 16.6391 26.2542C16.5049 26.2539 16.3969 26.1451 16.3969 26.011C16.397 25.877 16.5049 25.768 16.6391 25.7678ZM15.519 24.1614C15.9095 24.1614 16.226 24.478 16.226 24.8684C16.226 25.2587 15.9095 25.5754 15.519 25.5754C15.1284 25.5754 14.812 25.2588 14.812 24.8684C14.812 24.478 15.1284 24.1614 15.519 24.1614Z" fill="white"/>
+<path d="M14.5943 27.9517C14.4671 27.9517 14.344 27.8849 14.277 27.7664C14.1779 27.5914 14.2403 27.3688 14.4155 27.2697C14.4431 27.254 15.1066 26.8851 16.1018 26.8851C17.0966 26.8851 17.7601 27.254 17.7882 27.2697C17.9629 27.3688 18.0244 27.5909 17.9258 27.766C17.8267 27.9405 17.6058 28.0024 17.4306 27.9044C17.4198 27.8985 16.8907 27.6134 16.1018 27.6134C15.3085 27.6134 14.778 27.9016 14.7726 27.9045C14.716 27.9365 14.6545 27.9517 14.5943 27.9517Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4023C36.1083 26.6087 35.1303 27.5867 33.9239 27.5867C32.7175 27.5867 31.7394 26.6087 31.7394 25.4023C31.7394 24.1959 32.7175 23.218 33.9239 23.218C35.1303 23.218 36.1083 24.1959 36.1083 25.4023Z" fill="#1E2A38"/>
+<path d="M34.4619 25.7676C34.5955 25.7676 34.705 25.8766 34.7051 26.0107C34.7051 26.145 34.5956 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1448 34.2188 26.0107C34.2189 25.8768 34.3275 25.7678 34.4619 25.7676ZM33.3418 24.1611C33.7318 24.1613 34.0489 24.4778 34.0489 24.8682C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8682C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/>
+<path d="M32.4163 27.9517C32.2896 27.9517 32.1665 27.885 32.0996 27.7664C32.0007 27.5914 32.063 27.3688 32.2381 27.2697C32.2659 27.254 32.9293 26.8851 33.9239 26.8851C34.9195 26.8851 35.5829 27.254 35.6102 27.2697C35.7858 27.3688 35.8471 27.5909 35.7482 27.766C35.6494 27.9406 35.4279 28.0023 35.2533 27.9044C35.2425 27.8985 34.7135 27.6134 33.9239 27.6134C33.1307 27.6134 32.6002 27.9015 32.5951 27.9045C32.5389 27.9365 32.4771 27.9517 32.4163 27.9517Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>`,
+  love: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80677 33.0318 7.75726 29.2218 7.75726 25C7.7573 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24945 19.127C7.3783 20.9924 6.93696 22.9668 6.93695 25C6.93695 27.035 7.37809 29.0085 8.24945 30.873C5.92152 30.1076 4.22699 28.5923 4.22699 25C4.22702 21.5926 5.92133 19.8924 8.24945 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7162 20.5703C35.0751 19.8601 34.1869 20.5703 33.2299 20.5703H16.77C15.8243 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.4819 30.3291 35.0808 31.0291 35.7162 30.3291C37.5156 28.3462 38.5883 27.7109 38.5883 25C38.5883 22.3004 37.5023 22.5492 35.7162 20.5703Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9151C12.0768 31.1907 9.77594 28.8898 9.77594 26.0515V24.4535C9.77594 21.6152 12.0768 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.6419 26.4946C26.9635 26.4946 27.1995 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0124 28.679C24.02 28.679 23.1824 28.017 22.9163 27.1104C22.8257 26.8022 23.0623 26.4946 23.3834 26.4946H26.6419Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+<path d="M18.8322 22.8841C19.4651 23.2548 19.9104 24.0074 19.8907 24.8855C19.849 26.7396 17.3235 28.1059 16.8703 28.1059C16.4172 28.1059 13.8913 26.7396 13.8499 24.8855C13.8303 24.0074 14.2756 23.2551 14.9085 22.8841C15.5006 22.5377 16.2444 22.5355 16.8703 23.0471C17.4963 22.5355 18.2401 22.5373 18.8322 22.8841Z" fill="#1E2A38"/>
+<path d="M35.1254 22.8841C35.7584 23.2548 36.2037 24.0074 36.184 24.8855C36.1423 26.7396 33.6167 28.1059 33.1636 28.1059C32.7104 28.1059 30.1846 26.7396 30.1432 24.8855C30.1235 24.0074 30.5688 23.2551 31.2017 22.8841C31.7939 22.5377 32.5376 22.5355 33.1636 23.0471C33.7895 22.5355 34.5333 22.5373 35.1254 22.8841Z" fill="#1E2A38"/>
+<path d="M17.7334 26.0488C17.9815 26.049 18.1817 26.2504 18.1817 26.498C18.1815 26.7456 17.9814 26.9461 17.7334 26.9463C17.4853 26.9463 17.2844 26.7458 17.2842 26.498C17.2842 26.2503 17.4852 26.0488 17.7334 26.0488ZM15.6641 23.082C16.3852 23.0822 16.9698 23.6668 16.9698 24.3877C16.9696 25.1084 16.3851 25.6923 15.6641 25.6924C14.9429 25.6924 14.3586 25.1085 14.3584 24.3877C14.3584 23.6667 14.9429 23.082 15.6641 23.082Z" fill="white"/>
+<path d="M33.9476 26.0256C34.1886 26.0256 34.3851 26.2222 34.3851 26.4641C34.3851 26.7062 34.1886 26.9026 33.9476 26.9026C33.7048 26.9026 33.5091 26.7062 33.5091 26.4641C33.5092 26.2222 33.7048 26.0256 33.9476 26.0256ZM31.9261 23.1282C32.6297 23.1282 33.2015 23.6994 33.2015 24.4036C33.2013 25.1075 32.6295 25.678 31.9261 25.678C31.2218 25.678 30.6519 25.1075 30.6517 24.4036C30.6517 23.6994 31.2217 23.1282 31.9261 23.1282Z" fill="white"/>
+<ellipse cx="33.1636" cy="28.106" rx="2.47794" ry="1.15411" fill="#F2B6B6"/>
+<ellipse cx="16.8703" cy="28.0721" rx="2.47794" ry="1.15411" fill="#F2B6B6"/>
+</svg>`,
+  sad: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80677 33.0318 7.75726 29.2218 7.75726 25C7.7573 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24945 19.127C7.3783 20.9924 6.93696 22.9668 6.93695 25C6.93695 27.035 7.37809 29.0085 8.24945 30.873C5.92152 30.1076 4.22699 28.5923 4.22699 25C4.22702 21.5926 5.92133 19.8924 8.24945 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7162 20.5703C35.0751 19.8601 34.1869 20.5703 33.2299 20.5703H16.77C15.8243 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.4819 30.3291 35.0808 31.0291 35.7162 30.3291C37.5156 28.3462 38.5883 27.7109 38.5883 25C38.5883 22.3004 37.5023 22.5492 35.7162 20.5703Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9151C12.0768 31.1907 9.77596 28.8898 9.77596 26.0515V24.4535C9.77596 21.6152 12.0768 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.6419 28.6789C26.9635 28.6789 27.1996 28.3713 27.109 28.0631C26.8429 27.1566 26.0053 26.4946 25.0124 26.4946C24.02 26.4946 23.1824 27.1566 22.9163 28.0631C22.8258 28.3713 23.0623 28.6789 23.3834 28.6789H26.6419Z" fill="#1E2A38"/>
+<path d="M18.286 25.4023C18.286 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.286 24.1959 18.286 25.4023Z" fill="#1E2A38"/>
+<path d="M15.756 25.7678C15.6216 25.7678 15.5129 25.8769 15.5128 26.011C15.5128 26.1452 15.6216 26.2542 15.756 26.2542C15.8902 26.2539 15.9982 26.1451 15.9982 26.011C15.9981 25.877 15.8902 25.768 15.756 25.7678ZM16.8761 24.1614C16.4856 24.1614 16.1691 24.478 16.1691 24.8684C16.1691 25.2587 16.4856 25.5754 16.8761 25.5754C17.2667 25.5754 17.5831 25.2588 17.5831 24.8684C17.5831 24.478 17.2667 24.1614 16.8761 24.1614Z" fill="white"/>
+<path d="M13.9297 23.1081C13.8069 23.141 13.7052 23.2373 13.6712 23.3691C13.6207 23.5638 13.7387 23.7627 13.9335 23.8131C13.9643 23.8211 14.7006 24.0057 15.662 23.7481C16.6229 23.4907 17.1683 22.9626 17.1913 22.9402C17.3344 22.7992 17.3364 22.5687 17.1958 22.4251C17.0548 22.2822 16.8255 22.2797 16.6817 22.4196C16.6727 22.4281 16.2354 22.8404 15.4734 23.0446C14.7071 23.2499 14.1202 23.1089 14.1141 23.1075C14.0512 23.0913 13.9878 23.0925 13.9297 23.1081Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4026C36.1083 26.6089 35.1302 27.5869 33.9238 27.5869C32.7174 27.5869 31.7394 26.6089 31.7394 25.4026C31.7394 24.1962 32.7174 23.2182 33.9238 23.2182C35.1302 23.2182 36.1083 24.1962 36.1083 25.4026Z" fill="#1E2A38"/>
+<path d="M33.6445 25.7676C33.5109 25.7676 33.4014 25.8766 33.4013 26.0107C33.4013 26.145 33.5108 26.2539 33.6445 26.2539C33.7789 26.2537 33.8876 26.1448 33.8876 26.0107C33.8875 25.8768 33.7789 25.7678 33.6445 25.7676ZM34.7646 24.1611C34.3746 24.1613 34.0575 24.4778 34.0575 24.8682C34.0576 25.2584 34.3747 25.575 34.7646 25.5752C35.1552 25.5752 35.4716 25.2585 35.4716 24.8682C35.4716 24.4777 35.1552 24.1611 34.7646 24.1611Z" fill="white"/>
+<path d="M33.1122 22.3278C32.9898 22.295 32.8536 22.3276 32.7582 22.4248C32.6174 22.5682 32.62 22.7994 32.7635 22.9404C32.7863 22.9628 33.3316 23.4908 34.2923 23.7482C35.254 24.0059 35.9903 23.8213 36.0207 23.8132C36.216 23.7629 36.3327 23.5642 36.2825 23.3695C36.2321 23.1753 36.0342 23.0583 35.8402 23.1077C35.8282 23.1106 35.2435 23.2491 34.4808 23.0447C33.7147 22.8394 33.2768 22.4238 33.2726 22.4196C33.2266 22.3742 33.1709 22.3435 33.1122 22.3278Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>`,
+  sleep: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.1641C34.523 10.1642 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8358 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80678 33.0318 7.75727 29.2218 7.75727 25C7.75731 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24946 19.127C7.37831 20.9924 6.93697 22.9668 6.93696 25C6.93696 27.035 7.37809 29.0085 8.24946 30.873C5.92153 30.1076 4.227 28.5923 4.227 25C4.22703 21.5926 5.92134 19.8924 8.24946 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7172 20.5703C35.0761 19.8597 34.187 20.5703 33.2299 20.5703H16.77C15.8244 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.482 30.3291 35.0818 31.0293 35.7172 30.3291C37.5164 28.3465 38.5883 27.7107 38.5883 25C38.5883 22.3005 37.5032 22.549 35.7172 20.5703Z" fill="#2FBF71"/>
+<path d="M35.348 30.8765H15.1392C12.3009 30.8765 10 28.5756 10 25.7373V24.1393C10 21.301 12.3009 19.0001 15.1392 19.0001H35.348C38.1863 19.0001 40.4872 21.301 40.4872 24.1393V25.7373C40.4872 28.5756 38.1863 30.8765 35.348 30.8765Z" fill="white"/>
+<path d="M35.88 23.9164C36.2015 23.9164 36.3144 24.1233 36.2239 24.4315C35.9578 25.338 35.1202 26 34.1273 26C33.1349 26 32.2973 25.338 32.0312 24.4315C31.9406 24.1233 32.0457 23.9164 32.3668 23.9164C32.6879 23.9164 32.7753 24.6079 33.1814 24.9008C33.4979 25.1291 33.737 25.2221 34.1273 25.2233C34.5209 25.2244 34.7637 25.132 35.0823 24.9008C35.4861 24.6077 35.5584 23.9164 35.88 23.9164Z" fill="#1E2A38"/>
+<path d="M17.88 23.9164C18.2015 23.9164 18.3144 24.1233 18.2239 24.4315C17.9578 25.338 17.1202 26 16.1273 26C15.1349 26 14.2973 25.338 14.0312 24.4315C13.9406 24.1233 14.0457 23.9164 14.3668 23.9164C14.6879 23.9164 14.7753 24.6079 15.1814 24.9008C15.4979 25.1291 15.737 25.2221 16.1273 25.2233C16.5209 25.2244 16.7637 25.132 17.0823 24.9008C17.4861 24.6077 17.5584 23.9164 17.88 23.9164Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+<ellipse cx="25" cy="27.5" rx="1" ry="1.5" fill="#1E2A38"/>
+</svg>`,
+  surprised: `<svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.1641C34.523 10.1643 42.2426 16.8066 42.2426 25C42.2426 33.1935 34.523 39.8357 25.0004 39.8359C21.6955 39.8359 18.6071 39.0357 15.9838 37.6484C14.8358 38.6507 13.3428 39.2584 11.8188 39.3193C12.6049 38.2969 13.054 37.0215 13.0961 35.7334C9.80677 33.0318 7.75726 29.2218 7.75726 25C7.7573 16.8065 15.4777 10.1641 25.0004 10.1641ZM8.24945 19.127C7.3783 20.9924 6.93696 22.9668 6.93695 25C6.93695 27.035 7.37809 29.0085 8.24945 30.873C5.92152 30.1076 4.22699 28.5923 4.22699 25C4.22702 21.5926 5.92133 19.8924 8.24945 19.127ZM41.7504 19.127C44.0784 19.8925 45.7729 21.5927 45.7729 25C45.7729 28.5923 44.0784 30.1076 41.7504 30.873C42.6218 29.0085 43.0629 27.035 43.0629 25C43.0629 22.9669 42.6215 20.9924 41.7504 19.127ZM35.7162 20.5703C35.0751 19.8601 34.1869 20.5703 33.2299 20.5703H16.77C15.8243 20.5703 14.9191 19.87 14.2836 20.5703C12.4843 22.5531 11.4116 22.2892 11.4116 25C11.4116 27.7109 12.4843 27.7691 14.2836 29.752C14.9191 30.4521 16.0775 30.3291 17.0229 30.3291H33.5366C34.4819 30.3291 35.0808 31.0291 35.7162 30.3291C37.5156 28.3462 38.5883 27.7109 38.5883 25C38.5883 22.3004 37.5023 22.5492 35.7162 20.5703Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9151C12.0769 31.1907 9.77597 28.8898 9.77597 26.0515V24.4535C9.77597 21.6152 12.0769 19.3143 14.9151 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.4245 27.8344C26.7056 27.8344 26.9121 28.1403 26.8329 28.4469C26.6002 29.3485 25.8679 30.0068 24.9998 30.0068C24.1321 30.0068 23.3997 29.3485 23.1671 28.4469C23.0879 28.1403 23.2947 27.8344 23.5755 27.8344H26.4245Z" fill="#1E2A38"/>
+<path d="M26.4245 28.6829C26.7056 28.6829 26.9121 28.377 26.8329 28.0705C26.6002 27.1689 25.8679 26.5105 24.9998 26.5105C24.1321 26.5105 23.3997 27.1689 23.1671 28.0705C23.0879 28.377 23.2947 28.6829 23.5755 28.6829H26.4245Z" fill="#1E2A38"/>
+<path d="M18.286 25.4023C18.286 26.6087 17.308 27.5867 16.1018 27.5867C14.8952 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8952 23.2179 16.1018 23.2179C17.308 23.2179 18.286 24.1959 18.286 25.4023Z" fill="#1E2A38"/>
+<path d="M16.6391 25.7676C16.7735 25.7676 16.8822 25.8766 16.8823 26.0107C16.8823 26.145 16.7735 26.2539 16.6391 26.2539C16.5049 26.2537 16.3969 26.1448 16.3969 26.0107C16.397 25.8767 16.5049 25.7678 16.6391 25.7676ZM15.519 24.1611C15.9095 24.1612 16.226 24.4777 16.226 24.8682C16.226 25.2585 15.9095 25.5751 15.519 25.5752C15.1284 25.5752 14.812 25.2585 14.812 24.8682C14.812 24.4777 15.1284 24.1611 15.519 24.1611Z" fill="white"/>
+<path d="M13.7017 23.0814C13.5818 23.1241 13.4435 23.1025 13.3406 23.0133C13.1886 22.8817 13.1727 22.651 13.3045 22.4989C13.3253 22.4748 13.8266 21.9048 14.7642 21.571C15.7014 21.2374 16.4502 21.3624 16.4819 21.3678C16.6797 21.4025 16.8122 21.5912 16.778 21.7892C16.7431 21.9869 16.5558 22.1192 16.3579 22.0856C16.3457 22.0837 15.7517 21.9926 15.0085 22.2572C14.261 22.5233 13.858 22.9726 13.8538 22.9772C13.8112 23.0263 13.7584 23.0612 13.7017 23.0814Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4023C36.1083 26.6087 35.1302 27.5867 33.9238 27.5867C32.7174 27.5867 31.7394 26.6087 31.7394 25.4023C31.7394 24.1959 32.7174 23.218 33.9238 23.218C35.1302 23.218 36.1083 24.1959 36.1083 25.4023Z" fill="#1E2A38"/>
+<path d="M34.4619 25.7676C34.5955 25.7676 34.705 25.8766 34.7051 26.0107C34.7051 26.145 34.5956 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1449 34.2188 26.0107C34.2189 25.8768 34.3275 25.7678 34.4619 25.7676ZM33.3418 24.1611C33.7318 24.1614 34.0489 24.4778 34.0489 24.8682C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8682C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/>
+<path d="M33.763 22.2323C33.6488 22.1774 33.5668 22.064 33.5578 21.9281C33.5445 21.7275 33.6971 21.5539 33.8979 21.5404C33.9297 21.5383 34.6874 21.4932 35.5839 21.9241C36.4812 22.3554 36.9193 22.9752 36.9371 23.0012C37.0525 23.1666 37.0115 23.3934 36.8465 23.5083C36.6817 23.6229 36.4554 23.5825 36.3404 23.4187C36.3332 23.4087 35.98 22.9226 35.2683 22.5805C34.5534 22.2369 33.9505 22.2668 33.9446 22.2672C33.8801 22.2717 33.8178 22.2586 33.763 22.2323Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>`,
+};
+
+function setBotSvg(el, emotion) {
+  if (el) el.innerHTML = BOT_SVGS[emotion] || BOT_SVGS.happy;
+}
+
+/* ====================================================
+   DATA PER PERIOD
+==================================================== */
+const PERIODS = {
+  month: {
+    label: 'ЭТОТ МЕСЯЦ',
+    sub: '',
+    hasSub: false,
+    income: { value: '122 039.00 ₽', badge: null, bot: 'sad', msg: 'Я умею анализировать тренд по доходам в подписке' },
+    exp:    { value: '69 000.00 ₽',  badge: null, bot: 'sad', msg: 'Если хочешь, я могу анализировать для тебя тренды по расходам в подписке' },
+    bal:    { value: '53 039.00 ₽',  badge: null, bot: 'sad', msg: 'Хочешь, чтобы я отслеживал тренды по балансу? Я умею. Но нужна оплаченная подписка' },
+    barLocked: true, lineLocked: true,
+    bars: [{v:7,l:'1.03'},{v:91,l:'2-8.03'},{v:182,l:'9-15.03'},{v:82,l:'16-22.03'},{v:58,l:'23-29.03'},{v:125,l:'30-31.03'}],
+    barLabels: ['',     '23 540 ₽','45 657 ₽','20 540 ₽','13 543 ₽','31 543 ₽'],
+    lineMonths: ['январь','февраль','март'],
+    topExp: [{emoji:'🍎',name:'Продукты',amt:'2 350 ₽',pct:29},{emoji:'🏠',name:'Дом и быт',amt:'2 192 ₽',pct:27},{emoji:'🚗',name:'Авто',amt:'1 799 ₽',pct:22},{emoji:'💅',name:'Красота и уход за собой',amt:'863 ₽',pct:10},{emoji:'☕',name:'Кафе и рестораны',amt:'610 ₽',pct:7}],
+    topInc: [{emoji:'💰',name:'Зарплата',amt:'2 350 ₽',pct:29},{emoji:'📈',name:'Проценты по вкладу',amt:'2 192 ₽',pct:27},{emoji:'🎁',name:'Кэшбек и бонусы',amt:'1 799 ₽',pct:22}],
+    sysExp: [{emoji:'🏠',name:'Жилье',amt:'0 ₽',pct:0},{emoji:'🏦',name:'Кредиты и займы',amt:'0 ₽',pct:0},{emoji:'🎯',name:'Цель',amt:'0 ₽',pct:0}],
+    sysBot: 'sad', sysMsg: 'Похоже у меня нет данных по этим расходам в выбранный период',
+    noSysData: true
+  },
+  prev: {
+    label: 'ПРОШЛЫЙ МЕСЯЦ',
+    sub: 'Подписка до 01-11-2026',
+    hasSub: true,
+    income: { value: '122 039.00 ₽', badge: {type:'info', text:'0%'}, bot: 'sleep', msg: 'Похоже, динамики в доходах за выбранный период нет. Это не плохо' },
+    exp:    { value: '69 000.00 ₽',  badge: {type:'info', text:'0%'}, bot: 'sleep', msg: 'Похоже, динамики в расходах за выбранный период нет. Здорово!' },
+    bal:    { value: '53 039.00 ₽',  badge: {type:'info', text:'0%'}, bot: 'sleep', msg: 'Стабильность — признак мастерства. Ты умеешь сохранять баланс на уровне!' },
+    barLocked: false, lineLocked: false,
+    bars: [{v:7,l:'1.03'},{v:91,l:'2-8.03'},{v:182,l:'9-15.03'},{v:82,l:'16-22.03'},{v:58,l:'23-29.03'},{v:125,l:'30-31.03'}],
+    barLabels: ['','23 540 ₽','45 657 ₽','20 540 ₽','13 543 ₽','31 543 ₽'],
+    lineMonths: ['январь','февраль','март'],
+    topExp: [{emoji:'🍎',name:'Продукты',amt:'2 350 ₽',pct:29},{emoji:'🏠',name:'Дом и быт',amt:'2 192 ₽',pct:27},{emoji:'🚗',name:'Авто',amt:'1 799 ₽',pct:22},{emoji:'💅',name:'Красота и уход за собой',amt:'863 ₽',pct:10},{emoji:'☕',name:'Кафе и рестораны',amt:'610 ₽',pct:7}],
+    topInc: [{emoji:'💰',name:'Зарплата',amt:'2 350 ₽',pct:29},{emoji:'📈',name:'Проценты по вкладу',amt:'2 192 ₽',pct:27},{emoji:'🎁',name:'Кэшбек и бонусы',amt:'1 799 ₽',pct:22}],
+    sysExp: [{emoji:'🏠',name:'Жилье',amt:'49 000 ₽',pct:23},{emoji:'🏦',name:'Кредиты и займы',amt:'2 192 ₽',pct:27},{emoji:'🎯',name:'Цель',amt:'1 799 ₽',pct:22}],
+    sysBot: 'sleep', sysMsg: 'Обязательные платежи составляют 45% ваших расходов',
+    noSysData: false
+  },
+  '3m': {
+    label: '3 МЕСЯЦА',
+    sub: 'Подписка до 01-11-2026',
+    hasSub: true,
+    income: { value: '366 117.00 ₽', badge: {type:'success', text:'+12.2%'}, bot: 'love', msg: 'Доходы выросли на 12.2% по сравнению с прошлым периодом' },
+    exp:    { value: '201 000.00 ₽', badge: {type:'success', text:'5%'},   bot: 'love', msg: 'Расходы упали на 5% по сравнению с прошлым периодом. Так держать!' },
+    bal:    { value: '165 117.00 ₽', badge: {type:'success', text:'+12.2%'}, bot: 'love', msg: 'Вау! Баланс в этом периоде больше, чем в предыдущем! Так держать' },
+    barLocked: false, lineLocked: false,
+    bars: [{v:58,l:'Янв'},{v:125,l:'Фев'},{v:182,l:'Март'}],
+    barLabels: ['67 000 ₽','68 000 ₽','66 000 ₽'],
+    lineMonths: ['январь','февраль','март'],
+    topExp: [{emoji:'🍎',name:'Продукты',amt:'7 050 ₽',pct:29},{emoji:'🏠',name:'Дом и быт',amt:'6 576 ₽',pct:27},{emoji:'🚗',name:'Авто',amt:'5 397 ₽',pct:22},{emoji:'💅',name:'Красота и уход за собой',amt:'2 589 ₽',pct:10},{emoji:'☕',name:'Кафе и рестораны',amt:'1 830 ₽',pct:7}],
+    topInc: [{emoji:'💰',name:'Зарплата',amt:'7 050 ₽',pct:29},{emoji:'📈',name:'Проценты по вкладу',amt:'6 576 ₽',pct:27},{emoji:'🎁',name:'Кэшбек и бонусы',amt:'5 397 ₽',pct:22}],
+    sysExp: [{emoji:'🏠',name:'Жилье',amt:'147 000 ₽',pct:73},{emoji:'🏦',name:'Кредиты и займы',amt:'6 576 ₽',pct:27},{emoji:'🎯',name:'Цель',amt:'5 397 ₽',pct:22}],
+    sysBot: 'happy', sysMsg: 'Обязательные платежи составляют 45% ваших расходов',
+    noSysData: false
+  },
+  custom: {
+    label: 'ВЫБРАТЬ ПЕРИОД',
+    sub: 'Подписка до 01-11-2026',
+    hasSub: true,
+    income: { value: '89 100.00 ₽', badge: {type:'error', text:'-12.2%'}, bot: 'sad', msg: 'Доходы упали на 12.2% по сравнению с прошлым периодом' },
+    exp:    { value: '44 200.00 ₽', badge: {type:'error', text:'+12.2%'}, bot: 'sad', msg: 'Расходы выросли на 12.2% по сравнению с прошлым периодом. Осторожнее' },
+    bal:    { value: '44 900.00 ₽', badge: {type:'error', text:'-12%'},   bot: 'sad', msg: 'Расходы превышают доходы в этом периоде на 12% по сравнению с предыдущим' },
+    barLocked: false, lineLocked: false,
+    bars: [{v:40,l:'нд1'},{v:120,l:'нд2'},{v:90,l:'нд3'},{v:60,l:'нд4'}],
+    barLabels: ['10 400 ₽','31 200 ₽','23 400 ₽','15 600 ₽'],
+    lineMonths: ['январь','февраль','март'],
+    topExp: [{emoji:'🍎',name:'Продукты',amt:'2 350 ₽',pct:29},{emoji:'🏠',name:'Дом и быт',amt:'2 192 ₽',pct:27},{emoji:'🚗',name:'Авто',amt:'1 799 ₽',pct:22},{emoji:'💅',name:'Красота и уход за собой',amt:'863 ₽',pct:10},{emoji:'☕',name:'Кафе и рестораны',amt:'610 ₽',pct:7}],
+    topInc: [{emoji:'💰',name:'Зарплата',amt:'2 350 ₽',pct:29},{emoji:'📈',name:'Проценты по вкладу',amt:'2 192 ₽',pct:27},{emoji:'🎁',name:'Кэшбек и бонусы',amt:'1 799 ₽',pct:22}],
+    sysExp: [{emoji:'🏠',name:'Жилье',amt:'24 500 ₽',pct:55},{emoji:'🏦',name:'Кредиты и займы',amt:'1 096 ₽',pct:14},{emoji:'🎯',name:'Цель',amt:'900 ₽',pct:11}],
+    sysBot: 'sad', sysMsg: 'Обязательные платежи составляют 45% ваших расходов',
+    noSysData: false
+  },
+  cat: {
+    label: 'КАТЕГОРИЯ',
+    sub: 'Подписка до 01-11-2026',
+    hasSub: true,
+    income: { value: '2 350.00 ₽', badge: {type:'info', text:'0%'}, bot: 'sleep', msg: 'Данные по выбранной категории за период' },
+    exp:    { value: '5 412.00 ₽', badge: {type:'error', text:'+8%'},  bot: 'sad',   msg: 'Расходы на категорию выросли на 8%' },
+    bal:    { value: '-3 062.00 ₽', badge: {type:'error', text:'-100%'}, bot: 'sad', msg: 'Расходы по категории превышают доходы' },
+    barLocked: false, lineLocked: false,
+    bars: [{v:60,l:'Янв'},{v:100,l:'Фев'},{v:40,l:'Март'}],
+    barLabels: ['1 800 ₽','3 012 ₽','600 ₽'],
+    lineMonths: ['январь','февраль','март'],
+    topExp: [{emoji:'🍎',name:'Продукты',amt:'2 350 ₽',pct:43},{emoji:'🛒',name:'Маркетплейсы',amt:'1 800 ₽',pct:33},{emoji:'🚗',name:'Авто',amt:'862 ₽',pct:16},{emoji:'💅',name:'Красота и уход за собой',amt:'400 ₽',pct:8}],
+    topInc: [{emoji:'💰',name:'Зарплата',amt:'2 350 ₽',pct:100}],
+    sysExp: [{emoji:'🏠',name:'Жилье',amt:'0 ₽',pct:0},{emoji:'🏦',name:'Кредиты и займы',amt:'0 ₽',pct:0},{emoji:'🎯',name:'Цель',amt:'0 ₽',pct:0}],
+    sysBot: 'sad', sysMsg: 'Похоже у меня нет данных по этим расходам в выбранный период',
+    noSysData: true
+  }
+};
+
+/* ====================================================
+   SUBSCRIPTION CONFIG
+==================================================== */
+const SUB_CONFIG = {
+  free: {locked: ['prev','3m','custom','cat']},
+  active: {locked: []}
+};
+
+let currentSub = 'free'; // default: free
+let currentPeriod = 'month';
+
+/* ====================================================
+   RENDER
+==================================================== */
+function renderPage(period) {
+  const d = PERIODS[period];
+  const isSub = currentSub === 'active';
+
+  // Header sub line
+  document.getElementById('hdrSubLine').textContent = isSub ? d.sub || '' : '';
+  document.getElementById('navBudgetLocked').style.display = isSub ? 'none' : 'block';
+
+  // KPI
+  renderKpi('income', d.income, isSub);
+  renderKpi('exp',    d.exp,    isSub);
+  renderKpi('bal',    d.bal,    isSub);
+
+  // Charts
+  renderBarChart(d.bars, d.barLabels, d.barLocked && !isSub);
+  renderLineChart(d.lineMonths, d.lineLocked && !isSub);
+
+  // Cat lists
+  renderCatList('topExpList', d.topExp, false);
+  renderCatList('topIncList', d.topInc, false);
+  renderCatList('sysExpList', d.sysExp, false);
+
+  // Sys bot
+  addSysBot(d.sysBot, d.sysMsg, d.noSysData);
+}
+
+function renderKpi(key, info, isSub) {
+  const IDS = {
+    income: ['incomeValue','incomeBadge','incomeBadgeText','incomeBot','incomeMsg'],
+    exp:    ['expValue',   'expBadge',   'expBadgeText',   'expBot',   'expMsg'],
+    bal:    ['balValue',   'balBadge',   'balBadgeText',   'balBot',   'balMsg'],
+  };
+  const [vid,bid,btid,botid,mid] = IDS[key] || [];
+  const valEl   = document.getElementById(vid);
+  const badgeEl = document.getElementById(bid);
+  const badgeText = document.getElementById(btid);
+  const botEl   = document.getElementById(botid);
+  const msgEl   = document.getElementById(mid);
+  if (!valEl || !info) return;
+
+  valEl.textContent = info.value;
+  msgEl.textContent = info.msg;
+  if (botEl) botEl.innerHTML = BOT_SVGS[isSub ? info.bot : 'sad'] || BOT_SVGS.sad;
+
+  if (isSub && info.badge) {
+    badgeEl.className = `kpi-badge ${info.badge.type}`;
+    badgeEl.querySelector('.kpi-badge-dot').style.background =
+      info.badge.type === 'success' ? 'var(--c-success-main)' :
+      info.badge.type === 'error' ? 'var(--c-error-main)' : 'var(--c-info-main)';
+    badgeText.textContent = info.badge.text;
+  } else {
+    badgeEl.className = 'kpi-badge hidden';
+  }
+}
+
+function renderBarChart(bars, labels, locked) {
+  const data = document.getElementById('barData');
+  const timeline = document.getElementById('barTimeline');
+  const lockEl = document.getElementById('barLock');
+
+  if (locked) {
+    lockEl.classList.remove('hidden');
+  } else {
+    lockEl.classList.add('hidden');
+  }
+
+  const maxH = Math.max(...bars.map(b => b.v));
+  const chartH = 180; // px available for bars
+
+  data.innerHTML = '';
+  timeline.innerHTML = '';
+
+  bars.forEach((bar, i) => {
+    const h = Math.round((bar.v / maxH) * chartH);
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    col.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex:1;max-width:52px;justify-content:flex-end';
+    const fill = document.createElement('div');
+    fill.className = 'bar-fill';
+    fill.style.height = h + 'px';
+    fill.style.width = '100%';
+    if (labels[i]) {
+      const inside = document.createElement('div');
+      inside.className = 'bar-label-inside';
+      inside.style.cssText = 'font-size:10px;font-weight:500;color:#fff;writing-mode:vertical-lr;text-orientation:mixed;position:absolute;bottom:4px;left:50%;transform:translateX(-50%);white-space:nowrap';
+      inside.textContent = labels[i];
+      fill.appendChild(inside);
+    }
+    fill.style.position = 'relative';
+    col.appendChild(fill);
+    data.appendChild(col);
+
+
+
+    const tick = document.createElement('div');
+    tick.className = 'bar-tick';
+    tick.textContent = bar.l;
+    timeline.appendChild(tick);
+  });
+}
+
+
+
+function renderLineChart(months, locked) {
+  const lockEl = document.getElementById('lineLock');
+  const timeline = document.getElementById('lineTimeline');
+  const group = document.getElementById('lineGroup');
+  const svgEl = document.getElementById('lineSvg');
+
+  if (locked) { lockEl.classList.remove('hidden'); } else { lockEl.classList.add('hidden'); }
+
+  timeline.innerHTML = '';
+  months.forEach(m => {
+    const t = document.createElement('span');
+    t.className = 'line-tick';
+    t.textContent = m;
+    timeline.appendChild(t);
+  });
+
+  // Data per point: [x, y, incomeVal, expVal, balVal]
+  const DATA_POINTS = [
+    { month: months[0]||'', x: 60,  income: '122 039 ₽', expense: '69 000 ₽', balance: '53 039 ₽' },
+    { month: months[1]||'', x: 200, income: '134 000 ₽', expense: '64 000 ₽', balance: '70 000 ₽' },
+    { month: months[2]||'', x: 340, income: '139 000 ₽', expense: '66 000 ₽', balance: '73 000 ₽' },
+  ];
+
+  const lineData = {
+    income:  { pts: [[60,63],[200,51],[340,51]],    color:'#2FBF71', bg:'#E6F7EF', textColor:'#1F7A4C', label:'доходы' },
+    expense: { pts: [[60,73],[200,123],[340,123]],  color:'#E5484D', bg:'#FDECEC', textColor:'#9B2C2C', label:'расходы' },
+    balance: { pts: [[60,190],[200,110],[340,110]], color:'#3B82F6', bg:'#EFF6FF', textColor:'#1E40AF', label:'баланс' },
+  };
+
+  group.innerHTML = '';
+
+  // Draw lines
+  Object.entries(lineData).forEach(([key, d]) => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    path.setAttribute('points', d.pts.map(p => p.join(',')).join(' '));
+    path.setAttribute('stroke', d.color);
+    path.setAttribute('stroke-width','1.8');
+    path.setAttribute('fill','none');
+    group.appendChild(path);
+  });
+
+  // Draw interactive circles on top
+  DATA_POINTS.forEach((dp, i) => {
+    Object.entries(lineData).forEach(([key, d]) => {
+      const [x, y] = d.pts[i];
+      // hit area (invisible, larger)
+      const hit = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      hit.setAttribute('cx', x); hit.setAttribute('cy', y); hit.setAttribute('r', '12');
+      hit.setAttribute('fill', 'transparent'); hit.style.cursor = 'pointer';
+      // visible dot
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('r', '4');
+      dot.setAttribute('fill', d.color);
+
+      hit.addEventListener('mouseenter', () => {
+        showLineTooltip(x, y, dp[key], key, svgEl);
+        dot.setAttribute('r', '6');
+      });
+      hit.addEventListener('mouseleave', () => {
+        hideLineTooltip();
+        dot.setAttribute('r', '4');
+      });
+
+      group.appendChild(dot);
+      group.appendChild(hit);
+    });
+  });
+}
+
+function showLineTooltip(svgX, svgY, value, seriesKey, svgEl) {
+  const tt      = document.getElementById('lineTooltip');
+  const bubble  = document.getElementById('lineTooltipBubble');
+  const notch   = document.getElementById('lineTooltipNotch');
+
+  const STYLE = {
+    expense: { cls:'expense', notchColor:'#FDECEC' },
+    income:  { cls:'income',  notchColor:'#E6F7EF' },
+    balance: { cls:'balance', notchColor:'#EFF6FF' },
+  };
+  const s = STYLE[seriesKey] || STYLE.expense;
+
+  bubble.className = 'line-tt__bubble ' + s.cls;
+  bubble.textContent = value;
+  notch.style.borderTopColor = s.notchColor;
+
+  // Convert SVG coords → container-relative px
+  const svgRect = svgEl.getBoundingClientRect();
+  const cRect   = svgEl.parentElement.getBoundingClientRect();
+  const scaleX  = svgRect.width  / 400;
+  const scaleY  = svgRect.height / 220;
+  const pxX = (svgRect.left - cRect.left) + svgX * scaleX;
+  const pxY = (svgRect.top  - cRect.top)  + svgY * scaleY;
+  const ttH = 36; // bubble ~28px + notch ~8px
+
+  tt.style.left    = pxX + 'px';          // translateX(-50%) centres it
+  tt.style.top     = (pxY - ttH - 6) + 'px';
+  tt.style.display = 'flex';
+}
+
+function hideLineTooltip() {
+  document.getElementById('lineTooltip').style.display = 'none';
+}
+
+function renderCatList(elId, items, locked) {
+  const el = document.getElementById(elId);
+  el.innerHTML = '';
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'cat-row';
+    row.innerHTML = `
+      <div class="cat-icon">${item.emoji}</div>
+      <div class="cat-info">
+        <div class="cat-name">${item.name}</div>
+        <div class="cat-amount">${item.amt} (${item.pct}%)</div>
+        <div class="cat-progress">
+          <div class="cat-progress-bg"></div>
+          <div class="cat-progress-fill" style="width:${item.pct}%"></div>
+        </div>
+      </div>`;
+    el.appendChild(row);
+  });
+}
+
+function addSysBot(emotion, msg, noData) {
+  const list = document.getElementById('sysExpList');
+  // remove existing bot row
+  const existing = list.parentNode.querySelector('.kpi-bot-row');
+  if (existing) existing.remove();
+  if (noData) {
+    const botRow = document.createElement('div');
+    botRow.className = 'kpi-bot-row';
+    botRow.style.marginTop = '8px';
+    botRow.innerHTML = `<div class="kpi-bot-avatar" id="sysBotAvatar"></div><div class="bot-bubble">${msg}</div>`;
+    botRow.querySelector('.kpi-bot-avatar').innerHTML = BOT_SVGS[emotion] || BOT_SVGS.happy;
+    list.parentNode.appendChild(botRow);
+  } else {
+    // add at bottom of sys list
+    const botRow = document.createElement('div');
+    botRow.className = 'kpi-bot-row';
+    botRow.style.marginTop = '12px';
+    botRow.innerHTML = `<div class="kpi-bot-avatar" id="sysBotAvatar"></div><div class="bot-bubble">${msg}</div>`;
+    botRow.querySelector('.kpi-bot-avatar').innerHTML = BOT_SVGS[emotion] || BOT_SVGS.happy;
+    list.parentNode.appendChild(botRow);
+  }
+}
+
+/* ====================================================
+   FILTER CHIPS & DROPDOWNS (history-style)
+==================================================== */
+
+/* ── Period chips ── */
+const PERIOD_CHIPS = {
+  month: document.getElementById('chipMonth'),
+  prev:  document.getElementById('chipPrev'),
+  '3m':  document.getElementById('chip3m'),
+};
+
+function initFilters() {
+
+  /* period chips */
+  Object.entries(PERIOD_CHIPS).forEach(([p, btn]) => {
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      if (SUB_CONFIG[currentSub].locked.includes(p)) return;
+      currentPeriod = p;
+      setActiveChip(p);
+      renderPage(p);
+      updateActiveChipsRow();
+    });
+  });
+
+  /* ── Category dropdown ── */
+  const ALL_CATS = [
+    'Продукты','Кафе и рестораны','Транспорт','Жильё','Товары в дом',
+    'Красота и уход за собой','Здоровье','Досуг и развлечения',
+    'Одежда и обувь','Техника','Кредиты и займы','Налоги и штрафы',
+    'Зарплата','Проценты по вкладу','Кэшбек и бонусы','Подарки','Возврат денег'
+  ];
+  let pendingCats = [];
+
+  function buildCatList() {
+    const list = document.getElementById('catDropdownList');
+    list.innerHTML = '';
+    ALL_CATS.forEach(cat => {
+      const row = document.createElement('div');
+      row.className = 'cat-option' + (pendingCats.includes(cat) ? ' is-selected' : '');
+      row.innerHTML = `<span>${cat}</span><span class="cat-check"></span>`;
+      row.addEventListener('click', () => {
+        const idx = pendingCats.indexOf(cat);
+        if (idx >= 0) pendingCats.splice(idx, 1); else pendingCats.push(cat);
+        row.classList.toggle('is-selected', pendingCats.includes(cat));
+        document.getElementById('btnCatConfirm').classList.toggle('has-selection', pendingCats.length > 0);
+      });
+      list.appendChild(row);
+    });
+    document.getElementById('btnCatConfirm').classList.toggle('has-selection', pendingCats.length > 0);
+  }
+
+  document.getElementById('chipCat').addEventListener('click', e => {
+    e.stopPropagation();
+    if (SUB_CONFIG[currentSub].locked.includes('cat')) return;
+    pendingCats = filterCats.slice();
+    buildCatList();
+    const dd = document.getElementById('catDropdown');
+    const opening = !dd.classList.contains('is-open');
+    dd.classList.toggle('is-open', opening);
+    document.getElementById('chipCat').classList.toggle('is-open', opening);
+    document.getElementById('catArrow').style.transform = opening ? 'rotate(180deg)' : '';
+    // close date dd
+    document.getElementById('dateDropdown').classList.remove('is-open');
+    document.getElementById('chipDates').classList.remove('is-open');
+    document.getElementById('datesArrow').style.transform = '';
+  });
+
+  document.getElementById('btnCatConfirm').addEventListener('click', () => {
+    filterCats = pendingCats.slice();
+    document.getElementById('catDropdown').classList.remove('is-open');
+    document.getElementById('chipCat').classList.remove('is-open');
+    document.getElementById('catArrow').style.transform = '';
+    document.getElementById('chipCat').classList.toggle('is-active', filterCats.length > 0);
+    currentPeriod = filterCats.length > 0 ? 'cat' : currentPeriod;
+    setActiveChip(filterCats.length > 0 ? 'cat' : currentPeriod);
+    renderPage(filterCats.length > 0 ? 'cat' : currentPeriod);
+    updateActiveChipsRow();
+  });
+
+  document.getElementById('btnCatSelectAll').addEventListener('click', () => {
+    pendingCats = ALL_CATS.slice();
+    buildCatList();
+  });
+
+  /* ── Calendar date picker ── */
+  let dpViewYear = new Date().getFullYear();
+  let dpViewMonth = new Date().getMonth();
+  let dpPending = { start: null, end: null };
+  const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const DOW = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+  function renderCal() {
+    document.getElementById('dpMonthLabel').textContent = MONTHS_RU[dpViewMonth] + ' ' + dpViewYear;
+    const dow = document.getElementById('dpDow');
+    dow.innerHTML = DOW.map(d => `<div class="dp-dow-cell">${d}</div>`).join('');
+    const grid = document.getElementById('dpGrid');
+    grid.innerHTML = '';
+    const first = new Date(dpViewYear, dpViewMonth, 1);
+    const startDow = (first.getDay() + 6) % 7; // Mon=0
+    const daysInMonth = new Date(dpViewYear, dpViewMonth + 1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+    let week = document.createElement('div'); week.className = 'dp-week';
+    for (let i = 0; i < startDow; i++) {
+      const empty = document.createElement('div'); empty.className = 'dp-day dp-day--empty'; empty.textContent = ' ';
+      week.appendChild(empty);
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(dpViewYear, dpViewMonth, d);
+      const cell = document.createElement('div');
+      let cls = 'dp-day';
+      if (date.getTime() === today.getTime()) cls += ' dp-day--today';
+      const s = dpPending.start, e = dpPending.end;
+      if (s && date.getTime() === s.getTime()) cls += ' dp-day--selected';
+      else if (e && date.getTime() === e.getTime()) cls += ' dp-day--selected';
+      else if (s && e && date > s && date < e) cls += ' dp-day--range';
+      cell.className = cls; cell.textContent = d;
+      cell.addEventListener('click', () => {
+        if (!dpPending.start || (dpPending.start && dpPending.end)) {
+          dpPending = { start: new Date(dpViewYear, dpViewMonth, d), end: null };
+        } else {
+          const picked = new Date(dpViewYear, dpViewMonth, d);
+          if (picked < dpPending.start) { dpPending = { start: picked, end: dpPending.start }; }
+          else { dpPending.end = picked; }
+        }
+        document.getElementById('btnDpConfirm').classList.toggle('is-ready', !!(dpPending.start && dpPending.end));
+        renderCal();
+      });
+      week.appendChild(cell);
+      if ((startDow + d) % 7 === 0 || d === daysInMonth) {
+        grid.appendChild(week); week = document.createElement('div'); week.className = 'dp-week';
+      }
+    }
+  }
+
+  document.getElementById('dpPrev').addEventListener('click', () => {
+    dpViewMonth--; if (dpViewMonth < 0) { dpViewMonth = 11; dpViewYear--; } renderCal();
+  });
+  document.getElementById('dpNext').addEventListener('click', () => {
+    dpViewMonth++; if (dpViewMonth > 11) { dpViewMonth = 0; dpViewYear++; } renderCal();
+  });
+
+  document.getElementById('chipDates').addEventListener('click', e => {
+    e.stopPropagation();
+    dpViewYear = new Date().getFullYear(); dpViewMonth = new Date().getMonth();
+    renderCal();
+    const dd = document.getElementById('dateDropdown');
+    const opening = !dd.classList.contains('is-open');
+    dd.classList.toggle('is-open', opening);
+    document.getElementById('chipDates').classList.toggle('is-open', opening);
+    document.getElementById('datesArrow').style.transform = opening ? 'rotate(180deg)' : '';
+    // close cat dd
+    document.getElementById('catDropdown').classList.remove('is-open');
+    document.getElementById('chipCat').classList.remove('is-open');
+    document.getElementById('catArrow').style.transform = '';
+  });
+
+  document.getElementById('btnDpConfirm').addEventListener('click', () => {
+    if (!dpPending.start || !dpPending.end) return;
+    filterDateRange = { start: dpPending.start, end: dpPending.end };
+    document.getElementById('dateDropdown').classList.remove('is-open');
+    document.getElementById('chipDates').classList.remove('is-open');
+    document.getElementById('datesArrow').style.transform = '';
+    document.getElementById('chipDates').classList.add('is-active');
+    currentPeriod = 'custom';
+    setActiveChip('custom');
+    renderPage('custom');
+    updateActiveChipsRow();
+  });
+
+  document.addEventListener('click', () => {
+    document.getElementById('catDropdown').classList.remove('is-open');
+    document.getElementById('chipCat').classList.remove('is-open');
+    document.getElementById('catArrow').style.transform = '';
+    document.getElementById('dateDropdown').classList.remove('is-open');
+    document.getElementById('chipDates').classList.remove('is-open');
+    document.getElementById('datesArrow').style.transform = '';
+  });
+  document.getElementById('catDropdown').addEventListener('click', e => e.stopPropagation());
+  document.getElementById('dateDropdown').addEventListener('click', e => e.stopPropagation());
+}
+
+let filterCats = [];
+let filterDateRange = null;
+
+function updateActiveChipsRow() {
+  const row = document.getElementById('activeChipsRow');
+  let html = '';
+  if (filterCats.length > 0) {
+    filterCats.forEach(cat => {
+      html += `<span class="active-chip">${cat}<button class="active-chip__x" data-remove-cat="${cat}">&#x2715;</button></span>`;
+    });
+  }
+  if (filterDateRange) {
+    const fmt = d => d.toLocaleDateString('ru-RU', {day:'2-digit',month:'2-digit'});
+    html += `<span class="active-chip">${fmt(filterDateRange.start)}–${fmt(filterDateRange.end)}<button class="active-chip__x" id="removeDateChip">&#x2715;</button></span>`;
+  }
+  if (html) html += `<button class="active-chip active-chip--clear" id="clearAllFilters">Очистить все</button>`;
+  row.innerHTML = html;
+  row.classList.toggle('has-chips', !!(filterCats.length || filterDateRange));
+
+  row.querySelectorAll('[data-remove-cat]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const cat = btn.getAttribute('data-remove-cat');
+      filterCats = filterCats.filter(c => c !== cat);
+      document.getElementById('chipCat').classList.toggle('is-active', filterCats.length > 0);
+      if (!filterCats.length) { currentPeriod = 'month'; setActiveChip('month'); renderPage('month'); }
+      updateActiveChipsRow();
+    });
+  });
+  const rmDate = document.getElementById('removeDateChip');
+  if (rmDate) rmDate.addEventListener('click', e => {
+    e.stopPropagation();
+    filterDateRange = null;
+    document.getElementById('chipDates').classList.remove('is-active');
+    currentPeriod = 'month'; setActiveChip('month'); renderPage('month');
+    updateActiveChipsRow();
+  });
+  const clearAll = document.getElementById('clearAllFilters');
+  if (clearAll) clearAll.addEventListener('click', () => {
+    filterCats = []; filterDateRange = null;
+    document.getElementById('chipCat').classList.remove('is-active');
+    document.getElementById('chipDates').classList.remove('is-active');
+    currentPeriod = 'month'; setActiveChip('month'); renderPage('month');
+    updateActiveChipsRow();
+  });
+}
+
+function setActiveChip(p) {
+  // Reset all period chips
+  ['chipMonth','chipPrev','chip3m'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('is-active');
+  });
+  if (p === 'month') document.getElementById('chipMonth')?.classList.add('is-active');
+  else if (p === 'prev') document.getElementById('chipPrev')?.classList.add('is-active');
+  else if (p === '3m') document.getElementById('chip3m')?.classList.add('is-active');
+}
+
+function applySubLocks() {
+  const locked = SUB_CONFIG[currentSub].locked;
+  const chipMap = { prev:'chipPrev', '3m':'chip3m', cat:'chipCat', custom:'chipDates' };
+  Object.entries(chipMap).forEach(([p, id]) => {
+    const chip = document.getElementById(id);
+    if (!chip) return;
+    if (locked.includes(p)) {
+      chip.style.cursor = 'not-allowed';
+      chip.style.opacity = locked.includes(p) ? '0.3' : '';
+      chip.style.pointerEvents = 'none';
+    } else {
+      chip.style.cursor = '';
+      chip.style.opacity = '';
+      chip.style.pointerEvents = '';
+    }
+  });
+}
+
+/* ====================================================
+   DEMO NAV (scenario switcher)
+==================================================== */
+function addDemoNav() {
+  const nav = document.createElement('div');
+  nav.style.cssText = 'position:sticky;top:0;z-index:300;background:#1E2A38;padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap';
+  nav.innerHTML = `
+    <span style="color:rgba(255,255,255,.5);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-right:4px">Сценарий:</span>
+    <button onclick="switchSub('free')"   class="demo-b active-b" style="padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);background:none;cursor:pointer;transition:all 180ms" id="db-free">Бесплатный</button>
+    <button onclick="switchSub('active')" class="demo-b" style="padding:5px 14px;border-radius:999px;font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);background:none;cursor:pointer;transition:all 180ms" id="db-active">Подписка активна</button>`;
+  document.body.insertBefore(nav, document.body.firstChild);
+}
+
+window.switchSub = function(sub) {
+  currentSub = sub;
+  document.getElementById('db-free').style.background   = sub === 'free'   ? 'var(--c-primary)' : 'none';
+  document.getElementById('db-free').style.borderColor  = sub === 'free'   ? 'var(--c-primary)' : 'rgba(255,255,255,.2)';
+  document.getElementById('db-free').style.color        = sub === 'free'   ? '#fff' : 'rgba(255,255,255,.7)';
+  document.getElementById('db-active').style.background = sub === 'active' ? 'var(--c-primary)' : 'none';
+  document.getElementById('db-active').style.borderColor= sub === 'active' ? 'var(--c-primary)' : 'rgba(255,255,255,.2)';
+  document.getElementById('db-active').style.color      = sub === 'active' ? '#fff' : 'rgba(255,255,255,.7)';
+
+  applySubLocks();
+
+  // if current period is now locked → switch to month
+  if (SUB_CONFIG[sub].locked.includes(currentPeriod)) {
+    currentPeriod = 'month';
+    setActiveChip('month');
+  }
+  renderPage(currentPeriod);
+};
+
+/* ====================================================
+   INIT
+==================================================== */
+addDemoNav();
+initFilters();
+applySubLocks();
+renderPage('month');
+</script>
+</body>
+</html>

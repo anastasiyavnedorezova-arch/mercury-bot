@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Обратная связь — Mercury</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --color-brand-main:          #1E2A38;
+  --color-brand-primary:       #4C9AFF;
+  --color-brand-primary-hover: #3B82F6;
+  --color-brand-primary-active:#2563EB;
+  --color-white:               #FFFFFF;
+  --color-bg-main:             #F5F7FA;
+  --color-bg-alt:              #EEF2F6;
+  --color-border:              #E2E8F0;
+  --color-border-hard:         #CBD5E1;
+  --color-text-main:           #2D3748;
+  --color-text-second:         #6B7280;
+  --color-text-disabled:       #9CA3AF;
+  --color-error-main:          #E5484D;
+  --color-error-bg:            #FEF2F2;
+  --color-error-text:          #E5484D;
+  --color-info-bg:             #EFF6FF;
+  --color-info-text:           #1E40AF;
+  --font-display: 'Manrope', sans-serif;
+  --font-body:    'Manrope', sans-serif;
+  --radius-sm:    8px;
+  --radius-md:    12px;
+  --radius-card:  20px;
+  --radius-pill:  999px;
+  --shadow-card:  0 2px 8px rgba(0,0,0,.08);
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--color-text-main);
+  background: var(--color-bg-main);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--color-brand-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+ul, ol { list-style: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+/* ============================================================
+   LAYOUT
+============================================================ */
+.shell { display:flex; flex-direction:column; min-height:100vh; }
+
+/* HEADER */
+.lk-header {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 20px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.lk-logo { display:flex; align-items:center; gap:8px; text-decoration:none; flex-shrink:0; }
+.lk-logo-icon {
+  width: 36px; height: 36px;
+  background: var(--color-brand-main);
+  border-radius: 10px;
+  display: flex; align-items:center; justify-content:center;
+}
+.lk-logo-text { font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--color-brand-main); }
+.lk-userinfo { display:flex; flex-direction:column; gap:1px; flex:1; }
+.lk-username { font-size:14px; font-weight:600; color:var(--color-text-main); }
+.lk-username span { font-weight:400; color:var(--color-text-second); }
+.lk-subscription { font-size:12px; color:var(--color-text-second); font-weight:500; }
+.lk-header-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  font-family:var(--font-body); font-size:14px; font-weight:600; letter-spacing:.01em;
+  border-radius:var(--radius-md); border:1.5px solid transparent;
+  cursor:pointer; white-space:nowrap; transition:all 200ms ease;
+  padding:8px 18px; line-height:20px; text-decoration:none;
+}
+.btn-secondary { background:var(--color-white); color:var(--color-text-main); border-color:var(--color-border-hard); }
+.btn-secondary:hover { border-color:var(--color-brand-primary); color:var(--color-brand-primary); text-decoration:none; }
+.btn-primary { background:var(--color-brand-primary); color:#fff; border-color:var(--color-brand-primary); }
+.btn-primary:hover { background:var(--color-brand-primary-hover); border-color:var(--color-brand-primary-hover); text-decoration:none; }
+.btn-sm { padding:5px 14px; font-size:13px; }
+.hamburger-btn {
+  display:none; width:36px; height:36px;
+  align-items:center; justify-content:center;
+  border-radius:8px; background:var(--color-bg-alt); flex-shrink:0;
+}
+
+/* PAGE BODY */
+.page-body { display:flex; flex:1; overflow:hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 238px;
+  background: var(--color-white);
+  border-right: 1px solid var(--color-border);
+  padding: 20px 16px;
+  display:flex; flex-direction:column; gap:2px;
+  flex-shrink:0; overflow-y:auto;
+  height: calc(100vh - 64px);
+  position:sticky; top:64px;
+}
+.nav-item {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 12px; border-radius:var(--radius-sm);
+  font-size:14px; font-weight:400; color:var(--color-text-second);
+  text-decoration:none; transition:all 180ms ease; min-height:38px;
+}
+.nav-item:hover { background:var(--color-bg-main); color:var(--color-text-main); text-decoration:none; }
+.nav-item.active { background:var(--color-info-bg); color:var(--color-brand-primary); font-weight:700; }
+.nav-item.active .nav-icon path,
+.nav-item.active .nav-icon rect { fill:var(--color-brand-primary); }
+.nav-item.active .nav-icon circle[stroke] { stroke:var(--color-brand-primary); }
+.nav-icon { width:20px; height:20px; flex-shrink:0; }
+.nav-label { flex:1; }
+.nav-sep { height:1px; background:var(--color-border-hard); margin:8px 0; }
+.nav-item-soon { opacity:.5; pointer-events:none; }
+.nav-label-wrap { display:flex; flex-direction:column; gap:1px; }
+.nav-sublabel-soon { font-size:11px; font-weight:500; color:var(--color-text-disabled); }
+.nav-sublabel-locked { font-size:11px; font-weight:600; color:#E5484D; }
+
+/* MAIN */
+.main-content { flex:1; padding:28px 40px 80px; overflow-y:auto; }
+.page-title {
+  font-family:var(--font-display);
+  font-size:32px; font-weight:600; line-height:40px;
+  color:var(--color-text-main);
+  margin-bottom:20px;
+}
+
+/* ============================================================
+   FEEDBACK FORM CARD
+============================================================ */
+.feedback-card {
+  width: 500px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Fields wrapper */
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Field group (input + error message) */
+.field-group { display:flex; flex-direction:column; gap:6px; }
+
+/* INPUT */
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-text-main);
+  background: var(--color-white);
+  border: 1px solid var(--color-border-hard);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+  -webkit-appearance: none;
+}
+.form-input::placeholder { color: var(--color-text-disabled); }
+
+.form-input:focus {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px rgba(76,154,255,.15);
+}
+
+/* TEXTAREA */
+textarea.form-input {
+  height: 220px;
+  resize: none;
+  align-items: flex-start;
+  display: block;
+}
+
+/* ERROR state */
+.form-input.has-error {
+  border-color: var(--color-error-main);
+  background: var(--color-error-bg);
+}
+.form-input.has-error:focus {
+  border-color: var(--color-error-main);
+  box-shadow: 0 0 0 3px rgba(229,72,77,.12);
+}
+
+/* SUCCESS state (after submit — disabled) */
+.form-input:disabled {
+  background: var(--color-bg-alt);
+  border-color: var(--color-bg-alt);
+  color: var(--color-text-disabled);
+  cursor: default;
+}
+
+/* Error message */
+.field-error {
+  display: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--color-error-text);
+}
+.field-error.visible { display: block; }
+
+/* SUBMIT BUTTON */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.submit-btn {
+  height: 40px;
+  padding: 10px 20px;
+  background: var(--color-brand-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: .01em;
+  cursor: pointer;
+  transition: background 180ms ease, transform 100ms ease;
+  white-space: nowrap;
+}
+.submit-btn:hover:not(:disabled) { background: var(--color-brand-primary-hover); }
+.submit-btn:active:not(:disabled) { background: var(--color-brand-primary-active); transform: scale(.98); }
+.submit-btn:disabled {
+  background: var(--color-bg-alt);
+  color: var(--color-text-disabled);
+  cursor: default;
+}
+
+/* SUCCESS STATE */
+.success-message {
+  display: none;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 22px;
+  color: var(--color-brand-primary);
+}
+.success-message.visible { display: block; }
+
+/* New request button (shown after success) */
+.new-request-btn {
+  display: none;
+  width: 100%;
+  height: 40px;
+  padding: 10px 20px;
+  background: var(--color-brand-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: .01em;
+  cursor: pointer;
+  transition: background 180ms ease;
+  justify-content: center;
+  align-items: center;
+}
+.new-request-btn:hover { background: var(--color-brand-primary-hover); }
+.new-request-btn.visible { display: flex; }
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 768px) {
+  .sidebar { display:none; }
+  .main-content { padding:20px 16px 60px; }
+  .page-title { font-size:24px; line-height:32px; }
+  .lk-header { padding:0 12px; gap:10px; }
+  .lk-logo-text { font-size:14px; }
+  .lk-header-actions .btn-secondary { display:none; }
+  .hamburger-btn { display:flex; }
+  .feedback-card { width:100%; padding:20px; border-radius: var(--radius-card); }
+  .submit-btn { width:100%; }
+  .form-actions { justify-content: stretch; }
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="lk-header">
+    <a href="#" class="lk-logo">
+      <div class="lk-logo-icon">
+        <svg width="22" height="20" viewBox="0 0 22 20" fill="none">
+          <path d="M4 8L8.5 14.5L11 11.5L13.5 14.5L18 8" stroke="#2FBF71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="11" cy="17.5" r="1.8" fill="white"/>
+        </svg>
+      </div>
+      <span class="lk-logo-text">mercury</span>
+    </a>
+    <div class="lk-userinfo">
+      <div class="lk-username"><span>Кабинет: </span>@nastya_v</div>
+      <div class="lk-subscription">Подписка до 01-11-2026</div>
+    </div>
+    <div class="lk-header-actions">
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-secondary btn-sm">Открыть в Telegram</a>
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-primary btn-sm">Запустить бота</a>
+      <button class="hamburger-btn" aria-label="Меню">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+          <rect width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="6" width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="12" width="18" height="2" rx="1" fill="#2D3748"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="7" height="17" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="11" y="9" width="7.5" height="9.5" rx="2" fill="#CBD5E1"/>
+          <rect x="11" y="1.5" width="7.5" height="6" rx="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Дашборд</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="8" y="1.5" width="4" height="17" rx="2" fill="#CBD5E1"/>
+          <rect x="2.5" y="6.5" width="4" height="12" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x="13.5" y="10.5" width="4" height="8" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x=".5" y="17" width="19" height="1.5" rx=".75" fill="#CBD5E1" opacity=".5"/>
+        </svg>
+        <span class="nav-label">Учёт по месяцам</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="3" width="17" height="5" rx="2" fill="#CBD5E1"/>
+          <rect x="1.5" y="10" width="17" height="8" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="4" y="12.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">История</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="6" width="16" height="13" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <path d="M7 6V4a3 3 0 016 0v2" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="12" r="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Категории</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/>
+          <path d="M10 6v4l2.5 2.5" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Мои цели</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="4" width="17" height="14" rx="2.5" fill="#CBD5E1" opacity=".5"/>
+          <path d="M10 1.5v3M6 1.5v3M14 1.5v3" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="11.5" y="8" width="5" height="6" rx="1.5" fill="#CBD5E1"/>
+          <rect x="3.5" y="8.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label-wrap">
+          <span class="nav-label">Мой бюджет</span>
+          <span class="nav-sublabel-locked">Только в подписке</span>
+        </span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7.5" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="14" cy="6" r="4.5" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Аналитика</span>
+      </a>
+      <a href="#" class="nav-item nav-item-soon">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8.5" stroke="#CBD5E1" stroke-width="1.5"/>
+          <path d="M7 10h6M10 7v6" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label-wrap">
+          <span class="nav-label">Семейный доступ</span>
+          <span class="nav-sublabel-soon">Скоро!</span>
+        </span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="10" cy="10" r="3" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Мой профиль</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <path d="M10 6v4M10 14h.01" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Как установить бота</span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/>
+          <path d="M10 6v5" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="10" cy="14" r="1.2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Вопросы и ответы</span>
+      </a>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M3 4h14a1.5 1.5 0 010 3H3a1.5 1.5 0 010-3zM3 10h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="14" cy="15" r="3" fill="currentColor"/>
+          <path d="M13 15l.8.8L15 14" stroke="white" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-label">Обратная связь</span>
+      </a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <h1 class="page-title">Обратная связь</h1>
+
+      <div class="feedback-card" id="feedbackCard">
+        <div class="form-fields" id="formFields">
+
+          <!-- Email -->
+          <div class="field-group">
+            <input
+              class="form-input"
+              type="email"
+              id="fieldEmail"
+              placeholder="Ваш e-mail*"
+              autocomplete="email"
+              inputmode="email"
+            />
+            <span class="field-error" id="errorEmail"></span>
+          </div>
+
+          <!-- Subject -->
+          <div class="field-group">
+            <input
+              class="form-input"
+              type="text"
+              id="fieldSubject"
+              placeholder="Тема письма"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- Message -->
+          <div class="field-group">
+            <textarea
+              class="form-input"
+              id="fieldMessage"
+              placeholder="Напишите ваш вопрос*"
+            ></textarea>
+            <span class="field-error" id="errorMessage"></span>
+          </div>
+
+        </div><!-- /form-fields -->
+
+        <!-- Success message (hidden until submit) -->
+        <p class="success-message" id="successMsg">
+          Ваше сообщение отправлено. Обычно мы отвечаем в течение 24 рабочих часов, но стараемся как можно быстрее.
+        </p>
+
+        <!-- Actions -->
+        <div class="form-actions" id="formActions">
+          <button class="submit-btn" id="submitBtn" type="button" disabled>
+            Отправить
+          </button>
+        </div>
+
+        <!-- New request button (after success) -->
+        <button class="new-request-btn" id="newRequestBtn" type="button">
+          Отправить новое обращение
+        </button>
+
+      </div><!-- /feedback-card -->
+    </main>
+  </div>
+</div>
+
+<script>
+const emailField   = document.getElementById('fieldEmail');
+const subjectField = document.getElementById('fieldSubject');
+const messageField = document.getElementById('fieldMessage');
+const submitBtn    = document.getElementById('submitBtn');
+const errorEmail   = document.getElementById('errorEmail');
+const errorMessage = document.getElementById('errorMessage');
+const successMsg   = document.getElementById('successMsg');
+const newRequestBtn= document.getElementById('newRequestBtn');
+const formActions  = document.getElementById('formActions');
+
+// ---- Enable/disable submit based on required fields ----
+function updateSubmitState() {
+  const hasEmail   = emailField.value.trim().length > 0;
+  const hasMessage = messageField.value.trim().length > 0;
+  submitBtn.disabled = !(hasEmail && hasMessage);
+}
+
+emailField.addEventListener('input', () => {
+  clearError(emailField, errorEmail);
+  updateSubmitState();
+});
+messageField.addEventListener('input', () => {
+  clearError(messageField, errorMessage);
+  updateSubmitState();
+});
+
+// ---- Validation helpers ----
+function isValidEmail(val) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val.trim());
+}
+
+function showError(input, errorEl, msg) {
+  input.classList.add('has-error');
+  errorEl.textContent = msg;
+  errorEl.classList.add('visible');
+}
+
+function clearError(input, errorEl) {
+  input.classList.remove('has-error');
+  errorEl.classList.remove('visible');
+}
+
+// ---- Remove error on blur if field is now valid ----
+emailField.addEventListener('blur', () => {
+  const val = emailField.value.trim();
+  if (val.length === 0) {
+    showError(emailField, errorEmail, 'Обязательное поле для заполнения');
+  } else if (!isValidEmail(val)) {
+    showError(emailField, errorEmail, 'Возникла ошибка');
+  } else {
+    clearError(emailField, errorEmail);
+  }
+});
+
+messageField.addEventListener('blur', () => {
+  if (messageField.value.trim().length === 0) {
+    showError(messageField, errorMessage, 'Обязательное поле для заполнения');
+  } else {
+    clearError(messageField, errorMessage);
+  }
+});
+
+// ---- Submit ----
+submitBtn.addEventListener('click', () => {
+  let valid = true;
+
+  // Validate email
+  const emailVal = emailField.value.trim();
+  if (emailVal.length === 0) {
+    showError(emailField, errorEmail, 'Обязательное поле для заполнения');
+    valid = false;
+  } else if (!isValidEmail(emailVal)) {
+    showError(emailField, errorEmail, 'Возникла ошибка');
+    valid = false;
+  } else {
+    clearError(emailField, errorEmail);
+  }
+
+  // Validate message
+  if (messageField.value.trim().length === 0) {
+    showError(messageField, errorMessage, 'Обязательное поле для заполнения');
+    valid = false;
+  } else {
+    clearError(messageField, errorMessage);
+  }
+
+  if (!valid) return;
+
+  // ---- SUCCESS ----
+  // Disable all fields
+  emailField.disabled   = true;
+  subjectField.disabled = true;
+  messageField.disabled = true;
+
+  // Hide submit, show success message + new request button
+  formActions.style.display    = 'none';
+  successMsg.classList.add('visible');
+  newRequestBtn.classList.add('visible');
+});
+
+// ---- New request ----
+newRequestBtn.addEventListener('click', () => {
+  // Reset form
+  emailField.value   = '';
+  subjectField.value = '';
+  messageField.value = '';
+
+  emailField.disabled   = false;
+  subjectField.disabled = false;
+  messageField.disabled = false;
+
+  clearError(emailField, errorEmail);
+  clearError(messageField, errorMessage);
+
+  formActions.style.display = '';
+  successMsg.classList.remove('visible');
+  newRequestBtn.classList.remove('visible');
+
+  submitBtn.disabled = true;
+  emailField.focus();
+});
+</script>
+
+</body>
+</html>

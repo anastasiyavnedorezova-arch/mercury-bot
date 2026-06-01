@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Меркури — Мои цели</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   ДИЗАЙН-ТОКЕНЫ
+============================================================ */
+:root {
+  --color-brand-main:               #1E2A38;
+  --color-brand-primary:            #4C9AFF;
+  --color-brand-primary-hover:      #2563EB;
+  --color-brand-accent-green:       #2FBF71;
+  --color-brand-accent-green-hover: #28A862;
+  --color-white:                    #FFFFFF;
+  --color-bg-main:                  #F5F7FA;
+  --color-bg-alt:                   #EEF2F6;
+  --color-border:                   #E2E8F0;
+  --color-border-hard:              #CBD5E1;
+  --color-text-main:                #2D3748;
+  --color-text-second:              #6B7280;
+  --color-text-disabled:            #9CA3AF;
+  --color-success-main:             #2FBF71;
+  --color-success-bg:               #E6F7EF;
+  --color-success-text:             #1F7A4C;
+  --color-error-main:               #E5484D;
+  --color-error-bg:                 #FDECEC;
+  --color-error-text:               #9B2C2C;
+  --color-warning-bg:               #FFF7E6;
+  --color-warning-text:             #92400E;
+  --color-info-bg:                  #EFF6FF;
+  --color-info-text:                #1E40AF;
+  --color-card-bg:                  #FFFFFF;
+  --color-card-border:              #E2E8F0;
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-card: 20px;
+  --radius-modal:24px;
+  --radius-pill: 999px;
+  --shadow-sm:   0 2px 8px rgba(15,23,42,0.04);
+  --shadow-md:   0 8px 24px rgba(15,23,42,0.08);
+  --shadow-lg:   0 16px 40px rgba(15,23,42,0.12);
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* ============================================================
+   СБРОС
+============================================================ */
+*,*::before,*::after { box-sizing: border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--color-text-main);
+  background: var(--color-bg-main);
+  -webkit-font-smoothing: antialiased;
+}
+a { color:inherit; text-decoration:none; }
+ul,ol { list-style:none; }
+button { cursor:pointer; border:none; background:none; font-family:inherit; }
+
+/* ============================================================
+   DEMO NAV (переключатель сценариев)
+============================================================ */
+.demo-nav {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--color-brand-main);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.demo-nav span {
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+.demo-btn {
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+  transition: all 180ms ease;
+  white-space: nowrap;
+}
+.demo-btn:hover,
+.demo-btn.active {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: white;
+}
+
+/* ============================================================
+   LAYOUT SHELL
+============================================================ */
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 44px);
+}
+
+/* ============================================================
+   LK HEADER
+============================================================ */
+.lk-header {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 20px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.lk-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.lk-logo-icon {
+  width: 36px; height: 36px;
+  background: var(--color-brand-main);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.lk-logo-icon svg { display:block; }
+.lk-logo-text {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-brand-main);
+}
+.lk-userinfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+}
+.lk-username {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+.lk-username span { font-weight: 400; color: var(--color-text-second); }
+.lk-subscription {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-second);
+  font-weight: 500;
+}
+.lk-badge {
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+.lk-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-radius: var(--radius-md);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 200ms ease;
+  padding: 8px 18px;
+  line-height: 20px;
+}
+.btn-secondary {
+  background: var(--color-white);
+  color: var(--color-text-main);
+  border-color: var(--color-border-hard);
+}
+.btn-secondary:hover { border-color: var(--color-brand-primary); color: var(--color-brand-primary); }
+.btn-primary {
+  background: var(--color-brand-primary);
+  color: var(--color-white);
+  border-color: var(--color-brand-primary);
+}
+.btn-primary:hover { background: var(--color-brand-primary-hover); border-color: var(--color-brand-primary-hover); }
+.btn-accent {
+  background: var(--color-brand-accent-green);
+  color: var(--color-white);
+  border-color: var(--color-brand-accent-green);
+}
+.btn-accent:hover { background: var(--color-brand-accent-green-hover); }
+.btn-dark {
+  background: var(--color-brand-main);
+  color: var(--color-white);
+  border-color: var(--color-brand-main);
+  border-radius: var(--radius-sm);
+}
+.btn-danger-text {
+  background: var(--color-white);
+  color: var(--color-error-text);
+  border-color: var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  padding: 5px 12px;
+}
+.btn-sm { padding: 5px 14px; font-size: 13px; }
+.btn-disabled {
+  background: var(--color-bg-alt) !important;
+  color: var(--color-text-disabled) !important;
+  border-color: var(--color-bg-alt) !important;
+  pointer-events: none;
+  border-radius: var(--radius-sm);
+}
+.btn-mini-dark {
+  background: var(--color-brand-main);
+  color: white;
+  border-color: var(--color-brand-main);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  padding: 5px 12px;
+}
+
+/* ============================================================
+   PAGE LAYOUT (sidebar + content)
+============================================================ */
+.page-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ============================================================
+   SIDEBAR
+============================================================ */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--color-white);
+  border-right: 1px solid var(--color-border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--color-text-second);
+  cursor: pointer;
+  transition: all 150ms ease;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--color-bg-main); color: var(--color-text-main); }
+.nav-item.active {
+  background: #EAF2FF;
+  color: var(--color-brand-primary);
+  font-weight: 700;
+}
+.nav-item.active .nav-icon path,
+.nav-item.active .nav-icon rect { fill: var(--color-brand-primary); }
+.nav-icon { width:18px; height:18px; flex-shrink:0; }
+.nav-label { flex:1; }
+.nav-sublabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-error-main);
+  line-height: 14px;
+}
+.nav-soon { font-size:11px; color: var(--color-text-disabled); }
+.nav-sep {
+  height: 1px;
+  background: var(--color-border);
+  margin: 8px 4px;
+}
+.nav-item-disabled { opacity: 0.5; pointer-events: none; }
+.nav-item-disabled .nav-label { display:flex; flex-direction:column; }
+
+/* ============================================================
+   MAIN CONTENT
+============================================================ */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 40px 80px;
+}
+.page-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  letter-spacing: -0.01em;
+  margin-bottom: 24px;
+}
+
+/* ============================================================
+   CARDS GRID
+============================================================ */
+.goals-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-content: flex-start;
+}
+
+/* ============================================================
+   GOAL CARD
+============================================================ */
+.goal-card {
+  width: 320px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.goal-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.goal-card.faded { opacity: 0.3; pointer-events: none; }
+
+.goal-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-text-main);
+  letter-spacing: -0.01em;
+}
+.goal-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.goal-meta-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.goal-meta-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+.goal-sum-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.goal-sum-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+.badges-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.badge {
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge-info { background: var(--color-info-bg); color: var(--color-info-text); }
+.badge-success { background: var(--color-success-bg); color: var(--color-success-text); }
+
+.goal-monthly-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.goal-monthly-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.goal-monthly-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Progress */
+.goal-progress-section { display:flex; flex-direction:column; gap:6px; }
+.goal-progress-label { font-size:12px; font-weight:500; color: var(--color-text-second); }
+.progress-track {
+  width: 100%;
+  height: 12px;
+  background: var(--color-success-bg);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--color-brand-accent-green);
+  border-radius: var(--radius-pill);
+  transition: width 600ms cubic-bezier(0.4,0,0.2,1);
+}
+.goal-progress-amount {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-success-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+/* Card actions */
+.card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* ============================================================
+   BOT GOAL CARD
+============================================================ */
+.bot-goal-card {
+  width: 320px;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.bot-goal-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.bot-message-area {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bot-avatar {
+  width: 44px; height: 44px;
+  background: var(--color-brand-main);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.bot-avatar-mascot {
+  background: none;
+  border-radius: 0;
+  width: 50px; height: 50px;
+}
+.bot-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-main);
+  opacity: 0.5;
+  margin-bottom: 6px;
+}
+.bot-bubble {
+  background: var(--color-bg-alt);
+  border-radius: 16px 16px 16px 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-main);
+  position: relative;
+}
+.bot-bubble + .bot-bubble {
+  margin-top: 6px;
+}
+.bot-card-action {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   LOCKED CARD OVERLAY
+============================================================ */
+.goal-locked-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.42);
+  backdrop-filter: blur(3px);
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  z-index: 2;
+}
+.goal-locked-overlay .lock-icon { color: white; }
+.goal-locked-text {
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ============================================================
+   SUBSCRIPTION EXPIRED BANNER
+============================================================ */
+.expired-banner {
+  width: 100%;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.expired-block {
+  flex: 1;
+  min-width: 240px;
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.expired-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-main);
+}
+.expired-text strong { font-weight: 700; }
+@media (max-width: 768px) {
+  .expired-banner { flex-direction: column; gap: 0; }
+  .expired-block { align-items: center; text-align: center; }
+  .expired-block .btn { align-self: stretch; justify-content: center; }
+}
+
+/* ============================================================
+   MODAL OVERLAY
+============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 200ms ease;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-modal);
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 250ms cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+.modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  color: var(--color-text-main);
+  margin-bottom: 0;
+}
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--color-text-second);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+/* Modal choose-goal */
+.modal-choose {
+  max-width: 500px;
+  padding: 32px;
+  border-radius: 24px;
+  position: relative;
+  gap: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  transition: background 150ms ease;
+  cursor: pointer;
+}
+.modal-close:hover { background: var(--color-bg-alt); }
+.modal-radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--color-white);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.modal-radio-item:hover { background: #F5F7FA; }
+.modal-radio-item.selected .radio-label {
+  color: var(--color-brand-primary);
+  font-weight: 700;
+}
+.radio-circle {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--color-brand-primary);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms ease;
+}
+.radio-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--color-brand-primary);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.modal-radio-item.selected .radio-dot { opacity: 1; }
+.radio-label {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--color-text-main);
+  transition: all 150ms ease;
+}
+.modal-actions-choose {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.btn-confirm {
+  height: 40px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 20px;
+  border: none;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+.btn-confirm-disabled {
+  background: var(--color-bg-alt);
+  color: var(--color-text-disabled);
+  pointer-events: none;
+}
+.btn-confirm-active {
+  background: var(--color-brand-primary);
+  color: white;
+  pointer-events: auto;
+}
+.btn-confirm-active:hover { background: var(--color-brand-primary-hover); }
+.modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+/* Mobile: modal */
+@media (max-width: 600px) {
+  .modal-choose {
+    max-width: 100%;
+    padding: 20px;
+    border-radius: 20px;
+    gap: 20px;
+  }
+  .modal-title { font-size: 20px; line-height: 28px; }
+  .modal-radio-item { padding: 6px 12px; }
+  .radio-label { font-size: 15px; }
+  .modal-actions-choose {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .modal-actions-choose .btn-confirm,
+  .modal-actions-choose .btn-secondary {
+    width: 100%;
+    justify-content: center;
+    border-radius: 10px;
+  }
+}
+
+/* ============================================================
+   SCENARIO PANELS
+============================================================ */
+.scenario { display: none; }
+.scenario.visible { display: flex; flex-direction: column; }
+
+/* ============================================================
+   RESPONSIVE — MOBILE
+============================================================ */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { padding: 20px 16px 80px; }
+  .page-title { font-size: 22px; margin-bottom: 16px; }
+  .lk-header { padding: 0 12px; gap: 10px; }
+  .lk-logo-text { font-size:14px; }
+  .lk-header-actions .btn-secondary { display: none; }
+  .goals-grid { gap: 12px; }
+  .goal-card,
+  .bot-goal-card { width: 100%; }
+  .expired-banner { flex-direction: column; gap: 0; }
+  .expired-block { padding: 12px 0; align-items: center; text-align: center; }
+  .lk-subscription { font-size: 11px; }
+  .hamburger-btn { display: flex; }
+}
+.hamburger-btn {
+  display: none;
+  width: 36px; height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--color-bg-alt);
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<!-- DEMO NAVIGATION -->
+<div class="demo-nav">
+  <span>Сценарий:</span>
+  <button class="demo-btn active" onclick="showScenario('free-no-goals')">Бесплатный / нет целей</button>
+  <button class="demo-btn" onclick="showScenario('free-with-goal')">Бесплатный / есть цель</button>
+  <button class="demo-btn" onclick="showScenario('active-no-goals')">Подписка / нет целей</button>
+  <button class="demo-btn" onclick="showScenario('active-1-goal')">Подписка / 1 цель</button>
+  <button class="demo-btn" onclick="showScenario('active-2-goals')">Подписка / 2 цели</button>
+  <button class="demo-btn" onclick="showScenario('active-3-goals')">Подписка / 3 цели (лимит)</button>
+  <button class="demo-btn" onclick="showScenario('expired-3-goals')">Подписка истекла</button>
+  <button class="demo-btn" onclick="showScenario('expired-chose-1')">Истекла / выбрал 1 цель</button>
+</div>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="lk-header">
+    <a href="#" class="lk-logo">
+      <div class="lk-logo-icon">
+        <svg width="22" height="20" viewBox="0 0 22 20" fill="none">
+          <path d="M4 7L8.5 13.5L11 10.5L13.5 13.5L18 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="11" cy="17" r="1.5" fill="#2FBF71"/>
+        </svg>
+      </div>
+      <span class="lk-logo-text">mercury</span>
+    </a>
+
+    <div class="lk-userinfo">
+      <div class="lk-username"><span>Кабинет: </span>@anna_finance</div>
+      <!-- subscription info — меняется по сценарию -->
+      <div class="lk-subscription" id="header-sub-info"></div>
+    </div>
+
+    <div class="lk-header-actions">
+      <button class="btn btn-secondary btn-sm">Открыть в Telegram</button>
+      <button class="btn btn-primary btn-sm">Запустить бота</button>
+      <button class="hamburger-btn" aria-label="Меню">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+          <path d="M0 1h18M0 7h18M0 13h18" stroke="#2D3748" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-body">
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="7" height="17" rx="2" fill="#CBD5E1" opacity="0.5"/>
+          <rect x="11" y="9" width="7.5" height="9.5" rx="2" fill="#CBD5E1"/>
+          <rect x="11" y="1.5" width="7.5" height="6" rx="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Дашборд</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="8" y="1.5" width="4" height="17" rx="2" fill="#CBD5E1"/>
+          <rect x="2.5" y="6.5" width="4" height="12" rx="2" fill="#CBD5E1" opacity="0.7"/>
+          <rect x="13.5" y="10.5" width="4" height="8" rx="2" fill="#CBD5E1" opacity="0.7"/>
+          <rect x="0.5" y="17" width="19" height="1.5" rx="0.75" fill="#CBD5E1" opacity="0.5"/>
+        </svg>
+        <span class="nav-label">Учёт по месяцам</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="3" width="17" height="5" rx="2" fill="#CBD5E1"/>
+          <rect x="1.5" y="10" width="17" height="8" rx="2" fill="#CBD5E1" opacity="0.5"/>
+          <rect x="4" y="12.5" width="5" height="1.5" rx="0.75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">История</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="6" width="16" height="13" rx="3" fill="#CBD5E1" opacity="0.5"/>
+          <path d="M7 6V4a3 3 0 016 0v2" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="12" r="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Категории</span>
+      </a>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.8" fill="none"/>
+          <path d="M10 6v4l2.5 2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Мои цели</span>
+      </a>
+      <a href="#" class="nav-item" id="nav-budget">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="4" width="17" height="14" rx="2.5" fill="#CBD5E1" opacity="0.5"/>
+          <path d="M10 1.5v3M6 1.5v3M14 1.5v3" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="11.5" y="8" width="5" height="6" rx="1.5" fill="#CBD5E1"/>
+          <rect x="3.5" y="8.5" width="5" height="1.5" rx="0.75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label" id="nav-budget-label">Мой бюджет</span>
+        <span class="nav-sublabel" id="nav-budget-sub" style="display:none">Только в подписке</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7.5" fill="#CBD5E1" opacity="0.5"/>
+          <circle cx="14" cy="6" r="4.5" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Аналитика</span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity="0.5"/>
+          <circle cx="10" cy="10" r="3" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Мой профиль</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2.5L17.5 17.5H2.5L10 2.5Z" fill="#CBD5E1" opacity="0.5"/>
+          <rect x="9" y="8" width="2" height="5" rx="1" fill="#CBD5E1"/>
+          <circle cx="10" cy="15" r="1" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Вопросы и ответы</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M3 4h14a1.5 1.5 0 010 3H3a1.5 1.5 0 010-3zM3 10h10" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="14" cy="15" r="3" fill="#CBD5E1"/>
+          <path d="M13 15l.8.8L15 14" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-label">Обратная связь</span>
+      </a>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-content">
+      <h1 class="page-title">Мои финансовые цели</h1>
+
+      <!-- =========================================================
+           SCENARIO: FREE + NO GOALS
+      ========================================================= -->
+      <div class="scenario visible" id="sc-free-no-goals">
+        <div class="goals-grid">
+          <!-- BotGoal card — no goals state -->
+          <div class="bot-goal-card">
+            <div class="bot-message-area">
+              <div class="bot-avatar bot-avatar-mascot">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.164C34.5229 10.1642 42.2425 16.8065 42.2426 24.9999C42.2426 33.1934 34.5229 39.8357 25.0004 39.8358C21.6954 39.8358 18.607 39.0356 15.9838 37.6483C14.8357 38.6506 13.3427 39.2583 11.8187 39.3192C12.6048 38.2968 13.054 37.0214 13.0961 35.7333C9.80671 33.0317 7.7572 29.2217 7.7572 24.9999C7.75724 16.8064 15.4776 10.164 25.0004 10.164ZM8.24939 19.1269C7.37824 20.9923 6.9369 22.9668 6.93689 24.9999C6.93689 27.0349 7.37803 29.0084 8.24939 30.873C5.92146 30.1075 4.22693 28.5922 4.22693 24.9999C4.22696 21.5925 5.92127 19.8923 8.24939 19.1269ZM41.7504 19.1269C44.0783 19.8924 45.7728 21.5926 45.7728 24.9999C45.7728 28.5922 44.0783 30.1075 41.7504 30.873C42.6217 29.0084 43.0629 27.0349 43.0629 24.9999C43.0629 22.9668 42.6214 20.9923 41.7504 19.1269ZM35.7162 20.5702C35.0751 19.86 34.1868 20.5702 33.2299 20.5702H16.7699C15.8243 20.5702 14.9191 19.8699 14.2836 20.5702C12.4842 22.553 11.4115 22.2891 11.4115 24.9999C11.4115 27.7108 12.4842 27.769 14.2836 29.7519C14.919 30.452 16.0774 30.329 17.0228 30.329H33.5365C34.4819 30.329 35.0808 31.0291 35.7162 30.329C37.5155 28.3461 38.5883 27.7108 38.5883 24.9999C38.5882 22.3003 37.5023 22.5491 35.7162 20.5702Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8899 9.776 26.0516V24.4536C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4536V26.0516C40.2632 28.8899 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.642 28.679C26.9635 28.679 27.1996 28.3714 27.109 28.0632C26.8429 27.1566 26.0053 26.4947 25.0125 26.4947C24.0201 26.4947 23.1825 27.1566 22.9164 28.0632C22.8258 28.3714 23.0623 28.679 23.3834 28.679H26.642Z" fill="#1E2A38"/>
+<path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/>
+<path d="M15.756 25.7676C15.6216 25.7676 15.5129 25.8767 15.5128 26.0108C15.5128 26.145 15.6216 26.254 15.756 26.254C15.8902 26.2537 15.9982 26.1449 15.9982 26.0108C15.9981 25.8768 15.8902 25.7679 15.756 25.7676ZM16.8761 24.1612C16.4856 24.1612 16.1691 24.4778 16.1691 24.8682C16.1691 25.2586 16.4856 25.5752 16.8761 25.5753C17.2667 25.5753 17.5831 25.2586 17.5831 24.8682C17.5831 24.4778 17.2667 24.1612 16.8761 24.1612Z" fill="white"/>
+<path d="M13.9297 23.108C13.8069 23.1409 13.7052 23.2372 13.6712 23.369C13.6208 23.5637 13.7387 23.7626 13.9336 23.813C13.9643 23.821 14.7007 24.0056 15.662 23.748C16.6229 23.4906 17.1683 22.9625 17.1913 22.9401C17.3344 22.7992 17.3364 22.5686 17.1958 22.4251C17.0549 22.2821 16.8255 22.2796 16.6817 22.4195C16.6727 22.428 16.2355 22.8403 15.4735 23.0445C14.7071 23.2498 14.1202 23.1088 14.1142 23.1074C14.0513 23.0912 13.9879 23.0924 13.9297 23.108Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4025C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4025C31.7394 24.1961 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.1961 36.1083 25.4025Z" fill="#1E2A38"/>
+<path d="M33.6444 25.7675C33.5109 25.7675 33.4013 25.8766 33.4012 26.0107C33.4012 26.1449 33.5108 26.2539 33.6444 26.2539C33.7789 26.2537 33.8876 26.1448 33.8876 26.0107C33.8875 25.8767 33.7788 25.7677 33.6444 25.7675ZM34.7645 24.1611C34.3746 24.1613 34.0575 24.4778 34.0575 24.8681C34.0575 25.2584 34.3746 25.5749 34.7645 25.5752C35.1551 25.5752 35.4715 25.2585 35.4716 24.8681C35.4716 24.4777 35.1551 24.1611 34.7645 24.1611Z" fill="white"/>
+<path d="M33.1121 22.3277C32.9897 22.2949 32.8536 22.3275 32.7582 22.4247C32.6174 22.5681 32.62 22.7993 32.7635 22.9403C32.7863 22.9627 33.3316 23.4907 34.2923 23.7481C35.2539 24.0058 35.9902 23.8212 36.0206 23.8131C36.2159 23.7628 36.3326 23.5641 36.2824 23.3694C36.2321 23.1752 36.0341 23.0582 35.8402 23.1076C35.8282 23.1105 35.2434 23.249 34.4808 23.0446C33.7146 22.8393 33.2767 22.4237 33.2725 22.4195C33.2266 22.3741 33.1708 22.3434 33.1121 22.3277Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2876C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>
+              </div>
+              <div>
+                <div class="bot-time">Сегодня</div>
+                <div class="bot-bubble">
+                  Упс! Похоже, у тебя ещё нет установленных финансовых целей. Давай сделаем? 🤗
+                </div>
+              </div>
+            </div>
+            <div class="bot-card-action">
+              <button class="btn btn-primary" onclick="showModal('add-goal')">+ Добавить цель</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           SCENARIO: FREE + HAS 1 GOAL
+      ========================================================= -->
+      <div class="scenario" id="sc-free-with-goal">
+        <div class="goals-grid">
+          <!-- Goal card -->
+          <div class="goal-card">
+            <div class="goal-name">Купить однокомнатную квартиру</div>
+            <div class="goal-meta">
+              <div class="goal-meta-label">Когда:</div>
+              <div class="goal-meta-value">март 2036</div>
+            </div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row">
+                <div class="goal-sum-value">5 326 973 ₽</div>
+                <div class="badges-row">
+                  <span class="badge badge-info">+ инфляция</span>
+                </div>
+              </div>
+            </div>
+            <div class="goal-monthly-section">
+              <div class="goal-monthly-label">Нужно откладывать:</div>
+              <div class="goal-monthly-value">57 851 ₽/мес</div>
+            </div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width:10%"></div>
+              </div>
+              <div class="goal-progress-amount">532 697 ₽ (10%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-mini-dark btn-sm">Редактировать</button>
+            </div>
+          </div>
+
+          <!-- BotGoal — limit reached (free: 1 goal max), locked -->
+          <div class="bot-goal-card" style="position:relative;min-height:200px;">
+            <div class="bot-message-area" style="opacity:0.15;pointer-events:none">
+              <div class="bot-avatar bot-avatar-mascot">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0005 10.164C34.5231 10.1642 42.2426 16.8065 42.2427 24.9999C42.2427 33.1934 34.5231 39.8357 25.0005 39.8358C21.6955 39.8358 18.6072 39.0356 15.9839 37.6483C14.8359 38.6506 13.3429 39.2583 11.8188 39.3192C12.605 38.2968 13.0541 37.0214 13.0962 35.7333C9.80683 33.0317 7.75732 29.2217 7.75732 24.9999C7.75736 16.8064 15.4778 10.164 25.0005 10.164ZM8.24951 19.1269C7.37837 20.9923 6.93702 22.9668 6.93701 24.9999C6.93701 27.0349 7.37815 29.0084 8.24951 30.873C5.92158 30.1075 4.22705 28.5922 4.22705 24.9999C4.22708 21.5925 5.9214 19.8923 8.24951 19.1269ZM41.7505 19.1269C44.0784 19.8924 45.7729 21.5926 45.7729 24.9999C45.7729 28.5922 44.0785 30.1075 41.7505 30.873C42.6219 29.0084 43.063 27.0349 43.063 24.9999C43.063 22.9668 42.6216 20.9923 41.7505 19.1269ZM35.7163 20.5702C35.0752 19.8601 34.1869 20.5702 33.23 20.5702H16.77C15.8244 20.5702 14.9192 19.8699 14.2837 20.5702C12.4843 22.553 11.4116 22.2891 11.4116 24.9999C11.4116 27.7108 12.4844 27.769 14.2837 29.7519C14.9192 30.452 16.0775 30.329 17.0229 30.329H33.5366C34.482 30.329 35.0809 31.029 35.7163 30.329C37.5156 28.3461 38.5884 27.7108 38.5884 24.9999C38.5884 22.3003 37.5024 22.5491 35.7163 20.5702Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8898 9.776 26.0515V24.4535C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.642 26.4946C26.9635 26.4946 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0125 28.679C24.0201 28.679 23.1825 28.017 22.9164 27.1104C22.8258 26.8022 23.0623 26.4946 23.3834 26.4946H26.642Z" fill="#1E2A38"/>
+<path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/>
+<path d="M16.6392 25.7676C16.7735 25.7676 16.8823 25.8767 16.8823 26.0108C16.8823 26.145 16.7736 26.254 16.6392 26.254C16.5049 26.2537 16.397 26.1449 16.397 26.0108C16.397 25.8768 16.505 25.7678 16.6392 25.7676ZM15.519 24.1612C15.9096 24.1612 16.2261 24.4778 16.2261 24.8682C16.226 25.2585 15.9096 25.5752 15.519 25.5752C15.1285 25.5752 14.8121 25.2586 14.812 24.8682C14.812 24.4778 15.1285 24.1612 15.519 24.1612Z" fill="white"/>
+<path d="M14.5944 27.9517C14.4672 27.9517 14.3441 27.8849 14.2771 27.7664C14.178 27.5914 14.2404 27.3688 14.4156 27.2697C14.4432 27.254 15.1067 26.8851 16.1019 26.8851C17.0967 26.8851 17.7602 27.254 17.7883 27.2697C17.963 27.3688 18.0246 27.5909 17.9259 27.766C17.8268 27.9405 17.6059 28.0024 17.4308 27.9044C17.4199 27.8985 16.8908 27.6134 16.1019 27.6134C15.3086 27.6134 14.7781 27.9016 14.7727 27.9045C14.7161 27.9365 14.6546 27.9517 14.5944 27.9517Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4024C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4024C31.7394 24.196 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.196 36.1083 25.4024Z" fill="#1E2A38"/>
+<path d="M34.4619 25.7675C34.5955 25.7675 34.705 25.8766 34.7051 26.0107C34.7051 26.1449 34.5955 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1448 34.2188 26.0107C34.2188 25.8767 34.3275 25.7677 34.4619 25.7675ZM33.3418 24.1611C33.7317 24.1613 34.0488 24.4778 34.0488 24.8681C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8681C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/>
+<path d="M32.4163 27.9516C32.2895 27.9516 32.1664 27.8849 32.0995 27.7663C32.0006 27.5913 32.0629 27.3687 32.238 27.2696C32.2659 27.2539 32.9292 26.885 33.9238 26.885C34.9194 26.885 35.5828 27.2539 35.6101 27.2696C35.7858 27.3687 35.847 27.5909 35.7482 27.7659C35.6493 27.9405 35.4278 28.0022 35.2532 27.9044C35.2424 27.8985 34.7134 27.6134 33.9238 27.6134C33.1306 27.6134 32.6001 27.9015 32.595 27.9044C32.5388 27.9364 32.477 27.9516 32.4163 27.9516Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2876C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>
+              </div>
+              <div>
+                <div class="bot-time">Сегодня</div>
+                <div class="bot-bubble">Если хочешь, можем поставить ещё одну цель 🤗</div>
+              </div>
+            </div>
+            <div class="goal-locked-overlay" style="border-radius:22px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 10V7a6 6 0 10-12 0v3" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <rect x="3" y="10" width="18" height="12" rx="2.5" fill="rgba(255,255,255,0.2)" stroke="white" stroke-width="1.5"/>
+                <circle cx="12" cy="16" r="2" fill="white"/>
+              </svg>
+              <div class="goal-locked-text">Разблокируй больше целей в подписке</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           SCENARIO: ACTIVE SUBSCRIPTION + NO GOALS
+      ========================================================= -->
+      <div class="scenario" id="sc-active-no-goals">
+        <div class="goals-grid">
+          <div class="bot-goal-card">
+            <div class="bot-message-area">
+              <div class="bot-avatar bot-avatar-mascot">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0004 10.164C34.5229 10.1642 42.2425 16.8065 42.2426 24.9999C42.2426 33.1934 34.5229 39.8357 25.0004 39.8358C21.6954 39.8358 18.607 39.0356 15.9838 37.6483C14.8357 38.6506 13.3427 39.2583 11.8187 39.3192C12.6048 38.2968 13.054 37.0214 13.0961 35.7333C9.80671 33.0317 7.7572 29.2217 7.7572 24.9999C7.75724 16.8064 15.4776 10.164 25.0004 10.164ZM8.24939 19.1269C7.37824 20.9923 6.9369 22.9668 6.93689 24.9999C6.93689 27.0349 7.37803 29.0084 8.24939 30.873C5.92146 30.1075 4.22693 28.5922 4.22693 24.9999C4.22696 21.5925 5.92127 19.8923 8.24939 19.1269ZM41.7504 19.1269C44.0783 19.8924 45.7728 21.5926 45.7728 24.9999C45.7728 28.5922 44.0783 30.1075 41.7504 30.873C42.6217 29.0084 43.0629 27.0349 43.0629 24.9999C43.0629 22.9668 42.6214 20.9923 41.7504 19.1269ZM35.7162 20.5702C35.0751 19.86 34.1868 20.5702 33.2299 20.5702H16.7699C15.8243 20.5702 14.9191 19.8699 14.2836 20.5702C12.4842 22.553 11.4115 22.2891 11.4115 24.9999C11.4115 27.7108 12.4842 27.769 14.2836 29.7519C14.919 30.452 16.0774 30.329 17.0228 30.329H33.5365C34.4819 30.329 35.0808 31.0291 35.7162 30.329C37.5155 28.3461 38.5883 27.7108 38.5883 24.9999C38.5882 22.3003 37.5023 22.5491 35.7162 20.5702Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8899 9.776 26.0516V24.4536C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4536V26.0516C40.2632 28.8899 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.642 28.679C26.9635 28.679 27.1996 28.3714 27.109 28.0632C26.8429 27.1566 26.0053 26.4947 25.0125 26.4947C24.0201 26.4947 23.1825 27.1566 22.9164 28.0632C22.8258 28.3714 23.0623 28.679 23.3834 28.679H26.642Z" fill="#1E2A38"/>
+<path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/>
+<path d="M15.756 25.7676C15.6216 25.7676 15.5129 25.8767 15.5128 26.0108C15.5128 26.145 15.6216 26.254 15.756 26.254C15.8902 26.2537 15.9982 26.1449 15.9982 26.0108C15.9981 25.8768 15.8902 25.7679 15.756 25.7676ZM16.8761 24.1612C16.4856 24.1612 16.1691 24.4778 16.1691 24.8682C16.1691 25.2586 16.4856 25.5752 16.8761 25.5753C17.2667 25.5753 17.5831 25.2586 17.5831 24.8682C17.5831 24.4778 17.2667 24.1612 16.8761 24.1612Z" fill="white"/>
+<path d="M13.9297 23.108C13.8069 23.1409 13.7052 23.2372 13.6712 23.369C13.6208 23.5637 13.7387 23.7626 13.9336 23.813C13.9643 23.821 14.7007 24.0056 15.662 23.748C16.6229 23.4906 17.1683 22.9625 17.1913 22.9401C17.3344 22.7992 17.3364 22.5686 17.1958 22.4251C17.0549 22.2821 16.8255 22.2796 16.6817 22.4195C16.6727 22.428 16.2355 22.8403 15.4735 23.0445C14.7071 23.2498 14.1202 23.1088 14.1142 23.1074C14.0513 23.0912 13.9879 23.0924 13.9297 23.108Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4025C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4025C31.7394 24.1961 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.1961 36.1083 25.4025Z" fill="#1E2A38"/>
+<path d="M33.6444 25.7675C33.5109 25.7675 33.4013 25.8766 33.4012 26.0107C33.4012 26.1449 33.5108 26.2539 33.6444 26.2539C33.7789 26.2537 33.8876 26.1448 33.8876 26.0107C33.8875 25.8767 33.7788 25.7677 33.6444 25.7675ZM34.7645 24.1611C34.3746 24.1613 34.0575 24.4778 34.0575 24.8681C34.0575 25.2584 34.3746 25.5749 34.7645 25.5752C35.1551 25.5752 35.4715 25.2585 35.4716 24.8681C35.4716 24.4777 35.1551 24.1611 34.7645 24.1611Z" fill="white"/>
+<path d="M33.1121 22.3277C32.9897 22.2949 32.8536 22.3275 32.7582 22.4247C32.6174 22.5681 32.62 22.7993 32.7635 22.9403C32.7863 22.9627 33.3316 23.4907 34.2923 23.7481C35.2539 24.0058 35.9902 23.8212 36.0206 23.8131C36.2159 23.7628 36.3326 23.5641 36.2824 23.3694C36.2321 23.1752 36.0341 23.0582 35.8402 23.1076C35.8282 23.1105 35.2434 23.249 34.4808 23.0446C33.7146 22.8393 33.2767 22.4237 33.2725 22.4195C33.2266 22.3741 33.1708 22.3434 33.1121 22.3277Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2876C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>
+              </div>
+              <div>
+                <div class="bot-time">Сегодня</div>
+                <div class="bot-bubble">Упс! Похоже, у тебя ещё нет установленных финансовых целей. Давай сделаем? 🤗</div>
+              </div>
+            </div>
+            <div class="bot-card-action">
+              <button class="btn btn-primary" onclick="showModal('add-goal')">+ Добавить цель</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           SCENARIO: ACTIVE + 1 GOAL
+      ========================================================= -->
+      <div class="scenario" id="sc-active-1-goal">
+        <div class="goals-grid">
+          <!-- Goal card with inflation + yield badges -->
+          <div class="goal-card">
+            <div class="goal-name">Купить однокомнатную квартиру</div>
+            <div class="goal-meta">
+              <div class="goal-meta-label">Когда:</div>
+              <div class="goal-meta-value">март 2036</div>
+            </div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row">
+                <div class="goal-sum-value">5 326 973 ₽</div>
+                <div class="badges-row">
+                  <span class="badge badge-info">+ инфляция</span>
+                  <span class="badge badge-success">+ доходность</span>
+                </div>
+              </div>
+            </div>
+            <div class="goal-monthly-section">
+              <div class="goal-monthly-label">Нужно откладывать:</div>
+              <div class="goal-monthly-value">57 851 ₽/мес</div>
+            </div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width:10%"></div>
+              </div>
+              <div class="goal-progress-amount">532 697 ₽ (10%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-mini-dark btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <!-- Bot — add more -->
+          <div class="bot-goal-card">
+            <div class="bot-message-area">
+              <div class="bot-avatar bot-avatar-mascot">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0005 10.164C34.5231 10.1642 42.2426 16.8065 42.2427 24.9999C42.2427 33.1934 34.5231 39.8357 25.0005 39.8358C21.6955 39.8358 18.6072 39.0356 15.9839 37.6483C14.8359 38.6506 13.3429 39.2583 11.8188 39.3192C12.605 38.2968 13.0541 37.0214 13.0962 35.7333C9.80683 33.0317 7.75732 29.2217 7.75732 24.9999C7.75736 16.8064 15.4778 10.164 25.0005 10.164ZM8.24951 19.1269C7.37837 20.9923 6.93702 22.9668 6.93701 24.9999C6.93701 27.0349 7.37815 29.0084 8.24951 30.873C5.92158 30.1075 4.22705 28.5922 4.22705 24.9999C4.22708 21.5925 5.9214 19.8923 8.24951 19.1269ZM41.7505 19.1269C44.0784 19.8924 45.7729 21.5926 45.7729 24.9999C45.7729 28.5922 44.0785 30.1075 41.7505 30.873C42.6219 29.0084 43.063 27.0349 43.063 24.9999C43.063 22.9668 42.6216 20.9923 41.7505 19.1269ZM35.7163 20.5702C35.0752 19.8601 34.1869 20.5702 33.23 20.5702H16.77C15.8244 20.5702 14.9192 19.8699 14.2837 20.5702C12.4843 22.553 11.4116 22.2891 11.4116 24.9999C11.4116 27.7108 12.4844 27.769 14.2837 29.7519C14.9192 30.452 16.0775 30.329 17.0229 30.329H33.5366C34.482 30.329 35.0809 31.029 35.7163 30.329C37.5156 28.3461 38.5884 27.7108 38.5884 24.9999C38.5884 22.3003 37.5024 22.5491 35.7163 20.5702Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8898 9.776 26.0515V24.4535C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.642 26.4946C26.9635 26.4946 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0125 28.679C24.0201 28.679 23.1825 28.017 22.9164 27.1104C22.8258 26.8022 23.0623 26.4946 23.3834 26.4946H26.642Z" fill="#1E2A38"/>
+<path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/>
+<path d="M16.6392 25.7676C16.7735 25.7676 16.8823 25.8767 16.8823 26.0108C16.8823 26.145 16.7736 26.254 16.6392 26.254C16.5049 26.2537 16.397 26.1449 16.397 26.0108C16.397 25.8768 16.505 25.7678 16.6392 25.7676ZM15.519 24.1612C15.9096 24.1612 16.2261 24.4778 16.2261 24.8682C16.226 25.2585 15.9096 25.5752 15.519 25.5752C15.1285 25.5752 14.8121 25.2586 14.812 24.8682C14.812 24.4778 15.1285 24.1612 15.519 24.1612Z" fill="white"/>
+<path d="M14.5944 27.9517C14.4672 27.9517 14.3441 27.8849 14.2771 27.7664C14.178 27.5914 14.2404 27.3688 14.4156 27.2697C14.4432 27.254 15.1067 26.8851 16.1019 26.8851C17.0967 26.8851 17.7602 27.254 17.7883 27.2697C17.963 27.3688 18.0246 27.5909 17.9259 27.766C17.8268 27.9405 17.6059 28.0024 17.4308 27.9044C17.4199 27.8985 16.8908 27.6134 16.1019 27.6134C15.3086 27.6134 14.7781 27.9016 14.7727 27.9045C14.7161 27.9365 14.6546 27.9517 14.5944 27.9517Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4024C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4024C31.7394 24.196 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.196 36.1083 25.4024Z" fill="#1E2A38"/>
+<path d="M34.4619 25.7675C34.5955 25.7675 34.705 25.8766 34.7051 26.0107C34.7051 26.1449 34.5955 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1448 34.2188 26.0107C34.2188 25.8767 34.3275 25.7677 34.4619 25.7675ZM33.3418 24.1611C33.7317 24.1613 34.0488 24.4778 34.0488 24.8681C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8681C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/>
+<path d="M32.4163 27.9516C32.2895 27.9516 32.1664 27.8849 32.0995 27.7663C32.0006 27.5913 32.0629 27.3687 32.238 27.2696C32.2659 27.2539 32.9292 26.885 33.9238 26.885C34.9194 26.885 35.5828 27.2539 35.6101 27.2696C35.7858 27.3687 35.847 27.5909 35.7482 27.7659C35.6493 27.9405 35.4278 28.0022 35.2532 27.9044C35.2424 27.8985 34.7134 27.6134 33.9238 27.6134C33.1306 27.6134 32.6001 27.9015 32.595 27.9044C32.5388 27.9364 32.477 27.9516 32.4163 27.9516Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2876C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>
+              </div>
+              <div>
+                <div class="bot-time">Сегодня</div>
+                <div class="bot-bubble">Ты молодец! Цели поставлены, а значит — достижимы! 💪</div>
+                <div class="bot-bubble" style="margin-top:6px;">Если хочешь, можем поставить ещё одну цель 🤗</div>
+              </div>
+            </div>
+            <div class="bot-card-action">
+              <button class="btn btn-primary" onclick="showModal('add-goal')">+ Добавить цель</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           SCENARIO: ACTIVE + 2 GOALS
+      ========================================================= -->
+      <div class="scenario" id="sc-active-2-goals">
+        <div class="goals-grid">
+          <div class="goal-card">
+            <div class="goal-name">Купить однокомнатную квартиру</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">март 2036</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row">
+                <div class="goal-sum-value">5 326 973 ₽</div>
+                <div class="badges-row">
+                  <span class="badge badge-info">+ инфляция</span>
+                  <span class="badge badge-success">+ доходность</span>
+                </div>
+              </div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">57 851 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:10%"></div></div>
+              <div class="goal-progress-amount">532 697 ₽ (10%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-mini-dark btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <div class="goal-card">
+            <div class="goal-name">Купить машину</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">июнь 2028</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row">
+                <div class="goal-sum-value">2 800 000 ₽</div>
+                <div class="badges-row"><span class="badge badge-info">+ инфляция</span></div>
+              </div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">38 500 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>
+              <div class="goal-progress-amount">0 ₽ (0%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-mini-dark btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <!-- Bot — can still add 1 more -->
+          <div class="bot-goal-card">
+            <div class="bot-message-area">
+              <div class="bot-avatar bot-avatar-mascot">
+                <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.0005 10.164C34.5231 10.1642 42.2426 16.8065 42.2427 24.9999C42.2427 33.1934 34.5231 39.8357 25.0005 39.8358C21.6955 39.8358 18.6072 39.0356 15.9839 37.6483C14.8359 38.6506 13.3429 39.2583 11.8188 39.3192C12.605 38.2968 13.0541 37.0214 13.0962 35.7333C9.80683 33.0317 7.75732 29.2217 7.75732 24.9999C7.75736 16.8064 15.4778 10.164 25.0005 10.164ZM8.24951 19.1269C7.37837 20.9923 6.93702 22.9668 6.93701 24.9999C6.93701 27.0349 7.37815 29.0084 8.24951 30.873C5.92158 30.1075 4.22705 28.5922 4.22705 24.9999C4.22708 21.5925 5.9214 19.8923 8.24951 19.1269ZM41.7505 19.1269C44.0784 19.8924 45.7729 21.5926 45.7729 24.9999C45.7729 28.5922 44.0785 30.1075 41.7505 30.873C42.6219 29.0084 43.063 27.0349 43.063 24.9999C43.063 22.9668 42.6216 20.9923 41.7505 19.1269ZM35.7163 20.5702C35.0752 19.8601 34.1869 20.5702 33.23 20.5702H16.77C15.8244 20.5702 14.9192 19.8699 14.2837 20.5702C12.4843 22.553 11.4116 22.2891 11.4116 24.9999C11.4116 27.7108 12.4844 27.769 14.2837 29.7519C14.9192 30.452 16.0775 30.329 17.0229 30.329H33.5366C34.482 30.329 35.0809 31.029 35.7163 30.329C37.5156 28.3461 38.5884 27.7108 38.5884 24.9999C38.5884 22.3003 37.5024 22.5491 35.7163 20.5702Z" fill="#2FBF71"/>
+<path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8898 9.776 26.0515V24.4535C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/>
+<path d="M26.642 26.4946C26.9635 26.4946 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0125 28.679C24.0201 28.679 23.1825 28.017 22.9164 27.1104C22.8258 26.8022 23.0623 26.4946 23.3834 26.4946H26.642Z" fill="#1E2A38"/>
+<path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/>
+<path d="M16.6392 25.7676C16.7735 25.7676 16.8823 25.8767 16.8823 26.0108C16.8823 26.145 16.7736 26.254 16.6392 26.254C16.5049 26.2537 16.397 26.1449 16.397 26.0108C16.397 25.8768 16.505 25.7678 16.6392 25.7676ZM15.519 24.1612C15.9096 24.1612 16.2261 24.4778 16.2261 24.8682C16.226 25.2585 15.9096 25.5752 15.519 25.5752C15.1285 25.5752 14.8121 25.2586 14.812 24.8682C14.812 24.4778 15.1285 24.1612 15.519 24.1612Z" fill="white"/>
+<path d="M14.5944 27.9517C14.4672 27.9517 14.3441 27.8849 14.2771 27.7664C14.178 27.5914 14.2404 27.3688 14.4156 27.2697C14.4432 27.254 15.1067 26.8851 16.1019 26.8851C17.0967 26.8851 17.7602 27.254 17.7883 27.2697C17.963 27.3688 18.0246 27.5909 17.9259 27.766C17.8268 27.9405 17.6059 28.0024 17.4308 27.9044C17.4199 27.8985 16.8908 27.6134 16.1019 27.6134C15.3086 27.6134 14.7781 27.9016 14.7727 27.9045C14.7161 27.9365 14.6546 27.9517 14.5944 27.9517Z" fill="#1E2A38"/>
+<path d="M36.1083 25.4024C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4024C31.7394 24.196 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.196 36.1083 25.4024Z" fill="#1E2A38"/>
+<path d="M34.4619 25.7675C34.5955 25.7675 34.705 25.8766 34.7051 26.0107C34.7051 26.1449 34.5955 26.2539 34.4619 26.2539C34.3275 26.2537 34.2188 26.1448 34.2188 26.0107C34.2188 25.8767 34.3275 25.7677 34.4619 25.7675ZM33.3418 24.1611C33.7317 24.1613 34.0488 24.4778 34.0488 24.8681C34.0488 25.2584 33.7317 25.575 33.3418 25.5752C32.9512 25.5752 32.6348 25.2585 32.6348 24.8681C32.6348 24.4777 32.9512 24.1611 33.3418 24.1611Z" fill="white"/>
+<path d="M32.4163 27.9516C32.2895 27.9516 32.1664 27.8849 32.0995 27.7663C32.0006 27.5913 32.0629 27.3687 32.238 27.2696C32.2659 27.2539 32.9292 26.885 33.9238 26.885C34.9194 26.885 35.5828 27.2539 35.6101 27.2696C35.7858 27.3687 35.847 27.5909 35.7482 27.7659C35.6493 27.9405 35.4278 28.0022 35.2532 27.9044C35.2424 27.8985 34.7134 27.6134 33.9238 27.6134C33.1306 27.6134 32.6001 27.9015 32.595 27.9044C32.5388 27.9364 32.477 27.9516 32.4163 27.9516Z" fill="#1E2A38"/>
+<path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2876C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/>
+</svg>
+              </div>
+              <div>
+                <div class="bot-time">Сегодня</div>
+                <div class="bot-bubble">Отличный прогресс! Можно добавить ещё одну цель 🎯</div>
+              </div>
+            </div>
+            <div class="bot-card-action">
+              <button class="btn btn-primary" onclick="showModal('add-goal')">+ Добавить цель</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           SCENARIO: ACTIVE + 3 GOALS (limit reached)
+      ========================================================= -->
+      <div class="scenario" id="sc-active-3-goals">
+        <div class="goals-grid">
+          <div class="goal-card">
+            <div class="goal-name">Купить однокомнатную квартиру</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">март 2036</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row">
+                <div class="goal-sum-value">5 326 973 ₽</div>
+                <div class="badges-row"><span class="badge badge-info">+ инфляция</span><span class="badge badge-success">+ доходность</span></div>
+              </div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">57 851 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:10%"></div></div>
+              <div class="goal-progress-amount">532 697 ₽ (10%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-mini-dark btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <div class="goal-card">
+            <div class="goal-name">Купить машину</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">июнь 2028</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row"><div class="goal-sum-value">2 800 000 ₽</div><div class="badges-row"><span class="badge badge-info">+ инфляция</span></div></div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">38 500 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:22%"></div></div>
+              <div class="goal-progress-amount">616 000 ₽ (22%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-mini-dark btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <div class="goal-card">
+            <div class="goal-name">Купить дачу</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">сентябрь 2030</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row"><div class="goal-sum-value">4 100 000 ₽</div><div class="badges-row"><span class="badge badge-info">+ инфляция</span></div></div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">21 200 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>
+              <div class="goal-progress-amount">0 ₽ (0%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-mini-dark btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <!-- No bot card — limit reached, no add button -->
+        </div>
+        <div style="margin-top:16px;padding:12px 16px;background:var(--color-bg-alt);border-radius:var(--radius-md);font-size:13px;color:var(--color-text-second);max-width:500px;">
+          🎯 Вы достигли лимита в 3 цели. Чтобы добавить новую, удалите одну из существующих.
+        </div>
+      </div>
+
+      <!-- =========================================================
+           SCENARIO: SUBSCRIPTION EXPIRED (3 goals)
+      ========================================================= -->
+      <div class="scenario" id="sc-expired-3-goals">
+        <!-- Banner -->
+        <div class="expired-banner">
+          <div class="expired-block">
+            <p class="expired-text">К сожалению, у вас закончилась подписка. Чтобы продолжить отслеживание прогресса по целям, оплатите подписку.</p>
+            <button class="btn btn-accent" style="align-self:flex-start">Оплатить подписку</button>
+          </div>
+          <div class="expired-block">
+            <p class="expired-text">Если хотите остаться на бесплатном тарифе, <strong>выберите 1 цель,</strong> которую мы сохраним и будем пополнять дальше.</p>
+            <button class="btn btn-secondary" style="align-self:flex-start" onclick="showModal('choose-goal')">Выбрать цель</button>
+          </div>
+        </div>
+
+        <!-- Faded goal cards -->
+        <div class="goals-grid">
+          <div class="goal-card faded">
+            <div class="goal-name">Купить однокомнатную квартиру</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">март 2036</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row"><div class="goal-sum-value">5 326 973 ₽</div><div class="badges-row"><span class="badge badge-info">+ инфляция</span><span class="badge badge-success">+ доходность</span></div></div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">57 851 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:10%"></div></div>
+              <div class="goal-progress-amount">532 697 ₽ (10%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm" style="pointer-events:all;opacity:1">Удалить</button>
+              <button class="btn btn-disabled btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <div class="goal-card faded">
+            <div class="goal-name">Купить машину</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">июнь 2028</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row"><div class="goal-sum-value">2 800 000 ₽</div><div class="badges-row"><span class="badge badge-info">+ инфляция</span></div></div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">38 500 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:22%"></div></div>
+              <div class="goal-progress-amount">616 000 ₽ (22%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm" style="pointer-events:all;opacity:1">Удалить</button>
+              <button class="btn btn-disabled btn-sm">Редактировать</button>
+            </div>
+          </div>
+          <div class="goal-card faded">
+            <div class="goal-name">Купить дачу</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">сентябрь 2030</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row"><div class="goal-sum-value">4 100 000 ₽</div><div class="badges-row"><span class="badge badge-info">+ инфляция</span></div></div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">21 200 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>
+              <div class="goal-progress-amount">0 ₽ (0%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm" style="pointer-events:all;opacity:1">Удалить</button>
+              <button class="btn btn-disabled btn-sm">Редактировать</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           SCENARIO: EXPIRED + USER CHOSE 1 GOAL
+      ========================================================= -->
+      <div class="scenario" id="sc-expired-chose-1">
+        <!-- Banner: only pay subscription, no "choose goal" anymore -->
+        <div class="expired-banner">
+          <div class="expired-block">
+            <p class="expired-text">У вас закончилась подписка. Сохранена цель <strong>«Купить однокомнатную квартиру»</strong>. Чтобы продолжить отслеживание, оплатите подписку.</p>
+            <button class="btn btn-accent" style="align-self:flex-start">Оплатить подписку</button>
+          </div>
+        </div>
+        <!-- 1 active goal card -->
+        <div class="goals-grid">
+          <div class="goal-card">
+            <div class="goal-name">Купить однокомнатную квартиру</div>
+            <div class="goal-meta"><div class="goal-meta-label">Когда:</div><div class="goal-meta-value">март 2036</div></div>
+            <div>
+              <div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>
+              <div class="goal-sum-row">
+                <div class="goal-sum-value">5 326 973 ₽</div>
+                <div class="badges-row"><span class="badge badge-info">+ инфляция</span><span class="badge badge-success">+ доходность</span></div>
+              </div>
+            </div>
+            <div class="goal-monthly-section"><div class="goal-monthly-label">Нужно откладывать:</div><div class="goal-monthly-value">57 851 ₽/мес</div></div>
+            <div class="goal-progress-section">
+              <div class="goal-progress-label">Твой прогресс:</div>
+              <div class="progress-track"><div class="progress-fill" style="width:10%"></div></div>
+              <div class="goal-progress-amount">532 697 ₽ (10%)</div>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-danger-text btn-sm">Удалить</button>
+              <button class="btn btn-disabled btn-sm">Редактировать</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+    </main>
+  </div>
+</div>
+
+<!-- =========================================================
+     MODAL: ADD GOAL (placeholder)
+========================================================= -->
+<div class="modal-overlay" id="modal-add-goal" style="display:none" onclick="closeModalOnBg(event,'modal-add-goal')">
+  <div class="modal">
+    <div class="modal-title">Новая финансовая цель</div>
+    <div class="modal-subtitle">Бот в Telegram поможет настроить цель — укажи название, сумму и срок. Используй кнопку «Запустить бота».</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary btn-sm" onclick="hideModal('modal-add-goal')">Закрыть</button>
+      <button class="btn btn-primary btn-sm">Открыть в Telegram</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     MODAL: CHOOSE GOAL (expired scenario)
+========================================================= -->
+<div class="modal-overlay" id="modal-choose-goal" style="display:none" onclick="closeModalOnBg(event,'modal-choose-goal')">
+  <div class="modal modal-choose">
+    <button class="modal-close" onclick="hideModal('modal-choose-goal')" aria-label="Закрыть">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <path d="M1 1L14 14M14 1L1 14" stroke="#6B7280" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <div class="modal-title">Выберите цель</div>
+    <div class="modal-radio-list" id="choose-goals-list">
+      <label class="modal-radio-item" onclick="selectGoal(this,'goal-choice')">
+        <span class="radio-circle"><span class="radio-dot"></span></span>
+        <input type="radio" name="goal-choice" value="1" style="display:none"/>
+        <span class="radio-label">Купить однокомнатную квартиру</span>
+      </label>
+      <label class="modal-radio-item" onclick="selectGoal(this,'goal-choice')">
+        <span class="radio-circle"><span class="radio-dot"></span></span>
+        <input type="radio" name="goal-choice" value="2" style="display:none"/>
+        <span class="radio-label">Купить машину</span>
+      </label>
+      <label class="modal-radio-item" onclick="selectGoal(this,'goal-choice')">
+        <span class="radio-circle"><span class="radio-dot"></span></span>
+        <input type="radio" name="goal-choice" value="3" style="display:none"/>
+        <span class="radio-label">Купить дачу</span>
+      </label>
+    </div>
+    <div class="modal-actions-choose">
+      <button class="btn btn-confirm btn-confirm-disabled" id="btn-confirm-choice" onclick="confirmGoalChoice()" disabled>Подтвердить выбор</button>
+      <button class="btn btn-secondary" onclick="hideModal('modal-choose-goal')">Отменить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SCENARIO SWITCHER
+============================================================ */
+const scenarios = {
+  'free-no-goals': {
+    id: 'sc-free-no-goals',
+    subInfo: '',
+    budgetLocked: true,
+  },
+  'free-with-goal': {
+    id: 'sc-free-with-goal',
+    subInfo: '',
+    budgetLocked: true,
+  },
+  'active-no-goals': {
+    id: 'sc-active-no-goals',
+    subInfo: '<span>Подписка до 01.11.2026</span><span class="lk-badge">156 дней</span>',
+    budgetLocked: false,
+  },
+  'active-1-goal': {
+    id: 'sc-active-1-goal',
+    subInfo: '<span>Подписка до 01.11.2026</span><span class="lk-badge">156 дней</span>',
+    budgetLocked: false,
+  },
+  'active-2-goals': {
+    id: 'sc-active-2-goals',
+    subInfo: '<span>Пробный период до 09.06.2026</span><span class="lk-badge">12 дней</span>',
+    budgetLocked: false,
+  },
+  'active-3-goals': {
+    id: 'sc-active-3-goals',
+    subInfo: '<span>Подписка до 01.11.2026</span><span class="lk-badge">156 дней</span>',
+    budgetLocked: false,
+  },
+  'expired-3-goals': {
+    id: 'sc-expired-3-goals',
+    subInfo: '',
+    budgetLocked: true,
+  },
+  'expired-chose-1': {
+    id: 'sc-expired-chose-1',
+    subInfo: '',
+    budgetLocked: true,
+  },
+};
+
+function showScenario(key) {
+  // Hide all
+  document.querySelectorAll('.scenario').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.demo-btn').forEach(b => b.classList.remove('active'));
+
+  const sc = scenarios[key];
+  document.getElementById(sc.id).classList.add('visible');
+  document.querySelector(`[onclick="showScenario('${key}')"]`).classList.add('active');
+
+  // Update header sub info
+  document.getElementById('header-sub-info').innerHTML = sc.subInfo;
+
+  // Budget nav item
+  const budgetSub = document.getElementById('nav-budget-sub');
+  const navBudget = document.getElementById('nav-budget');
+  if (sc.budgetLocked) {
+    budgetSub.style.display = 'block';
+    navBudget.querySelector('.nav-label').style.display = 'flex';
+    navBudget.querySelector('.nav-label').style.flexDirection = 'column';
+  } else {
+    budgetSub.style.display = 'none';
+  }
+}
+
+/* ============================================================
+   MODAL
+============================================================ */
+function showModal(type) {
+  if (type === 'add-goal') document.getElementById('modal-add-goal').style.display = 'flex';
+  if (type === 'choose-goal') document.getElementById('modal-choose-goal').style.display = 'flex';
+}
+function hideModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+function closeModalOnBg(e, id) {
+  if (e.target === document.getElementById(id)) hideModal(id);
+}
+function selectGoal(el, groupName) {
+  // deselect all in group
+  document.querySelectorAll(`[name="${groupName}"]`).forEach(inp => {
+    inp.closest('.modal-radio-item').classList.remove('selected');
+  });
+  el.classList.add('selected');
+  el.querySelector('input[type="radio"]').checked = true;
+  // enable confirm button
+  const btn = document.getElementById('btn-confirm-choice');
+  if (btn) {
+    btn.disabled = false;
+    btn.classList.remove('btn-confirm-disabled');
+    btn.classList.add('btn-confirm-active');
+  }
+}
+
+function confirmGoalChoice() {
+  const selected = document.querySelector('.modal-radio-item.selected .radio-label');
+  if (!selected) return;
+  hideModal('modal-choose-goal');
+  // Switch to expired-chose-1 scenario
+  showScenario('expired-chose-1');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Мой бюджет — Mercury</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --color-brand-main:#1E2A38;--color-brand-primary:#4C9AFF;--color-brand-primary-hover:#2563EB;
+  --color-brand-accent-green:#2FBF71;--color-brand-accent-green-hover:#28A862;
+  --color-white:#FFFFFF;--color-bg-main:#F5F7FA;--color-bg-alt:#EEF2F6;
+  --color-border:#E2E8F0;--color-border-hard:#CBD5E1;
+  --color-text-main:#2D3748;--color-text-second:#6B7280;--color-text-disabled:#9CA3AF;
+  --color-success-bg:#E6F7EF;--color-success-text:#1F7A4C;--color-success-main:#2FBF71;
+  --color-error-main:#E5484D;--color-error-bg:#FDECEC;--color-error-text:#9B2C2C;
+  --color-warning-bg:#FFF7E6;--color-warning-text:#92400E;
+  --color-info-bg:#EFF6FF;--color-info-text:#1E40AF;
+  --font-display:'Manrope',sans-serif;--font-body:'Manrope',sans-serif;
+  --radius-sm:8px;--radius-md:12px;--radius-card:20px;--radius-pill:999px;
+  --shadow-sm:0 2px 8px rgba(15,23,42,.04);--shadow-md:0 8px 24px rgba(15,23,42,.08);
+  --shadow-card:0 2px 8px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);font-size:16px;line-height:24px;color:var(--color-text-main);background:var(--color-bg-main);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}ul,ol{list-style:none}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+
+/* DEMO NAV */
+.demo-nav{position:sticky;top:0;z-index:200;background:var(--color-brand-main);padding:10px 20px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.demo-nav span{color:rgba(255,255,255,.5);font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-right:4px}
+.demo-btn{padding:5px 14px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);transition:all 180ms ease;white-space:nowrap}
+.demo-btn:hover,.demo-btn.active{background:var(--color-brand-primary);border-color:var(--color-brand-primary);color:#fff}
+
+/* LAYOUT */
+.shell{display:flex;flex-direction:column;min-height:calc(100vh - 44px)}
+.lk-header{background:var(--color-white);border-bottom:1px solid var(--color-border);padding:0 20px;height:64px;display:flex;align-items:center;gap:20px;flex-shrink:0}
+.lk-logo{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
+.lk-logo-icon{width:36px;height:36px;background:var(--color-brand-main);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.lk-logo-text{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--color-brand-main)}
+.lk-userinfo{display:flex;flex-direction:column;gap:1px;flex:1}
+.lk-username{font-size:14px;font-weight:600;color:var(--color-text-main)}
+.lk-username span{font-weight:400;color:var(--color-text-second)}
+.lk-subscription{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--color-text-second);font-weight:500}
+.lk-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-body);font-size:14px;font-weight:600;letter-spacing:.01em;border-radius:var(--radius-md);border:1.5px solid transparent;cursor:pointer;white-space:nowrap;transition:all 200ms ease;padding:8px 18px;line-height:20px}
+.btn-secondary{background:var(--color-white);color:var(--color-text-main);border-color:var(--color-border-hard)}
+.btn-secondary:hover{border-color:var(--color-brand-primary);color:var(--color-brand-primary)}
+.btn-primary{background:var(--color-brand-primary);color:#fff;border-color:var(--color-brand-primary)}
+.btn-primary:hover{background:var(--color-brand-primary-hover)}
+.btn-dark{background:var(--color-brand-main);color:#fff;border-color:var(--color-brand-main);border-radius:var(--radius-sm)}
+.btn-dark:hover{background:#2a3a4d}
+.btn-sm{padding:5px 14px;font-size:13px}
+.page-body{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:238px;background:var(--color-white);border-right:1px solid var(--color-border);padding:20px 16px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius-sm);font-size:14px;font-weight:400;color:var(--color-text-second);text-decoration:none;transition:all 180ms ease;min-height:38px}
+.nav-item:hover{background:var(--color-bg-main);color:var(--color-text-main)}
+.nav-item.active{background:var(--color-info-bg);color:var(--color-brand-primary);font-weight:700}
+.nav-item.active .nav-icon path,.nav-item.active .nav-icon rect{fill:var(--color-brand-primary)}
+.nav-item.active .nav-icon circle[stroke]{stroke:var(--color-brand-primary)}
+.nav-icon{width:20px;height:20px;flex-shrink:0}
+.nav-label{flex:1}
+.nav-sep{height:1px;background:var(--color-border-hard);margin:8px 0}
+.nav-item-soon{opacity:.5;pointer-events:none}
+.nav-label-wrap{display:flex;flex-direction:column;gap:1px}
+.nav-sublabel-soon{font-size:11px;font-weight:500;color:var(--color-text-disabled)}
+
+/* MAIN */
+.main-content{flex:1;padding:28px 40px 80px;overflow-y:auto;display:flex;flex-direction:column}
+.page-title{font-family:var(--font-display);font-size:32px;font-weight:600;line-height:40px;color:var(--color-text-main);margin-bottom:24px}
+.scenario{display:none}
+.scenario.visible{display:block}
+.section-subtitle{font-size:18px;font-weight:600;line-height:26px;color:var(--color-text-main);margin-top:28px;margin-bottom:16px}
+
+/* STATUS CHIP */
+.status-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:var(--radius-pill);font-size:12px;font-weight:500;line-height:16px;white-space:nowrap}
+.status-chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.chip-info{background:var(--color-info-bg);color:var(--color-info-text)}
+.chip-info .status-chip-dot{background:#3B82F6}
+.chip-success{background:var(--color-success-bg);color:var(--color-success-text)}
+.chip-success .status-chip-dot{background:var(--color-success-main)}
+.chip-error{background:var(--color-error-bg);color:var(--color-error-text)}
+.chip-error .status-chip-dot{background:var(--color-error-main)}
+.chip-warning{background:var(--color-warning-bg);color:var(--color-warning-text)}
+.chip-warning .status-chip-dot{background:#F59E0B}
+
+/* BUDGET CARD — empty */
+.budget-card{width:340px;background:var(--color-white);border:1px solid var(--color-border);border-radius:24px;box-shadow:var(--shadow-card);padding:24px;display:flex;flex-direction:column;gap:12px}
+.budget-card-header{display:flex;align-items:center;gap:10px}
+.budget-card-title{flex:1;font-size:14px;font-weight:700;color:var(--color-text-second)}
+.budget-card-empty-body{display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 24px}
+.budget-card-empty-text{text-align:center;font-size:18px;font-weight:600;line-height:26px;color:var(--color-text-second)}
+
+/* BUDGET CARD — filled */
+.budget-amount{font-size:28px;font-weight:600;line-height:38px;letter-spacing:.02em;color:var(--color-text-main);font-variant-numeric:tabular-nums}
+.budget-progress-section{display:flex;flex-direction:column;gap:6px}
+.budget-progress-label{font-size:12px;font-weight:700;color:var(--color-text-second)}
+.progress-track{width:100%;height:20px;border-radius:4px;overflow:hidden}
+.progress-track-good{background:var(--color-info-bg)}
+.progress-track-bad{background:var(--color-error-bg)}
+.progress-fill{height:100%;border-radius:4px;transition:width 600ms ease}
+.progress-fill-good{background:var(--color-brand-primary)}
+.progress-fill-bad{background:var(--color-error-main)}
+.progress-meta{display:flex;justify-content:space-between;margin-top:2px}
+.progress-meta-left{font-size:12px;color:var(--color-text-second)}
+.progress-meta-right-good{font-size:12px;font-weight:600;color:var(--color-brand-primary)}
+.progress-meta-right-bad{font-size:12px;font-weight:600;color:var(--color-error-main)}
+
+/* BOT INLINE MESSAGE */
+.bot-inline{padding:0}
+.bot-inline-icon{display:none}
+.bot-inline-text{font-size:14px;font-weight:400;line-height:1.6;color:var(--color-text-main)}
+.budget-card-actions{display:flex;justify-content:flex-end}
+
+/* TABLE */
+.budget-table-wrap{background:var(--color-white);border-radius:var(--radius-md);overflow:clip;box-shadow:var(--shadow-sm);border:1px solid var(--color-border)}
+.budget-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.budget-table{min-width:580px}
+.budget-table{width:100%;border-collapse:collapse}
+.budget-table th{background:var(--color-bg-alt);padding:8px 14px;font-size:12px;font-weight:700;color:var(--color-text-second);text-align:left;border-bottom:1px solid var(--color-border);white-space:nowrap}
+.budget-table td{padding:10px 14px;font-size:14px;color:var(--color-text-main);border-bottom:1px solid var(--color-border);vertical-align:middle}
+.budget-table tr:last-child td{border-bottom:none}
+.budget-table tr:hover td{background:var(--color-bg-alt)}
+.td-month{color:var(--color-text-second);font-weight:400;min-width:130px}
+.td-amount{font-variant-numeric:tabular-nums;min-width:130px}
+.td-pos{color:var(--color-success-text);font-variant-numeric:tabular-nums}
+.td-neg{color:var(--color-error-text);font-variant-numeric:tabular-nums}
+.td-dash{color:var(--color-text-disabled)}
+
+/* TABLE EMPTY */
+.table-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:48px 24px}
+.table-empty-text{font-size:16px;font-weight:600;color:var(--color-text-second);text-align:center}
+
+/* HAMBURGER */
+.hamburger-btn{display:none;width:36px;height:36px;align-items:center;justify-content:center;border-radius:8px;background:var(--color-bg-alt);flex-shrink:0}
+
+@media(max-width:1024px){.budget-card{width:100%;max-width:400px}}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main-content{padding:20px 16px 60px}
+  .page-title{font-size:24px;line-height:32px}
+  .lk-header{padding:0 12px;gap:10px}
+  .lk-logo-text{font-size:14px}
+  .lk-header-actions .btn-secondary{display:none}
+  .hamburger-btn{display:flex}
+  .budget-card{width:100%}
+  .budget-amount{font-size:22px}
+  .budget-table th,.budget-table td{padding:8px 10px;font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<!-- DEMO NAV -->
+<div class="demo-nav">
+  <span>Сценарий:</span>
+  <button class="demo-btn active" onclick="show('no-budget-no-history')">Нет бюджета / нет истории</button>
+  <button class="demo-btn" onclick="show('no-budget-has-history')">Нет бюджета / есть история</button>
+  <button class="demo-btn" onclick="show('budget-good')">Бюджет + прогноз 👍</button>
+  <button class="demo-btn" onclick="show('budget-risk')">Бюджет + риск ⚠️</button>
+</div>
+
+<div class="shell">
+
+  <!-- HEADER -->
+  <header class="lk-header">
+    <a href="#" class="lk-logo">
+      <div class="lk-logo-icon">
+        <svg width="22" height="20" viewBox="0 0 22 20" fill="none">
+          <path d="M4 8L8.5 14.5L11 11.5L13.5 14.5L18 8" stroke="#2FBF71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="11" cy="17.5" r="1.8" fill="white"/>
+        </svg>
+      </div>
+      <span class="lk-logo-text">mercury</span>
+    </a>
+    <div class="lk-userinfo">
+      <div class="lk-username"><span>Кабинет: </span>@nastya_v</div>
+      <div class="lk-subscription">Подписка до 01-11-2026</div>
+    </div>
+    <div class="lk-header-actions">
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-secondary btn-sm">Открыть в Telegram</a>
+      <a href="https://t.me/MercuryFinBot" target="_blank" class="btn btn-primary btn-sm">Запустить бота</a>
+      <button class="hamburger-btn" aria-label="Меню">
+        <svg width="18" height="14" viewBox="0 0 18 14" fill="none">
+          <rect width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="6" width="18" height="2" rx="1" fill="#2D3748"/>
+          <rect y="12" width="18" height="2" rx="1" fill="#2D3748"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="page-body">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="7" height="17" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="11" y="9" width="7.5" height="9.5" rx="2" fill="#CBD5E1"/>
+          <rect x="11" y="1.5" width="7.5" height="6" rx="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Дашборд</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="8" y="1.5" width="4" height="17" rx="2" fill="#CBD5E1"/>
+          <rect x="2.5" y="6.5" width="4" height="12" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x="13.5" y="10.5" width="4" height="8" rx="2" fill="#CBD5E1" opacity=".7"/>
+          <rect x=".5" y="17" width="19" height="1.5" rx=".75" fill="#CBD5E1" opacity=".5"/>
+        </svg>
+        <span class="nav-label">Учёт по месяцам</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="3" width="17" height="5" rx="2" fill="#CBD5E1"/>
+          <rect x="1.5" y="10" width="17" height="8" rx="2" fill="#CBD5E1" opacity=".5"/>
+          <rect x="4" y="12.5" width="5" height="1.5" rx=".75" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">История</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="6" width="16" height="13" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <path d="M7 6V4a3 3 0 016 0v2" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="12" r="2" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Категории</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8" stroke="#CBD5E1" stroke-width="1.8" fill="none"/>
+          <path d="M10 6v4l2.5 2.5" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label">Мои цели</span>
+      </a>
+      <a href="#" class="nav-item active">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="4" width="17" height="14" rx="2.5" fill="currentColor" opacity=".5"/>
+          <path d="M10 1.5v3M6 1.5v3M14 1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="11.5" y="8" width="5" height="6" rx="1.5" fill="currentColor"/>
+          <rect x="3.5" y="8.5" width="5" height="1.5" rx=".75" fill="currentColor"/>
+        </svg>
+        <span class="nav-label">Мой бюджет</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="7.5" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="14" cy="6" r="4.5" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Аналитика</span>
+      </a>
+      <a href="#" class="nav-item nav-item-soon">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="8.5" stroke="#CBD5E1" stroke-width="1.5"/>
+          <path d="M7 10h6M10 7v6" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-label-wrap">
+          <span class="nav-label">Семейный доступ</span>
+          <span class="nav-sublabel-soon">Скоро!</span>
+        </span>
+      </a>
+      <div class="nav-sep"></div>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <rect x="1.5" y="1.5" width="17" height="17" rx="3" fill="#CBD5E1" opacity=".5"/>
+          <circle cx="10" cy="10" r="3" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Мой профиль</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2.5L17.5 17.5H2.5L10 2.5Z" fill="#CBD5E1" opacity=".5"/>
+          <rect x="9" y="8" width="2" height="5" rx="1" fill="#CBD5E1"/>
+          <circle cx="10" cy="15" r="1" fill="#CBD5E1"/>
+        </svg>
+        <span class="nav-label">Вопросы и ответы</span>
+      </a>
+      <a href="#" class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 20 20" fill="none">
+          <path d="M3 4h14a1.5 1.5 0 010 3H3a1.5 1.5 0 010-3zM3 10h10" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="14" cy="15" r="3" fill="#CBD5E1"/>
+          <path d="M13 15l.8.8L15 14" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="nav-label">Обратная связь</span>
+      </a>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <h1 class="page-title">Мой бюджет</h1>
+
+      <!-- BotEmptyData SVG — определяем как шаблон через JS -->
+
+      <!-- ===== СЦЕНАРИЙ 1: НЕТ БЮДЖЕТА + НЕТ ИСТОРИИ ===== -->
+      <div class="scenario visible" id="sc-no-budget-no-history">
+        <div class="budget-card">
+          <div class="budget-card-header">
+            <span class="budget-card-title">Бюджет</span>
+            <span class="status-chip chip-info"><span class="status-chip-dot"></span>Прогноз: —</span>
+          </div>
+          <div class="budget-card-empty-body">
+            <svg width="64" height="64" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1639C34.5229 10.1641 42.2425 16.8065 42.2426 24.9999C42.2426 33.1934 34.5229 39.8356 25.0004 39.8358C21.6954 39.8358 18.607 39.0355 15.9838 37.6483C14.8357 38.6505 13.3427 39.2583 11.8187 39.3192C12.6048 38.2968 13.054 37.0214 13.0961 35.7333C9.80671 33.0317 7.7572 29.2217 7.7572 24.9999C7.75724 16.8064 15.4776 10.1639 25.0004 10.1639ZM8.24939 19.1268C7.37824 20.9923 6.9369 22.9667 6.93689 24.9999C6.93689 27.0349 7.37803 29.0084 8.24939 30.8729C5.92146 30.1075 4.22693 28.5922 4.22693 24.9999C4.22696 21.5924 5.92127 19.8923 8.24939 19.1268ZM41.7504 19.1268C44.0783 19.8923 45.7728 21.5926 45.7728 24.9999C45.7728 28.5922 44.0783 30.1074 41.7504 30.8729C42.6217 29.0084 43.0629 27.0349 43.0629 24.9999C43.0629 22.9667 42.6214 20.9923 41.7504 19.1268ZM35.7162 20.5702C35.0751 19.86 34.1868 20.5702 33.2299 20.5702H16.7699C15.8243 20.5702 14.9191 19.8699 14.2836 20.5702C12.4842 22.553 11.4115 22.2891 11.4115 24.9999C11.4115 27.7107 12.4842 27.769 14.2836 29.7518C14.919 30.452 16.0774 30.329 17.0228 30.329H33.5365C34.4819 30.329 35.0808 31.029 35.7162 30.329C37.5155 28.346 38.5883 27.7108 38.5883 24.9999C38.5882 22.3003 37.5023 22.5491 35.7162 20.5702Z" fill="#1E2A38"/><path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8898 9.776 26.0515V24.4535C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.642 28.6789C26.9635 28.6789 27.1996 28.3713 27.109 28.0631C26.8429 27.1566 26.0053 26.4946 25.0125 26.4946C24.0201 26.4946 23.1825 27.1566 22.9164 28.0631C22.8258 28.3713 23.0623 28.6789 23.3834 28.6789H26.642Z" fill="#1E2A38"/><path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/><path d="M15.756 25.7676C15.6216 25.7676 15.5129 25.8766 15.5128 26.0107C15.5128 26.145 15.6216 26.2539 15.756 26.2539C15.8902 26.2537 15.9982 26.1448 15.9982 26.0107C15.9981 25.8767 15.8902 25.7678 15.756 25.7676ZM16.8761 24.1611C16.4856 24.1612 16.1691 24.4777 16.1691 24.8682C16.1691 25.2585 16.4856 25.5752 16.8761 25.5752C17.2667 25.5752 17.5831 25.2585 17.5831 24.8682C17.5831 24.4777 17.2667 24.1611 16.8761 24.1611Z" fill="white"/><path d="M13.9297 23.108C13.8069 23.1409 13.7052 23.2372 13.6712 23.369C13.6208 23.5637 13.7387 23.7626 13.9336 23.813C13.9643 23.821 14.7007 24.0056 15.662 23.748C16.6229 23.4905 17.1683 22.9625 17.1913 22.94C17.3344 22.7991 17.3364 22.5686 17.1958 22.425C17.0549 22.2821 16.8255 22.2796 16.6817 22.4195C16.6727 22.428 16.2355 22.8403 15.4735 23.0445C14.7071 23.2498 14.1202 23.1088 14.1142 23.1074C14.0513 23.0911 13.9879 23.0924 13.9297 23.108Z" fill="#1E2A38"/><path d="M36.1083 25.4025C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4025C31.7394 24.1961 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.1961 36.1083 25.4025Z" fill="#1E2A38"/><path d="M33.6444 25.7676C33.5109 25.7676 33.4013 25.8766 33.4012 26.0107C33.4012 26.145 33.5108 26.2539 33.6444 26.2539C33.7789 26.2537 33.8876 26.1448 33.8876 26.0107C33.8875 25.8768 33.7788 25.7678 33.6444 25.7676ZM34.7645 24.1611C34.3746 24.1613 34.0575 24.4778 34.0575 24.8682C34.0575 25.2584 34.3746 25.575 34.7645 25.5752C35.1551 25.5752 35.4715 25.2585 35.4716 24.8682C35.4716 24.4777 35.1551 24.1611 34.7645 24.1611Z" fill="white"/><path d="M33.1121 22.3277C32.9897 22.2949 32.8536 22.3274 32.7582 22.4246C32.6174 22.5681 32.62 22.7992 32.7635 22.9403C32.7863 22.9627 33.3316 23.4907 34.2923 23.7481C35.2539 24.0058 35.9902 23.8212 36.0206 23.8131C36.2159 23.7628 36.3326 23.5641 36.2824 23.3694C36.2321 23.1751 36.0341 23.0582 35.8402 23.1075C35.8282 23.1105 35.2434 23.2489 34.4808 23.0446C33.7146 22.8393 33.2767 22.4237 33.2725 22.4195C33.2266 22.3741 33.1708 22.3434 33.1121 22.3277Z" fill="#1E2A38"/><path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/></svg>
+            <p class="budget-card-empty-text">Бюджет на этот месяц<br>ещё не установлен</p>
+            <button class="btn btn-dark">Установить бюджет</button>
+          </div>
+        </div>
+
+        <h2 class="section-subtitle">История</h2>
+        <div class="budget-table-wrap">
+          <div class="budget-table-scroll"><table class="budget-table">
+            <thead><tr><th>Месяц</th><th>Бюджет</th><th>Потрачено</th><th>Остаток</th><th>Итог</th></tr></thead>
+          </table></div>
+          <div class="table-empty">
+            <svg width="56" height="56" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1639C34.5229 10.1641 42.2425 16.8065 42.2426 24.9999C42.2426 33.1934 34.5229 39.8356 25.0004 39.8358C21.6954 39.8358 18.607 39.0355 15.9838 37.6483C14.8357 38.6505 13.3427 39.2583 11.8187 39.3192C12.6048 38.2968 13.054 37.0214 13.0961 35.7333C9.80671 33.0317 7.7572 29.2217 7.7572 24.9999C7.75724 16.8064 15.4776 10.1639 25.0004 10.1639ZM8.24939 19.1268C7.37824 20.9923 6.9369 22.9667 6.93689 24.9999C6.93689 27.0349 7.37803 29.0084 8.24939 30.8729C5.92146 30.1075 4.22693 28.5922 4.22693 24.9999C4.22696 21.5924 5.92127 19.8923 8.24939 19.1268ZM41.7504 19.1268C44.0783 19.8923 45.7728 21.5926 45.7728 24.9999C45.7728 28.5922 44.0783 30.1074 41.7504 30.8729C42.6217 29.0084 43.0629 27.0349 43.0629 24.9999C43.0629 22.9667 42.6214 20.9923 41.7504 19.1268ZM35.7162 20.5702C35.0751 19.86 34.1868 20.5702 33.2299 20.5702H16.7699C15.8243 20.5702 14.9191 19.8699 14.2836 20.5702C12.4842 22.553 11.4115 22.2891 11.4115 24.9999C11.4115 27.7107 12.4842 27.769 14.2836 29.7518C14.919 30.452 16.0774 30.329 17.0228 30.329H33.5365C34.4819 30.329 35.0808 31.029 35.7162 30.329C37.5155 28.346 38.5883 27.7108 38.5883 24.9999C38.5882 22.3003 37.5023 22.5491 35.7162 20.5702Z" fill="#1E2A38"/><path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8898 9.776 26.0515V24.4535C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.642 28.6789C26.9635 28.6789 27.1996 28.3713 27.109 28.0631C26.8429 27.1566 26.0053 26.4946 25.0125 26.4946C24.0201 26.4946 23.1825 27.1566 22.9164 28.0631C22.8258 28.3713 23.0623 28.6789 23.3834 28.6789H26.642Z" fill="#1E2A38"/><path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/><path d="M15.756 25.7676C15.6216 25.7676 15.5129 25.8766 15.5128 26.0107C15.5128 26.145 15.6216 26.2539 15.756 26.2539C15.8902 26.2537 15.9982 26.1448 15.9982 26.0107C15.9981 25.8767 15.8902 25.7678 15.756 25.7676ZM16.8761 24.1611C16.4856 24.1612 16.1691 24.4777 16.1691 24.8682C16.1691 25.2585 16.4856 25.5752 16.8761 25.5752C17.2667 25.5752 17.5831 25.2585 17.5831 24.8682C17.5831 24.4777 17.2667 24.1611 16.8761 24.1611Z" fill="white"/><path d="M13.9297 23.108C13.8069 23.1409 13.7052 23.2372 13.6712 23.369C13.6208 23.5637 13.7387 23.7626 13.9336 23.813C13.9643 23.821 14.7007 24.0056 15.662 23.748C16.6229 23.4905 17.1683 22.9625 17.1913 22.94C17.3344 22.7991 17.3364 22.5686 17.1958 22.425C17.0549 22.2821 16.8255 22.2796 16.6817 22.4195C16.6727 22.428 16.2355 22.8403 15.4735 23.0445C14.7071 23.2498 14.1202 23.1088 14.1142 23.1074C14.0513 23.0911 13.9879 23.0924 13.9297 23.108Z" fill="#1E2A38"/><path d="M36.1083 25.4025C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4025C31.7394 24.1961 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.1961 36.1083 25.4025Z" fill="#1E2A38"/><path d="M33.6444 25.7676C33.5109 25.7676 33.4013 25.8766 33.4012 26.0107C33.4012 26.145 33.5108 26.2539 33.6444 26.2539C33.7789 26.2537 33.8876 26.1448 33.8876 26.0107C33.8875 25.8768 33.7788 25.7678 33.6444 25.7676ZM34.7645 24.1611C34.3746 24.1613 34.0575 24.4778 34.0575 24.8682C34.0575 25.2584 34.3746 25.575 34.7645 25.5752C35.1551 25.5752 35.4715 25.2585 35.4716 24.8682C35.4716 24.4777 35.1551 24.1611 34.7645 24.1611Z" fill="white"/><path d="M33.1121 22.3277C32.9897 22.2949 32.8536 22.3274 32.7582 22.4246C32.6174 22.5681 32.62 22.7992 32.7635 22.9403C32.7863 22.9627 33.3316 23.4907 34.2923 23.7481C35.2539 24.0058 35.9902 23.8212 36.0206 23.8131C36.2159 23.7628 36.3326 23.5641 36.2824 23.3694C36.2321 23.1751 36.0341 23.0582 35.8402 23.1075C35.8282 23.1105 35.2434 23.2489 34.4808 23.0446C33.7146 22.8393 33.2767 22.4237 33.2725 22.4195C33.2266 22.3741 33.1708 22.3434 33.1121 22.3277Z" fill="#1E2A38"/><path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/></svg>
+            <p class="table-empty-text">Истории бюджета ещё нет</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== СЦЕНАРИЙ 2: НЕТ БЮДЖЕТА + ЕСТЬ ИСТОРИЯ ===== -->
+      <div class="scenario" id="sc-no-budget-has-history">
+        <div class="budget-card">
+          <div class="budget-card-header">
+            <span class="budget-card-title">Бюджет</span>
+            <span class="status-chip chip-info"><span class="status-chip-dot"></span>Прогноз: —</span>
+          </div>
+          <div class="budget-card-empty-body">
+            <svg width="64" height="64" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.1639C34.5229 10.1641 42.2425 16.8065 42.2426 24.9999C42.2426 33.1934 34.5229 39.8356 25.0004 39.8358C21.6954 39.8358 18.607 39.0355 15.9838 37.6483C14.8357 38.6505 13.3427 39.2583 11.8187 39.3192C12.6048 38.2968 13.054 37.0214 13.0961 35.7333C9.80671 33.0317 7.7572 29.2217 7.7572 24.9999C7.75724 16.8064 15.4776 10.1639 25.0004 10.1639ZM8.24939 19.1268C7.37824 20.9923 6.9369 22.9667 6.93689 24.9999C6.93689 27.0349 7.37803 29.0084 8.24939 30.8729C5.92146 30.1075 4.22693 28.5922 4.22693 24.9999C4.22696 21.5924 5.92127 19.8923 8.24939 19.1268ZM41.7504 19.1268C44.0783 19.8923 45.7728 21.5926 45.7728 24.9999C45.7728 28.5922 44.0783 30.1074 41.7504 30.8729C42.6217 29.0084 43.0629 27.0349 43.0629 24.9999C43.0629 22.9667 42.6214 20.9923 41.7504 19.1268ZM35.7162 20.5702C35.0751 19.86 34.1868 20.5702 33.2299 20.5702H16.7699C15.8243 20.5702 14.9191 19.8699 14.2836 20.5702C12.4842 22.553 11.4115 22.2891 11.4115 24.9999C11.4115 27.7107 12.4842 27.769 14.2836 29.7518C14.919 30.452 16.0774 30.329 17.0228 30.329H33.5365C34.4819 30.329 35.0808 31.029 35.7162 30.329C37.5155 28.346 38.5883 27.7108 38.5883 24.9999C38.5882 22.3003 37.5023 22.5491 35.7162 20.5702Z" fill="#1E2A38"/><path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8898 9.776 26.0515V24.4535C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.642 28.6789C26.9635 28.6789 27.1996 28.3713 27.109 28.0631C26.8429 27.1566 26.0053 26.4946 25.0125 26.4946C24.0201 26.4946 23.1825 27.1566 22.9164 28.0631C22.8258 28.3713 23.0623 28.6789 23.3834 28.6789H26.642Z" fill="#1E2A38"/><path d="M18.2861 25.4023C18.2861 26.6087 17.308 27.5867 16.1019 27.5867C14.8953 27.5867 13.9172 26.6087 13.9172 25.4023C13.9172 24.1959 14.8953 23.2179 16.1019 23.2179C17.308 23.2179 18.2861 24.1959 18.2861 25.4023Z" fill="#1E2A38"/><path d="M15.756 25.7676C15.6216 25.7676 15.5129 25.8766 15.5128 26.0107C15.5128 26.145 15.6216 26.2539 15.756 26.2539C15.8902 26.2537 15.9982 26.1448 15.9982 26.0107C15.9981 25.8767 15.8902 25.7678 15.756 25.7676ZM16.8761 24.1611C16.4856 24.1612 16.1691 24.4777 16.1691 24.8682C16.1691 25.2585 16.4856 25.5752 16.8761 25.5752C17.2667 25.5752 17.5831 25.2585 17.5831 24.8682C17.5831 24.4777 17.2667 24.1611 16.8761 24.1611Z" fill="white"/><path d="M13.9297 23.108C13.8069 23.1409 13.7052 23.2372 13.6712 23.369C13.6208 23.5637 13.7387 23.7626 13.9336 23.813C13.9643 23.821 14.7007 24.0056 15.662 23.748C16.6229 23.4905 17.1683 22.9625 17.1913 22.94C17.3344 22.7991 17.3364 22.5686 17.1958 22.425C17.0549 22.2821 16.8255 22.2796 16.6817 22.4195C16.6727 22.428 16.2355 22.8403 15.4735 23.0445C14.7071 23.2498 14.1202 23.1088 14.1142 23.1074C14.0513 23.0911 13.9879 23.0924 13.9297 23.108Z" fill="#1E2A38"/><path d="M36.1083 25.4025C36.1083 26.6088 35.1302 27.5868 33.9238 27.5868C32.7174 27.5868 31.7394 26.6088 31.7394 25.4025C31.7394 24.1961 32.7174 23.2181 33.9238 23.2181C35.1302 23.2181 36.1083 24.1961 36.1083 25.4025Z" fill="#1E2A38"/><path d="M33.6444 25.7676C33.5109 25.7676 33.4013 25.8766 33.4012 26.0107C33.4012 26.145 33.5108 26.2539 33.6444 26.2539C33.7789 26.2537 33.8876 26.1448 33.8876 26.0107C33.8875 25.8768 33.7788 25.7678 33.6444 25.7676ZM34.7645 24.1611C34.3746 24.1613 34.0575 24.4778 34.0575 24.8682C34.0575 25.2584 34.3746 25.575 34.7645 25.5752C35.1551 25.5752 35.4715 25.2585 35.4716 24.8682C35.4716 24.4777 35.1551 24.1611 34.7645 24.1611Z" fill="white"/><path d="M33.1121 22.3277C32.9897 22.2949 32.8536 22.3274 32.7582 22.4246C32.6174 22.5681 32.62 22.7992 32.7635 22.9403C32.7863 22.9627 33.3316 23.4907 34.2923 23.7481C35.2539 24.0058 35.9902 23.8212 36.0206 23.8131C36.2159 23.7628 36.3326 23.5641 36.2824 23.3694C36.2321 23.1751 36.0341 23.0582 35.8402 23.1075C35.8282 23.1105 35.2434 23.2489 34.4808 23.0446C33.7146 22.8393 33.2767 22.4237 33.2725 22.4195C33.2266 22.3741 33.1708 22.3434 33.1121 22.3277Z" fill="#1E2A38"/><path d="M25.3135 13.3585C25.3587 14.295 26.069 15.0587 27.1052 15.3243C25.9948 15.5709 25.0652 16.32 24.7489 17.2533C24.7036 16.3168 23.9933 15.5531 22.9571 15.2875C24.0675 15.041 24.9972 14.2918 25.3135 13.3585Z" fill="white"/></svg>
+            <p class="budget-card-empty-text">Бюджет на этот месяц<br>ещё не установлен</p>
+            <button class="btn btn-dark">Установить бюджет</button>
+          </div>
+        </div>
+
+        <h2 class="section-subtitle">История</h2>
+        <div class="budget-table-wrap">
+          <div class="budget-table-scroll"><table class="budget-table">
+            <thead><tr><th>Месяц</th><th>Бюджет</th><th>Потрачено</th><th>Остаток</th><th>Итог</th></tr></thead>
+            <tbody>
+              <tr><td class="td-month">май 2026</td><td class="td-amount td-dash">—</td><td class="td-amount">69 000,00 ₽</td><td class="td-amount td-dash">—</td><td><span class="status-chip chip-info"><span class="status-chip-dot"></span>Текущий месяц</span></td></tr>
+              <tr><td class="td-month">апрель 2026</td><td class="td-amount">100 000,00 ₽</td><td class="td-amount">69 000,00 ₽</td><td class="td-amount td-pos">+31 000,00 ₽</td><td><span class="status-chip chip-success"><span class="status-chip-dot"></span>В рамках бюджета</span></td></tr>
+              <tr><td class="td-month">март 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">69 000,00 ₽</td><td class="td-amount td-pos">+11 000,00 ₽</td><td><span class="status-chip chip-success"><span class="status-chip-dot"></span>В рамках бюджета</span></td></tr>
+              <tr><td class="td-month">февраль 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">115 000,00 ₽</td><td class="td-amount td-neg">−35 000,00 ₽</td><td><span class="status-chip chip-error"><span class="status-chip-dot"></span>Перерасход</span></td></tr>
+              <tr><td class="td-month">январь 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">80 400,00 ₽</td><td class="td-amount td-neg">−400,00 ₽</td><td><span class="status-chip chip-warning"><span class="status-chip-dot"></span>Почти весь бюджет</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ===== СЦЕНАРИЙ 3: БЮДЖЕТ + ПРОГНОЗ ХОРОШИЙ ===== -->
+      <div class="scenario" id="sc-budget-good">
+        <div class="budget-card">
+          <div class="budget-card-header">
+            <span class="budget-card-title">Бюджет</span>
+            <span class="status-chip chip-success"><span class="status-chip-dot"></span>Прогноз: Благоприятный</span>
+          </div>
+          <div class="budget-amount">100 000,00 ₽</div>
+          <div class="budget-progress-section">
+            <div class="budget-progress-label">Израсходовано:</div>
+            <div class="progress-track progress-track-good">
+              <div class="progress-fill progress-fill-good" style="width:46%"></div>
+            </div>
+            <div class="progress-meta">
+              <span class="progress-meta-left">46 000 ₽ из 100 000 ₽</span>
+              <span class="progress-meta-right-good">46%</span>
+            </div>
+          </div>
+          <div class="bot-inline bot-inline-good">
+            <div class="bot-inline-icon">
+              <svg width="28" height="28" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0005 10.164C34.5231 10.1642 42.2426 16.8065 42.2427 24.9999C42.2427 33.1934 34.5231 39.8357 25.0005 39.8358C21.6955 39.8358 18.6072 39.0356 15.9839 37.6483C14.8359 38.6506 13.3429 39.2583 11.8188 39.3192C12.605 38.2968 13.0541 37.0214 13.0962 35.7333C9.80683 33.0317 7.75732 29.2217 7.75732 24.9999C7.75736 16.8064 15.4778 10.164 25.0005 10.164Z" fill="#2FBF71"/><path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8898 9.776 26.0515V24.4535C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4535V26.0515C40.2632 28.8898 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.642 26.4946C26.9635 26.4946 27.1996 26.8022 27.109 27.1104C26.8429 28.017 26.0053 28.679 25.0125 28.679C24.0201 28.679 23.1825 28.017 22.9164 27.1104C22.8258 26.8022 23.0623 26.4946 23.3834 26.4946H26.642Z" fill="#1E2A38"/><circle cx="16.1" cy="25.4" r="2.37" fill="#1E2A38"/><circle cx="33.92" cy="25.4" r="2.37" fill="#1E2A38"/></svg>
+            </div>
+            <p class="bot-inline-text">Без учёта крупных трат, если сохранишь темп расходов — израсходуешь менее 100% своего бюджета 💛</p>
+          </div>
+          <div class="budget-card-actions">
+            <button class="btn btn-dark btn-sm">Изменить бюджет</button>
+          </div>
+        </div>
+
+        <h2 class="section-subtitle">История</h2>
+        <div class="budget-table-wrap">
+          <div class="budget-table-scroll"><table class="budget-table">
+            <thead><tr><th>Месяц</th><th>Бюджет</th><th>Потрачено</th><th>Остаток</th><th>Итог</th></tr></thead>
+            <tbody>
+              <tr><td class="td-month">май 2026</td><td class="td-amount">100 000,00 ₽</td><td class="td-amount">46 000,00 ₽</td><td class="td-amount td-pos">+54 000,00 ₽</td><td><span class="status-chip chip-info"><span class="status-chip-dot"></span>Текущий месяц</span></td></tr>
+              <tr><td class="td-month">апрель 2026</td><td class="td-amount">100 000,00 ₽</td><td class="td-amount">69 000,00 ₽</td><td class="td-amount td-pos">+31 000,00 ₽</td><td><span class="status-chip chip-success"><span class="status-chip-dot"></span>В рамках бюджета</span></td></tr>
+              <tr><td class="td-month">март 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">69 000,00 ₽</td><td class="td-amount td-pos">+11 000,00 ₽</td><td><span class="status-chip chip-success"><span class="status-chip-dot"></span>В рамках бюджета</span></td></tr>
+              <tr><td class="td-month">февраль 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">115 000,00 ₽</td><td class="td-amount td-neg">−35 000,00 ₽</td><td><span class="status-chip chip-error"><span class="status-chip-dot"></span>Перерасход</span></td></tr>
+              <tr><td class="td-month">январь 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">80 400,00 ₽</td><td class="td-amount td-neg">−400,00 ₽</td><td><span class="status-chip chip-warning"><span class="status-chip-dot"></span>Почти весь бюджет</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- ===== СЦЕНАРИЙ 4: БЮДЖЕТ + РИСК ПРЕВЫШЕНИЯ ===== -->
+      <div class="scenario" id="sc-budget-risk">
+        <div class="budget-card">
+          <div class="budget-card-header">
+            <span class="budget-card-title">Бюджет</span>
+            <span class="status-chip chip-error"><span class="status-chip-dot"></span>Прогноз: Риск превышения</span>
+          </div>
+          <div class="budget-amount">80 000,00 ₽</div>
+          <div class="budget-progress-section">
+            <div class="budget-progress-label">Израсходовано:</div>
+            <div class="progress-track progress-track-bad">
+              <div class="progress-fill progress-fill-bad" style="width:88%"></div>
+            </div>
+            <div class="progress-meta">
+              <span class="progress-meta-left">70 400 ₽ из 80 000 ₽</span>
+              <span class="progress-meta-right-bad">88%</span>
+            </div>
+          </div>
+          <div class="bot-inline bot-inline-bad">
+            <div class="bot-inline-icon">
+              <svg width="28" height="28" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M25.0004 10.164C34.5229 10.1642 42.2425 16.8065 42.2426 24.9999C42.2426 33.1934 34.5229 39.8357 25.0004 39.8358C21.6954 39.8358 18.607 39.0356 15.9838 37.6483C14.8357 38.6506 13.3427 39.2583 11.8187 39.3192C12.6048 38.2968 13.054 37.0214 13.0961 35.7333C9.80671 33.0317 7.7572 29.2217 7.7572 24.9999C7.75724 16.8064 15.4776 10.164 25.0004 10.164Z" fill="#E5484D"/><path d="M35.124 31.1907H14.9152C12.0769 31.1907 9.776 28.8899 9.776 26.0516V24.4536C9.776 21.6152 12.0769 19.3143 14.9152 19.3143H35.124C37.9623 19.3143 40.2632 21.6152 40.2632 24.4536V26.0516C40.2632 28.8899 37.9623 31.1907 35.124 31.1907Z" fill="white"/><path d="M26.642 28.679C26.9635 28.679 27.1996 28.3714 27.109 28.0632C26.8429 27.1566 26.0053 26.4947 25.0125 26.4947C24.0201 26.4947 23.1825 27.1566 22.9164 28.0632C22.8258 28.3714 23.0623 28.679 23.3834 28.679H26.642Z" fill="#1E2A38"/><circle cx="16.1" cy="25.4" r="2.37" fill="#1E2A38"/><circle cx="33.92" cy="25.4" r="2.37" fill="#1E2A38"/></svg>
+            </div>
+            <p class="bot-inline-text">Расходы растут быстрее плана — если темп сохранится, бюджет будет превышен до конца месяца. Стоит притормозить 🙈</p>
+          </div>
+          <div class="budget-card-actions">
+            <button class="btn btn-dark btn-sm">Изменить бюджет</button>
+          </div>
+        </div>
+
+        <h2 class="section-subtitle">История</h2>
+        <div class="budget-table-wrap">
+          <div class="budget-table-scroll"><table class="budget-table">
+            <thead><tr><th>Месяц</th><th>Бюджет</th><th>Потрачено</th><th>Остаток</th><th>Итог</th></tr></thead>
+            <tbody>
+              <tr><td class="td-month">май 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">70 400,00 ₽</td><td class="td-amount td-pos">+9 600,00 ₽</td><td><span class="status-chip chip-info"><span class="status-chip-dot"></span>Текущий месяц</span></td></tr>
+              <tr><td class="td-month">апрель 2026</td><td class="td-amount">100 000,00 ₽</td><td class="td-amount">69 000,00 ₽</td><td class="td-amount td-pos">+31 000,00 ₽</td><td><span class="status-chip chip-success"><span class="status-chip-dot"></span>В рамках бюджета</span></td></tr>
+              <tr><td class="td-month">март 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">69 000,00 ₽</td><td class="td-amount td-pos">+11 000,00 ₽</td><td><span class="status-chip chip-success"><span class="status-chip-dot"></span>В рамках бюджета</span></td></tr>
+              <tr><td class="td-month">февраль 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">115 000,00 ₽</td><td class="td-amount td-neg">−35 000,00 ₽</td><td><span class="status-chip chip-error"><span class="status-chip-dot"></span>Перерасход</span></td></tr>
+              <tr><td class="td-month">январь 2026</td><td class="td-amount">80 000,00 ₽</td><td class="td-amount">80 400,00 ₽</td><td class="td-amount td-neg">−400,00 ₽</td><td><span class="status-chip chip-warning"><span class="status-chip-dot"></span>Почти весь бюджет</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.scenario').forEach(el => el.classList.remove('visible'));
+  document.getElementById('sc-' + id).classList.add('visible');
+  document.querySelectorAll('.demo-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick').includes("'" + id + "'"));
+  });
+}
+</script>
+</body>
+</html>
