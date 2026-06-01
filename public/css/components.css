@@ -1,0 +1,389 @@
+/* ================================
+   КОМПОНЕНТЫ МЕРКУРИ
+   ================================ */
+
+
+/* ================================
+   HEADER
+   Источник: Figma desktop_1440__hero
+   Фон: rgba(255,255,255,0.60) + blur(4px)
+   ================================ */
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  /* Фон — отступы снаружи от nav-капсулы */
+  background: var(--c-bg);
+  padding: 15px var(--container-pad);
+  transition: padding 250ms ease;
+}
+
+/* Nav-капсула: белый фон + blur */
+.header__inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: var(--r-lg);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Логотип */
+.header__logo {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: 169px;
+}
+
+.header__logo svg {
+  width: 169px;
+  height: 50px;
+}
+
+/* Навигация */
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  justify-content: center;
+}
+
+.header__nav-link {
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--c-text-muted);
+  white-space: nowrap;
+  transition: color 150ms, background 150ms;
+}
+
+.header__nav-link:hover {
+  color: var(--c-text);
+  background: rgba(0,0,0,0.04);
+}
+
+/* Кнопки header */
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Бургер */
+.header__burger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  transition: background 150ms;
+}
+.header__burger:hover { background: rgba(0,0,0,0.06); }
+.header__burger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--c-text);
+  border-radius: var(--r-pill);
+  transition: transform 250ms, opacity 200ms;
+  transform-origin: center;
+}
+.header__burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.header__burger.is-open span:nth-child(2) { opacity: 0; }
+.header__burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Мобильное меню */
+.header__mobile-menu {
+  display: none;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 300ms ease, opacity 250ms ease;
+  background: var(--c-white);
+  border-top: 1px solid var(--c-border);
+  margin-top: 12px;
+  border-radius: var(--r-lg);
+}
+.header__mobile-menu.is-open { max-height: 400px; opacity: 1; }
+
+.header__mobile-link {
+  display: block;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--c-text);
+  border-bottom: 1px solid var(--c-border);
+  transition: color 150ms;
+}
+.header__mobile-link:last-of-type { border-bottom: none; }
+.header__mobile-link:hover { color: var(--c-blue); }
+
+.header__mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+}
+
+/* ================================
+   HERO
+   Источник: Figma desktop_1440__hero + adaptive_390__hero
+   ================================ */
+
+/* Отступ от фиксированного header */
+.hero {
+  padding-top: 80px; /* высота header (15px pad + 74px inner) */
+}
+
+/* Внешняя обёртка: паддинги как в Figma — 30px top, 120px bottom, 140px sides */
+.hero__wrap {
+  max-width: calc(var(--container-max) + var(--container-pad) * 2);
+  margin: 0 auto;
+  padding: 30px var(--container-pad) 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+}
+
+/* --- Теги-пилюли --- */
+.hero__tags {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hero__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: #E2E8F0;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+
+.hero__tag strong {
+  font-weight: 700;
+  color: var(--c-text);
+}
+
+.hero__tag-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c-text);
+  flex-shrink: 0;
+}
+
+/* --- Основной контент: 2 колонки --- */
+.hero__body {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+/* Левая колонка — 660px в Figma */
+.hero__content {
+  flex: 0 0 660px;
+  max-width: 660px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.hero__text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hero__title {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 48px;
+  color: var(--c-text);
+  font-family: var(--font);
+}
+
+.hero__title-accent {
+  color: var(--c-blue);
+}
+
+.hero__subtitle {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--c-text-muted);
+}
+
+.hero__cta-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero__buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero__note {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--c-text-muted);
+}
+
+/* Правая колонка — изображение */
+.hero__image-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.hero__image {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  border-radius: 40px;
+  display: block;
+  object-fit: cover;
+}
+
+/* ================================
+   RESPONSIVE — Header + Hero
+   ================================ */
+
+@media (max-width: 1100px) {
+  .hero__content { flex: 0 0 520px; max-width: 520px; }
+  .hero__title { font-size: 34px; line-height: 42px; }
+}
+
+@media (max-width: 900px) {
+  .header { padding: 10px 20px; }
+  .header__nav, .header__actions { display: none; }
+  .header__burger { display: flex; }
+  .header__mobile-menu { display: block; }
+
+  .hero__content { flex: 0 0 100%; max-width: 100%; }
+  .hero__body {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+  .hero__image-wrap {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Mobile 390px — по Figma adaptive */
+@media (max-width: 480px) {
+  .header {
+    padding: 15px 20px 4px;
+  }
+
+  .header__inner {
+    padding: 4px 8px;
+    border-radius: var(--r-lg);
+  }
+
+  .header__logo svg {
+    width: 50px;   /* на мобиле — только иконка */
+    height: 50px;
+    overflow: hidden;
+  }
+
+  .hero { padding-top: 70px; }
+
+  .hero__wrap {
+    padding: 24px 20px 60px;
+    gap: 40px;
+  }
+
+  .hero__tags {
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+  }
+
+  .hero__title {
+    font-size: 28px;
+    line-height: 36px;
+    text-align: center;
+  }
+
+  .hero__subtitle {
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+  }
+
+  .hero__note { text-align: center; }
+
+  .hero__buttons {
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .hero__buttons .btn-accent,
+  .hero__buttons .btn-secondary-outline {
+    width: 100%;
+    height: 40px;
+  }
+
+  .hero__image {
+    border-radius: 40px;
+  }
+}
+
+
+/* ================================
+   ОСТАЛЬНЫЕ СЕКЦИИ — заглушки
+   ================================ */
+
+/* How it works */
+/* .section-how { } */
+
+/* Features */
+/* .section-features { } */
+
+/* Pricing */
+/* .section-pricing { } */
+
+/* FAQ */
+/* .section-faq { } */
+
+/* CTA */
+/* .section-cta { } */
+
+/* Footer */
+/* .footer { } */

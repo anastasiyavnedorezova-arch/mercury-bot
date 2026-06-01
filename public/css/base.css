@@ -1,0 +1,100 @@
+/* ================================
+   СБРОС И БАЗА
+   ================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--c-text);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img, svg, video { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+ul, ol { list-style: none; }
+button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+/* Контейнер — совпадает с Figma: 1440px - 140px*2 = 1160px */
+.container {
+  width: 100%;
+  max-width: calc(var(--container-max) + var(--container-pad) * 2);
+  margin: 0 auto;
+  padding: 0 var(--container-pad);
+}
+
+/* ================================
+   КНОПКИ (по Figma)
+   ================================ */
+
+/* Общие свойства */
+.btn-accent,
+.btn-dark,
+.btn-secondary-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 10px 20px;
+  border-radius: var(--r-md);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.14px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s, background 0.15s, transform 0.1s;
+}
+
+/* Зелёная — «Установить бота» */
+.btn-accent {
+  background: var(--c-green);
+  color: var(--c-white);
+  border: none;
+}
+.btn-accent:hover { background: var(--c-green-hover); }
+.btn-accent:active { transform: scale(0.98); }
+
+/* Тёмная — «Создать аккаунт» */
+.btn-dark {
+  background: var(--c-dark);
+  color: var(--c-white);
+  border: none;
+  border-radius: var(--r-md);
+}
+.btn-dark:hover { opacity: 0.88; }
+.btn-dark:active { transform: scale(0.98); }
+
+/* Вторичная с рамкой — «Войти», «Открыть в Telegram» */
+.btn-secondary-outline {
+  background: var(--c-white);
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
+  outline: none;
+}
+.btn-secondary-outline:hover { border-color: var(--c-border-hard); }
+.btn-secondary-outline:active { transform: scale(0.98); }
+
+/* На всю ширину (mobile) */
+.btn-full { width: 100%; }
+
+/* Секции */
+.section { padding: 80px 0; }
+
+@media (max-width: 768px) {
+  .section { padding: 48px 0; }
+}
+
+/* Утилиты */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}

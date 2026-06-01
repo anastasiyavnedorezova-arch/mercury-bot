@@ -1,5 +1,10 @@
 import express from 'express';
 import { supabase } from './db.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function monthsWord(n) {
   if (n === 1) return 'месяц';
@@ -9,7 +14,7 @@ function monthsWord(n) {
 
 export function startWebhookServer(bot) {
   const app = express();
-  app.use(express.json());
+  app.use(express.static(path.join(__dirname, '../public')));
 
   app.get('/', (req, res) => {
     res.send('Mercury bot webhook server is running');

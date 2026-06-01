@@ -1,0 +1,52 @@
+/* ================================
+   МЕРКУРИ — Дизайн-токены
+   Источник: Colors.pdf, Text_Styles.pdf, Figma-макет
+   ================================ */
+
+:root {
+  /* Цвета бренда */
+  --c-dark:        #1E2A38;
+  --c-blue:        #4C9AFF;
+  --c-green:       #2FBF71;
+  --c-green-hover: #28A862;
+
+  /* Нейтральные */
+  --c-white:       #FFFFFF;
+  --c-bg:          #EEF2F6;
+  --c-border:      #E2E8F0;
+  --c-border-hard: #CBD5E1;
+
+  /* Текст */
+  --c-text:        #2D3748;
+  --c-text-muted:  #6B7280;
+  --c-text-dim:    #9CA3AF;
+
+  /* Статусы */
+  --c-success:     #2FBF71;
+  --c-error:       #E5484D;
+  --c-warning:     #F59E0B;
+
+  /* Типографика */
+  --font: 'Manrope', sans-serif;
+
+  /* Радиусы */
+  --r-sm:   8px;
+  --r-md:   10px;
+  --r-lg:   12px;
+  --r-pill: 999px;
+
+  /* Тени */
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+  /* Контейнер */
+  --container-max: 1160px;
+  --container-pad: 140px;
+}
+
+@media (max-width: 1200px) {
+  :root { --container-pad: 40px; }
+}
+@media (max-width: 768px) {
+  :root { --container-pad: 20px; }
+}

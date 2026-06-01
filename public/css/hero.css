@@ -1,0 +1,2227 @@
+/* ================================
+   МЕРКУРИ — Hero + Header
+   Figma: desktop 1440, mobile 390
+   Шрифт: Manrope
+   ================================ */
+
+:root {
+  --font:            'Manrope', sans-serif;
+  --bg:              #F5F7FA;
+  --white:           #FFFFFF;
+  --text-main:       #2D3748;
+  --text-muted:      #6B7280;
+  --blue:            #4C9AFF;
+  --green:           #2FBF71;
+  --dark:            #1E2A38;
+  --border:          #E2E8F0;
+  --tag-bg:          #E2E8F0;
+  --tag-dot:         #2D3748;
+  --radius-btn:      10px;
+  --radius-header:   12px;
+  --radius-tag:      999px;
+  --radius-img:      40px;
+  --header-h-desk:   74px;   /* 12+50+12 */
+  --header-h-mob:    58px;   /* 4+50+4 */
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ================================================
+   КНОПКИ
+   ================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: var(--radius-btn);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.14px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.18s ease, transform 0.15s ease;
+  border: none;
+}
+
+.btn:hover  { opacity: 0.88; transform: translateY(-1px); }
+.btn:active { opacity: 1;    transform: translateY(0); }
+
+.btn--primary {
+  background: var(--dark);
+  color: var(--white);
+}
+
+.btn--secondary {
+  background: var(--white);
+  color: var(--text-main);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.btn--accent {
+  background: var(--green);
+  color: var(--white);
+}
+
+.btn--full { width: 100%; }
+
+
+/* ================================================
+   HEADER
+   Figma: padding 12px 24px, bg rgba(255,255,255,0.60),
+          blur 4px, border-radius 12px
+   ================================================ */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 30px 140px 0;        /* отступы страницы = 140px, сверху 30px (как в Figma) */
+}
+
+/* Внутренняя «капсула» */
+.header__wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 24px;
+  background: rgba(255, 255, 255, 0.60);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-radius: var(--radius-header);
+}
+
+/* Логотип */
+.header__logo { flex-shrink: 0; display: flex; align-items: center; }
+.header__logo img { display: block; }
+
+/* Навигация */
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.header__nav-link {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+  transition: color 0.18s, background 0.18s;
+  white-space: nowrap;
+}
+
+.header__nav-link:hover {
+  color: var(--text-main);
+  background: rgba(0,0,0,0.04);
+}
+
+/* Кнопки шапки */
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Бургер — скрыт на desktop */
+.header__burger { display: none; }
+
+/* Мобильное меню — скрыто на desktop */
+.header__mobile { display: none; }
+
+
+/* ================================================
+   HERO
+   Figma: padding-top 30px, gap 60px, padding 0 140px
+   ================================================ */
+.hero {
+  background: var(--bg);
+  padding: 0 140px 120px;
+}
+
+/* Общий контейнер hero (= всё что под header внутри той же секции) */
+.hero__container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  padding-top: calc(30px + 74px + 60px);
+  max-width: 1160px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ---- Теги-пилюли ---- */
+.hero__tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+.hero__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--tag-bg);
+  border-radius: var(--radius-tag);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-main);
+}
+
+.hero__tag strong { font-weight: 700; }
+
+.hero__tag-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tag-dot);
+  flex-shrink: 0;
+}
+
+/* ---- Основной блок: текст + картинка ---- */
+.hero__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+/* Левая колонка */
+.hero__content {
+  width: 660px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.hero__title {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 48px;
+  color: var(--text-main);
+}
+
+.hero__title-blue { color: var(--blue); }
+
+.hero__subtitle {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--text-muted);
+}
+
+/* CTA */
+.hero__cta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hero__buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hero__note {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--text-muted);
+}
+
+/* Правая колонка — картинка */
+.hero__visual {
+  flex: 1;
+}
+
+.hero__image {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 20px;
+  display: block;
+  background: transparent;
+}
+
+
+/* ================================================
+   АДАПТИВ — 1200px
+   ================================================ */
+@media (max-width: 1200px) {
+  .header { padding: 20px 40px 0; }
+  .hero   { padding: 0 40px 80px; }
+
+  .hero__container { padding-top: calc(20px + 74px + 40px); }
+
+  .hero__content { width: 520px; }
+  .hero__title   { font-size: 34px; line-height: 42px; }
+  .hero__subtitle{ font-size: 16px; line-height: 24px; }
+}
+
+
+/* ================================================
+   АДАПТИВ — 768px
+   ================================================ */
+@media (max-width: 768px) {
+  .header { padding: 0; }
+
+  /* Шапка — без капсулы, прямоугольная */
+  .header__wrap {
+    border-radius: 0;
+    padding: 4px 8px 4px 4px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--white);
+  }
+
+  .header__nav,
+  .header__actions { display: none; }
+
+  /* Бургер */
+  .header__burger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+    border-radius: 8px;
+    transition: background 0.18s;
+  }
+
+  .header__burger:hover { background: var(--bg); }
+
+  .header__burger span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--text-main);
+    border-radius: 999px;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+    transform-origin: center;
+  }
+
+  .header__burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .header__burger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .header__burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* Оверлей */
+  .header__overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.40);
+    z-index: 98;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .header__overlay.is-open {
+    display: block;
+    opacity: 1;
+  }
+
+  /* Карточка меню — по центру под хедером */
+  .header__mobile {
+    display: block;
+    position: fixed;
+    top: 62px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px) scale(0.98);
+    width: calc(100% - 32px);
+    max-width: 350px;
+    background: var(--white);
+    border-radius: 16px;
+    outline: 1px solid #E2E8F0;
+    outline-offset: -1px;
+    padding: 20px 16px;
+    z-index: 99;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .header__mobile.is-open {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .header__mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+  }
+
+  .header__mobile-nav a {
+    display: block;
+    width: 100%;
+    padding: 6px 0;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 18px;
+    color: #1E2A38;
+    text-align: center;
+    text-decoration: none;
+    transition: color 0.18s;
+  }
+
+  .header__mobile-nav a:hover { color: var(--blue); }
+
+  .header__mobile-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header__mobile-actions .btn {
+    height: 40px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+  }
+
+  /* Войти — secondary */
+  .header__mobile-actions .btn--secondary {
+    background: var(--white);
+    color: var(--text-main);
+    outline: 1px solid #E2E8F0;
+    outline-offset: -1px;
+  }
+
+  /* Войти — secondary по центру */
+  .header__mobile-actions .btn--secondary {
+    width: auto;
+    min-width: 140px;
+    justify-content: center;
+  }
+
+  /* Создать аккаунт — синяя на всю ширину */
+  .header__mobile-actions .btn--blue {
+    background: var(--blue);
+    color: var(--white);
+    width: 100%;
+    justify-content: center;
+  }
+
+
+  /* Hero — мобильная версия (390px) */
+  .hero { padding: 0 20px 60px; }
+
+  /* Смещение под фиксированный header */
+  .hero__container {
+    padding-top: calc(58px + 24px);
+    gap: 40px;
+  }
+
+  /* Теги — вертикальный стек слева */
+  .hero__tags { justify-content: flex-start; }
+
+  /* Блок: колонки → вертикально */
+  .hero__body {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .hero__content {
+    width: 100%;
+    gap: 24px;
+  }
+
+  /* Заголовок — центр на mobile */
+  .hero__title {
+    font-size: 28px;
+    line-height: 36px;
+    text-align: center;
+  }
+
+  .hero__subtitle {
+    font-size: 16px;
+    line-height: 24px;
+    text-align: center;
+  }
+
+  /* CTA — кнопки на всю ширину */
+  .hero__buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero__buttons .btn { width: 100%; }
+
+  .hero__note { text-align: center; }
+
+  /* Картинка */
+  .hero__visual { width: 100%; }
+
+  .hero__image {
+    height: auto;
+    max-height: 297px;
+    border-radius: 0;
+    background: transparent;
+  }
+}
+
+
+/* ================================================
+   АДАПТИВ — 480px
+   ================================================ */
+@media (max-width: 480px) {
+  .hero { padding: 0 16px 48px; }
+  .hero__title { font-size: 24px; line-height: 32px; }
+}
+
+
+/* ================================================
+   HOW IT WORKS
+   Figma: padding-bottom 90px, gap 78px (между слайдами)
+   ================================================ */
+
+.how {
+  background: var(--bg);
+  padding: 0 140px 90px;
+}
+
+.how__container {
+  display: flex;
+  flex-direction: column;
+  gap: 78px;
+}
+
+/* ---- Один слайд ---- */
+.how__slide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+/* Базовый: img слева, content справа */
+.how__slide .how__slide-img    { order: 0; }
+.how__slide .how__slide-content { order: 1; }
+
+/* --reverse: content слева, img справа */
+.how__slide--reverse .how__slide-content { order: 0; }
+.how__slide--reverse .how__slide-img     { order: 1; }
+
+/* Картинка */
+.how__slide-img {
+  flex-shrink: 0;
+  width: 358px;
+}
+
+.how__slide-img {
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.how__slide-img img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: transparent;
+}
+
+/* Правая колонка */
+.how__slide-content {
+  width: 600px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Заголовок + лид */
+.how__slide-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.how__slide-title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-main);
+}
+
+.how__slide-lead {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-main);
+}
+
+/* Пузырёк бота */
+.how__bubble-wrap {
+  width: 450px;
+  padding: 16px;
+  background: var(--white);
+  border-radius: 16px;
+  outline: 1px solid #E2E8F0;
+  outline-offset: -1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.how__bubble {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+/* Аватар бота в пузырьке — только иконка, не полный логотип */
+.how__bubble-avatar {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.how__bubble-avatar img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* Само сообщение */
+.how__bubble-msg {
+  position: relative;
+  flex: 1;
+  background: #EEF2F6;
+  border-radius: 18px;
+  padding: 6px 12px;
+}
+
+.how__bubble-msg p {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-main);
+}
+
+/* CSS-хвостик пузыря (треугольник слева внизу) */
+.how__bubble-tail {
+  position: absolute;
+  left: -9px;
+  bottom: 8px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-right: 10px solid #EEF2F6;
+  border-bottom: 0 solid transparent;
+}
+
+/* Подпись под пузырьком */
+.how__slide-caption {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+}
+
+
+/* ================================================
+   RESPONSIVE — How it works
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .how { padding: 0 40px 72px; }
+
+  .how__slide-img  { width: 280px; }
+  .how__slide-content { width: auto; flex: 1; }
+  .how__bubble-wrap { width: 100%; }
+
+  .how__slide-title { font-size: 26px; line-height: 34px; }
+}
+
+@media (max-width: 768px) {
+  .how { padding: 0 20px 45px; }
+  .how__container { gap: 48px; }
+
+  /* Оба варианта — вертикально, картинка снизу */
+  .how__slide,
+  .how__slide:nth-child(even) {
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .how__slide-img  { width: 100%; }
+  .how__slide-content { width: 100%; }
+
+  .how__slide-title {
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+  }
+
+  .how__slide-lead {
+    font-size: 15px;
+    line-height: 22px;
+    text-align: center;
+  }
+
+  .how__bubble-wrap {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .how__slide-caption {
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  /* Mobile: всегда текст сверху (order 0), картинка снизу (order 1) */
+  .how__slide,
+  .how__slide--reverse { flex-direction: column; }
+  .how__slide .how__slide-img,
+  .how__slide--reverse .how__slide-img    { order: 1; }
+  .how__slide .how__slide-content,
+  .how__slide--reverse .how__slide-content { order: 0; }
+}
+
+/* Последний слайд — увеличенный нижний отступ секции (Figma: 120px vs 90px) */
+.how__slide:last-child { padding-bottom: 30px; }
+
+
+/* ================================================
+   КАК НАЧАТЬ ПОЛЬЗОВАТЬСЯ БОТОМ
+   Figma: padding 120px 140px, container 1024px,
+          gap 40px, текст flex:1, img 462×304
+   ================================================ */
+
+.start {
+  background: #EEF2F6;
+  padding: 120px 140px;
+}
+
+/* Центрированный контейнер 1024px */
+.start__container {
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+.start__inner {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+/* ---- Левая колонка ---- */
+.start__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.start__head {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.start__title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-main);
+}
+
+.start__desc {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+}
+
+/* Шаги */
+.start__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+.start__step {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.start__step-label {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--text-main);
+}
+
+.start__step-text {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-main);
+}
+
+/* ---- Правая колонка — картинка ---- */
+.start__visual {
+  flex-shrink: 0;
+  width: 462px;
+}
+
+.start__visual {
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.start__visual img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: transparent;
+}
+
+
+/* ================================================
+   RESPONSIVE — Start
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .start { padding: 80px 40px; }
+  .start__visual { width: 360px; }
+  .start__title { font-size: 26px; line-height: 34px; }
+}
+
+@media (max-width: 768px) {
+  .start { padding: 60px 20px; }
+
+  .start__inner {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .start__content { gap: 16px; }
+
+  .start__title {
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+  }
+
+  .start__desc {
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .start__step-label {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .start__step-text {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .start__visual {
+    width: 100%;
+  }
+
+  .start__visual img {
+    
+  }
+}
+
+
+/* ================================================
+   ПРЕИМУЩЕСТВА
+   Figma: padding 120px 140px, bg #F5F7FA,
+          сетка 3 колонки, карточки 370px, gap 24px
+   ================================================ */
+
+.features {
+  background: #F5F7FA;
+  padding: 120px 140px;
+}
+
+.features__container {
+  max-width: 1160px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.features__title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-main);
+  text-align: center;
+  max-width: 820px;
+}
+
+/* Сетка карточек */
+.features__grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+/* Карточка */
+.features__card {
+  background: var(--white);
+  border-radius: 24px;
+  outline: 1px solid #E2E8F0;
+  outline-offset: -1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.features__card img {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+
+.features__card-name {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  color: var(--text-main);
+}
+
+.features__card-text {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-muted);
+}
+
+/* Последняя карточка — текст bold по Figma */
+.features__card-text--bold {
+  font-weight: 700;
+}
+
+
+/* ================================================
+   RESPONSIVE — Features
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .features { padding: 80px 40px; }
+  .features__card-name { font-size: 20px; line-height: 28px; }
+  .features__card-text { font-size: 15px; line-height: 22px; }
+}
+
+@media (max-width: 900px) {
+  .features__grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .features { padding: 60px 20px; }
+
+  .features__title {
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+  }
+
+  .features__grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* На mobile: иконка + название в одну строку */
+  .features__card {
+    padding: 20px;
+    border-radius: 20px;
+    gap: 8px;
+  }
+
+  .features__card img { width: 32px; height: 32px; }
+
+  /* Иконка + заголовок горизонтально */
+  .features__card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .features__card-name {
+    font-size: 20px;
+    line-height: 28px;
+  }
+
+  .features__card-text {
+    font-size: 15px;
+    line-height: 22px;
+  }
+}
+
+
+/* ================================================
+   ДЛЯ КОГО
+   Figma: padding-bottom 120px 140px, container 1024px,
+          gap 40px, img 462×318
+   ================================================ */
+
+.forwhom {
+  background: #F5F7FA;
+  padding: 0 140px 120px;
+}
+
+.forwhom__container {
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+.forwhom__inner {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+/* ---- Левая колонка ---- */
+.forwhom__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 27px;
+}
+
+.forwhom__title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-main);
+}
+
+.forwhom__title-blue { color: var(--blue); }
+
+.forwhom__list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  list-style: none;
+}
+
+.forwhom__list li {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-main);
+}
+
+.forwhom__list strong {
+  font-weight: 700;
+}
+
+.forwhom__note {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+}
+
+/* ---- Правая колонка ---- */
+.forwhom__visual {
+  flex-shrink: 0;
+  width: 462px;
+}
+
+.forwhom__visual {
+  overflow: hidden;
+}
+
+.forwhom__visual img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: transparent;
+}
+
+
+/* ================================================
+   RESPONSIVE — For Whom
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .forwhom { padding: 0 40px 80px; }
+  .forwhom__visual { width: 360px; }
+  .forwhom__title { font-size: 26px; line-height: 34px; }
+}
+
+@media (max-width: 768px) {
+  .forwhom { padding: 0 20px 60px; }
+
+  .forwhom__inner {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .forwhom__title {
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+  }
+
+  .forwhom__list li {
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  .forwhom__note {
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .forwhom__visual {
+    width: 100%;
+    order: 1;
+  }
+
+  .forwhom__content { order: 0; }
+}
+
+
+/* ================================================
+   ТАРИФЫ
+   Figma: padding 0 140px 120px, bg #F5F7FA,
+          2 карточки по 500px, gap 24px
+   ================================================ */
+
+.pricing {
+  background: #F5F7FA;
+  padding: 0 140px 120px;
+}
+
+.pricing__container {
+  max-width: 1160px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+
+.pricing__title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: #1E2430;
+  align-self: center;
+  text-align: center;
+}
+
+/* Сетка карточек */
+.pricing__grid {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+/* Карточка */
+.pricing__card {
+  width: 500px;
+  flex-shrink: 0;
+  background: var(--white);
+  border-radius: 24px;
+  outline: 1px solid #E2E8F0;
+  outline-offset: -1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Заголовок + цена */
+.pricing__card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pricing__card-name {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  color: var(--text-main);
+}
+
+.pricing__card-price {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 27px;
+  letter-spacing: 0.4px;
+  color: #1F7A4C;
+}
+
+.pricing__card-desc {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+}
+
+/* Список фич */
+.pricing__features {
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing__feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.pricing__feature-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: #EAF2FF;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.pricing__feature-body {
+  flex: 1;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #D9DEE5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Последний элемент без border */
+.pricing__feature--last .pricing__feature-body {
+  border-bottom: none;
+}
+
+.pricing__feature-name {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: var(--text-main);
+}
+
+.pricing__feature-list {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #1E2430;
+}
+
+/* CTA */
+.pricing__card-cta {
+  padding-top: 12px;
+}
+
+/* Синяя кнопка (бесплатный тариф) */
+.btn--blue {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.btn--blue:hover { opacity: 0.88; }
+
+
+/* ================================================
+   RESPONSIVE — Pricing
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .pricing { padding: 0 40px 80px; }
+  .pricing__card { width: calc(50% - 12px); }
+}
+
+@media (max-width: 900px) {
+  .pricing__grid { flex-direction: column; align-items: center; }
+  .pricing__card { width: 100%; max-width: 540px; }
+}
+
+@media (max-width: 768px) {
+  .pricing { padding: 0 20px 60px; }
+
+  .pricing__title {
+    font-size: 24px;
+    line-height: 32px;
+    align-self: center;
+  }
+
+  .pricing__card {
+    padding: 20px;
+    border-radius: 20px;
+    gap: 8px;
+  }
+
+  .pricing__card-name {
+    font-size: 20px;
+    line-height: 28px;
+    text-align: center;
+  }
+
+  .pricing__card-price {
+    font-size: 18px;
+    text-align: center;
+  }
+
+  .pricing__card-desc {
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .pricing__feature-name {
+    font-size: 15px;
+    line-height: 22px;
+  }
+}
+
+
+/* ================================================
+   ТРИАЛ
+   Figma: bg #E6F7EF, padding 120px 140px,
+          текст 658px слева, img 462px справа
+   ================================================ */
+
+.trial {
+  background: #E6F7EF;
+  padding: 120px 140px;
+}
+
+.trial__container {
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+.trial__inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+/* ---- Левая колонка ---- */
+.trial__content {
+  width: 658px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.trial__text {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trial__title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-main);
+}
+
+.trial__title-green { color: #1F7A4C; }
+
+.trial__desc {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-main);
+}
+
+/* Пузырёк — переиспользуем .how__bubble стили */
+.trial__bubble-wrap {
+  width: 450px;
+  padding: 16px;
+  background: var(--white);
+  border-radius: 16px;
+  outline: 1px solid #E2E8F0;
+  outline-offset: -1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* CTA */
+.trial__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Тёмная кнопка */
+.btn--dark {
+  background: var(--dark);
+  color: var(--white);
+}
+
+.btn--dark:hover { opacity: 0.88; }
+
+/* ---- Правая колонка ---- */
+.trial__visual {
+  flex: 1;
+}
+
+.trial__visual {
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.trial__visual img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: transparent;
+}
+
+
+/* ================================================
+   RESPONSIVE — Trial
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .trial { padding: 80px 40px; }
+  .trial__content { width: auto; flex: 1; }
+  .trial__bubble-wrap { width: 100%; }
+}
+
+@media (max-width: 768px) {
+  .trial { padding: 60px 20px; }
+
+  .trial__inner {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .trial__title {
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+  }
+
+  .trial__desc {
+    font-size: 15px;
+    line-height: 22px;
+    text-align: center;
+  }
+
+  .trial__bubble-wrap {
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .trial__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trial__actions .btn { width: 100%; justify-content: center; }
+
+  .trial__visual { width: 100%; }
+
+  .trial__visual img {  }
+}
+
+
+/* ================================================
+   ДОВЕРИЕ / ПОДХОД
+   Figma: padding 120px 140px, bg #F5F7FA,
+          img 358px слева, текст 600px справа
+   ================================================ */
+
+.trust {
+  background: #F5F7FA;
+  padding: 120px 140px;
+}
+
+.trust__container {
+  max-width: 1160px;
+  margin: 0 auto;
+}
+
+.trust__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+/* Картинка слева */
+.trust__visual {
+  flex-shrink: 0;
+  width: 358px;
+}
+
+.trust__visual {
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.trust__visual img {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: transparent;
+}
+
+/* Правая колонка */
+.trust__content {
+  width: 600px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.trust__text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trust__title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-main);
+}
+
+.trust__desc {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-main);
+}
+
+/* Карточка со списком */
+.trust__card {
+  background: var(--white);
+  border-radius: 24px;
+  outline: 1px solid #E2E8F0;
+  outline-offset: -1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trust__card p {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-main);
+}
+
+.trust__card strong {
+  font-weight: 700;
+}
+
+
+/* ================================================
+   RESPONSIVE — Trust
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .trust { padding: 80px 40px; }
+  .trust__visual { width: 280px; }
+  .trust__content { width: auto; flex: 1; }
+}
+
+@media (max-width: 768px) {
+  .trust { padding: 60px 20px; }
+
+  .trust__inner {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* На mobile: сначала текст, потом картинка */
+  .trust__visual { width: 100%; order: 1; }
+  .trust__content { width: 100%; order: 0; }
+
+  .trust__title {
+    font-size: 24px;
+    line-height: 32px;
+    text-align: center;
+  }
+
+  .trust__desc {
+    font-size: 15px;
+    line-height: 22px;
+    text-align: center;
+  }
+
+  .trust__card {
+    padding: 20px;
+    border-radius: 20px;
+    gap: 12px;
+  }
+
+  .trust__card p {
+    font-size: 15px;
+    line-height: 22px;
+  }
+}
+
+
+/* ================================================
+   FAQ
+   Figma: padding-bottom 120px 140px, bg #F5F7FA,
+          заголовок + табы + аккордеон 650px по центру
+   ================================================ */
+
+.faq {
+  background: #F5F7FA;
+  padding: 0 140px 120px;
+}
+
+.faq__container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Шапка: заголовок + табы */
+.faq__head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.faq__title {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  color: var(--text-main);
+  text-align: center;
+}
+
+.faq__title-blue { color: var(--blue); }
+
+/* Табы-фильтры */
+.faq__tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.faq__tab {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+}
+
+.faq__tab:hover { color: var(--text-main); background: rgba(0,0,0,0.04); }
+
+.faq__tab--active {
+  background: #EAF2FF;
+  color: var(--blue);
+}
+
+/* Скрытая группа */
+.faq__group--hidden { display: none; }
+
+/* Список вопросов */
+.faq__list {
+  width: 650px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Один вопрос */
+.faq__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 0;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.faq__item:first-child {
+  border-top: 1px solid #E2E8F0;
+}
+
+/* Кнопка-вопрос */
+.faq__q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  color: #1E2A38;
+  font-family: var(--font);
+}
+
+/* Стрелка */
+.faq__arrow {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: block;
+  background: url('../images/icon_arrowdown.svg') center/contain no-repeat;
+  transition: background 0.15s;
+}
+
+.faq__q[aria-expanded="true"] .faq__arrow {
+  background-image: url('../images/icon_arrowup.svg');
+}
+
+/* Ответ */
+.faq__a {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: var(--text-muted);
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  opacity: 0;
+}
+
+.faq__a:not([hidden]) {
+  max-height: 400px;
+  opacity: 1;
+}
+
+.faq__a a {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
+
+/* ================================================
+   RESPONSIVE — FAQ
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .faq { padding: 0 40px 80px; }
+}
+
+@media (max-width: 768px) {
+  .faq { padding: 0 20px 60px; }
+
+  .faq__title { font-size: 24px; line-height: 32px; }
+
+  .faq__tabs { gap: 4px; }
+  .faq__tab  { font-size: 13px; padding: 8px 10px; }
+
+  .faq__list { width: 100%; }
+
+  .faq__q    { font-size: 15px; }
+  .faq__a    { font-size: 15px; line-height: 22px; }
+}
+
+
+/* ================================================
+   FOOTER
+   Figma: bg #2D3748, padding 60px 140px,
+          строка 1: логотип space-between кнопки,
+          строка 2: ИНН flex-1 + документы
+   ================================================ */
+
+.footer {
+  background: #2D3748;
+  padding: 60px 140px;
+}
+
+.footer__container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+/* ---- Строка 1 ---- */
+.footer__top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* Логотип — инвертируем в светлый через filter */
+.footer__logo { display: flex; align-items: center; }
+.footer__logo-img { display: block; }
+
+/* Кнопки-пилюли */
+.footer__contacts {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer__contact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 1000px;
+  outline: 1px solid #F5F7FA;
+  outline-offset: -1px;
+  color: #F5F7FA;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.18s;
+}
+
+.footer__contact-pill:hover {
+  background: rgba(245, 247, 250, 0.1);
+}
+
+.footer__contact-pill svg { flex-shrink: 0; }
+
+/* ---- Строка 2 ---- */
+.footer__bottom {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.footer__legal {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #6B7280;
+}
+
+.footer__docs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer__doc-link {
+  padding: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.14px;
+  color: #EAF2FF;
+  text-decoration: none;
+  transition: opacity 0.18s;
+}
+
+.footer__doc-link:hover { opacity: 0.75; }
+
+
+/* ================================================
+   RESPONSIVE — Footer
+   ================================================ */
+
+@media (max-width: 1200px) {
+  .footer { padding: 48px 40px; }
+  .footer__contact-pill { font-size: 15px; }
+}
+
+@media (max-width: 768px) {
+  .footer { padding: 45px 20px 60px; }
+
+  /* Строка 1: колонка — логотип по центру, кнопки под ним */
+  .footer__top {
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  /* Кнопки — вертикально, на всю ширину */
+  .footer__contacts {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .footer__contact-pill {
+    width: 100%;
+    justify-content: center;
+    max-width: 320px;
+  }
+
+  /* Строка 2: колонка — документы сверху, ИНН снизу */
+  .footer__bottom {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .footer__docs {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .footer__doc-link {
+    text-align: center;
+  }
+
+  .footer__legal {
+    text-align: center;
+    flex: none;
+  }
+}
+
+
+/* ================================================
+   FIX: прозрачные PNG — убираем чёрную подложку
+   Все секционные картинки должны быть на фоне
+   секции, без своего background
+   ================================================ */
+
+.how__slide-img,
+.how__slide-img img,
+.start__visual,
+.start__visual img,
+.forwhom__visual,
+.forwhom__visual img,
+.trial__visual,
+.trial__visual img,
+.trust__visual,
+.trust__visual img {
+  background: transparent !important;
+  -webkit-print-color-adjust: exact;
+}
+
+/* Hero image: на mobile был gradient background — убираем */
+.hero__image {
+  background: transparent !important;
+}
+
+/* Иконки в шапке карточек features — фон явный, не трогаем */
+
+
+/* ================================================
+   МОДАЛ: ВЫБОР ТАРИФА
+   Figma: desktop 500px, mobile 340px
+   ================================================ */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.40);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Карточка модала */
+.modal-box {
+  position: relative;
+  background: var(--white);
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  outline: 1px solid #E2E8F0;
+  outline-offset: -1px;
+  padding: 32px;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transform: translateY(8px) scale(0.98);
+  transition: transform 0.2s ease;
+}
+
+.modal-overlay.is-open .modal-box {
+  transform: translateY(0) scale(1);
+}
+
+/* Кнопка закрытия */
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.modal-close:hover { background: var(--bg); }
+
+/* Заголовок */
+.modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  color: var(--text-main);
+  padding-right: 40px;
+}
+
+/* Список тарифов */
+.modal-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Одна строка тарифа */
+.modal-plan {
+  padding: 16px 20px;
+  background: var(--white);
+  border-radius: 20px;
+  outline: 1px solid #E2E8F0;
+  outline-offset: -1px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Верхняя строка: период + бейдж скидки */
+.modal-plan__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-plan__period {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 26px;
+  color: var(--text-muted);
+}
+
+.modal-plan__period--active {
+  color: var(--text-main);
+}
+
+/* Бейдж скидки */
+.modal-plan__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: #FDECEC;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: #9B2C2C;
+}
+
+.modal-plan__badge-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E5484D;
+  flex-shrink: 0;
+}
+
+/* Нижняя строка: цены + кнопка */
+.modal-plan__bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.modal-plan__prices {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.modal-plan__price {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 27px;
+  letter-spacing: 0.4px;
+  color: var(--text-main);
+}
+
+.modal-plan__old-price {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+  color: #9CA3AF;
+  text-decoration: line-through;
+}
+
+.modal-plan__new-price {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 27px;
+  letter-spacing: 0.4px;
+  color: #E5484D;
+}
+
+/* Кнопка оплаты */
+.modal-plan__btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  background: var(--blue);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.14px;
+  color: var(--white);
+  text-decoration: none;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.modal-plan__btn:hover { opacity: 0.85; }
+
+
+/* ================================================
+   RESPONSIVE — Modal
+   ================================================ */
+@media (max-width: 560px) {
+  .modal-box {
+    padding: 20px;
+    border-radius: 20px;
+    gap: 20px;
+  }
+
+  .modal-title { font-size: 20px; line-height: 28px; }
+
+  .modal-plan {
+    padding: 12px 16px;
+    border-radius: 16px;
+    gap: 6px;
+  }
+
+  .modal-plan__period { font-size: 16px; line-height: 24px; }
+  .modal-plan__price,
+  .modal-plan__new-price { font-size: 18px; line-height: 26px; }
+}
+
+
+/* Header nav кнопка — выглядит как ссылка */
+.header__nav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+/* Mobile nav кнопка */
+.header__mobile-nav-btn {
+  display: block;
+  width: 100%;
+  padding: 6px 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  color: #1E2A38;
+  text-align: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: color 0.18s;
+}
+
+.header__mobile-nav-btn:hover { color: var(--blue); }

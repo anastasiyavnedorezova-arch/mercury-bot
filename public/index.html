@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Меркури — телеграм-бот для ведения личных финансов. Записывай расходы голосом или текстом, следи за бюджетом и достигай финансовых целей." />
+  <meta property="og:title" content="Меркури — личный финансовый помощник в Telegram" />
+  <meta property="og:description" content="Записывай расходы в свободной форме, следи за бюджетом и достигай целей. 30 дней бесплатно." />
+  <meta property="og:url" content="https://mercuryfinbot.ru" />
+  <meta property="og:type" content="website" />
+  <title>Меркури — личный финансовый помощник в Telegram</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/hero.css" />
+</head>
+<body>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="header" id="header">
+    <div class="header__wrap">
+
+      <a href="/" class="header__logo" aria-label="Меркури — главная">
+        <img src="images/logo-mercury-main.svg" width="169" height="50" alt="mercury" />
+      </a>
+
+      <nav class="header__nav" aria-label="Основная навигация">
+        <a href="#how" class="header__nav-link">Как работает бот</a>
+        <a href="#pricing" class="header__nav-link">Тарифы</a>
+        <button class="header__nav-link header__nav-btn" id="openPricingModalNav" type="button">Подписка</button>
+        <a href="#faq" class="header__nav-link">Вопросы и ответы</a>
+      </nav>
+
+      <div class="header__actions">
+        <a href="https://t.me/mercury_finbot" class="btn btn--secondary" target="_blank" rel="noopener">Войти</a>
+        <a href="https://t.me/mercury_finbot" class="btn btn--primary" target="_blank" rel="noopener">Создать аккаунт</a>
+      </div>
+
+      <!-- Бургер — иконка X при открытом меню -->
+      <button class="header__burger" id="burger" aria-label="Меню" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+    </div>
+
+    <!-- Оверлей -->
+    <div class="header__overlay" id="menuOverlay" aria-hidden="true"></div>
+
+    <!-- Карточка меню — выпадает справа под хедером -->
+    <div class="header__mobile" id="mobileMenu" aria-hidden="true" role="dialog" aria-label="Меню навигации">
+      <nav class="header__mobile-nav">
+        <a href="#how">Как работает бот</a>
+        <a href="#pricing">Тарифы</a>
+        <button class="header__mobile-nav-btn" id="openPricingModalMob" type="button">Подписка</button>
+        <a href="#faq">Вопросы и ответы</a>
+      </nav>
+      <div class="header__mobile-actions">
+        <a href="https://t.me/mercury_finbot" class="btn btn--secondary" target="_blank" rel="noopener">Войти</a>
+        <a href="https://t.me/mercury_finbot" class="btn btn--blue" target="_blank" rel="noopener">Создать аккаунт</a>
+      </div>
+    </div>
+  </header>
+
+
+  <!-- ===================== HERO ===================== -->
+  <main>
+    <section class="hero" id="hero">
+      <div class="hero__container">
+
+        <div class="hero__tags">
+          <div class="hero__tag">
+            <span class="hero__tag-dot" aria-hidden="true"></span>
+            <span>Хочешь понять, <strong>куда уходят деньги</strong></span>
+          </div>
+          <div class="hero__tag">
+            <span class="hero__tag-dot" aria-hidden="true"></span>
+            <span>Хочешь держать <strong>бюджет под контролем</strong></span>
+          </div>
+          <div class="hero__tag">
+            <span class="hero__tag-dot" aria-hidden="true"></span>
+            <span>Хочешь <strong>копить на важные цели</strong></span>
+          </div>
+        </div>
+
+        <div class="hero__body">
+
+          <div class="hero__content">
+            <div class="hero__text">
+              <h1 class="hero__title">
+                Меркури бот&nbsp;— <span class="hero__title-blue">личный финансовый помощник</span> в твоем телефоне
+              </h1>
+              <p class="hero__subtitle">
+                Записывай доходы и расходы обычными сообщениями, следи за бюджетом и двигайся к финансовой цели без таблиц и сложных приложений.
+              </p>
+            </div>
+
+            <div class="hero__cta">
+              <div class="hero__buttons">
+                <a href="https://t.me/mercury_finbot" class="btn btn--accent" target="_blank" rel="noopener">Установить бота</a>
+                <a href="https://t.me/mercury_finbot" class="btn btn--secondary" target="_blank" rel="noopener">Открыть в Telegram</a>
+              </div>
+              <p class="hero__note">Бот работает в Telegram и через виджет в личном кабинете на сайте</p>
+            </div>
+          </div>
+
+          <div class="hero__visual">
+            <img
+              src="images/image-hero.png"
+              alt="Интерфейс Меркури бота в Telegram"
+              class="hero__image"
+              width="460"
+              height="390"
+            />
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== HOW IT WORKS ===================== -->
+    <section class="how" id="how">
+      <div class="how__container">
+
+        <!-- Слайд 1: Записывайте расходы -->
+        <div class="how__slide">
+          <div class="how__slide-img">
+            <img src="images/image-2.png" alt="Запись расходов в боте Меркури" width="358" height="304" />
+          </div>
+          <div class="how__slide-content">
+            <div class="how__slide-text">
+              <h2 class="how__slide-title">Записывайте доходы и расходы обычным сообщением</h2>
+              <p class="how__slide-lead">Бот понимает текст, аудио и изображение</p>
+            </div>
+            <div class="how__bubble-wrap">
+              <div class="how__bubble">
+                <div class="how__bubble-avatar" aria-hidden="true">
+                  <img src="images/bot-face.svg" width="50" height="50" alt="" />
+                </div>
+                <div class="how__bubble-msg">
+                  <p>Я понимаю обычную речь, не нужно искать категории в сложных меню! 😉</p>
+                  <span class="how__bubble-tail" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+            <p class="how__slide-caption">Встроенный искусственный интеллект расшифрует запись и занесет расход или доход в нужную категорию</p>
+          </div>
+        </div>
+
+        <!-- Слайд 2: Финансовая цель -->
+        <div class="how__slide how__slide--reverse">
+          <div class="how__slide-content">
+            <div class="how__slide-text">
+              <h2 class="how__slide-title">Ставьте финансовую цель и копите с умом</h2>
+              <p class="how__slide-lead">Меркури рассчитает, сколько в месяц нужно откладывать или инвестировать с учетом инфляции или потенциальной доходности и будет отслеживать ваш прогресс</p>
+            </div>
+            <div class="how__bubble-wrap">
+              <div class="how__bubble">
+                <div class="how__bubble-avatar" aria-hidden="true">
+                  <img src="images/bot-face.svg" width="50" height="50" alt="" />
+                </div>
+                <div class="how__bubble-msg">
+                  <p>Просто напиши мне «Хочу накопить 4 000 000 на квартиру к марту 2036» 🫡</p>
+                  <span class="how__bubble-tail" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="how__slide-img">
+            <img src="images/image-3.png" alt="Финансовые цели в личном кабинете Меркури" width="358" height="304" />
+          </div>
+        </div>
+
+        <!-- Слайд 3: Бюджет на месяц -->
+        <div class="how__slide">
+          <div class="how__slide-img">
+            <img src="images/image-4.png" alt="Личный кабинет Меркури — раздел бюджета" width="358" height="304" />
+          </div>
+          <div class="how__slide-content">
+            <div class="how__slide-text">
+              <h2 class="how__slide-title">Устанавливайте бюджет на месяц</h2>
+              <p class="how__slide-lead">Бот поможет держать бюджет под контролем. Встроенные уведомления помогают следить за лимитом расходов.</p>
+            </div>
+            <div class="how__bubble-wrap">
+              <div class="how__bubble">
+                <div class="how__bubble-avatar" aria-hidden="true">
+                  <img src="images/bot-face.svg" width="50" height="50" alt="" />
+                </div>
+                <div class="how__bubble-msg">
+                  <p>Я предупрежу, если вы близки к превышению своего бюджета 🫣</p>
+                  <span class="how__bubble-tail" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+            <p class="how__slide-caption">Встроенный искусственный умеет прогнозировать расходы к концу месяца в зависимости от темпа трат</p>
+          </div>
+        </div>
+
+        <!-- Слайд 4: Аналитика -->
+        <div class="how__slide how__slide--reverse">
+          <div class="how__slide-content">
+            <div class="how__slide-text">
+              <h2 class="how__slide-title">Анализируйте свои личные финансы</h2>
+              <p class="how__slide-lead">В личном кабинете сохраняется полный учет расходов и доходов по месяцам, аналитика по итогам месяца без сложных таблиц</p>
+            </div>
+            <div class="how__bubble-wrap">
+              <div class="how__bubble">
+                <div class="how__bubble-avatar" aria-hidden="true">
+                  <img src="images/bot-face.svg" width="50" height="50" alt="" />
+                </div>
+                <div class="how__bubble-msg">
+                  <p>Я могу показать самые популярные категории расходов, спрогнозировать расход бюджета и прогресс достижения цели 🤑</p>
+                  <span class="how__bubble-tail" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="how__slide-img">
+            <img src="images/image-5.png" alt="Аналитика в личном кабинете Меркури" width="358" height="304" />
+          </div>
+        </div>
+
+        <!-- Слайд 5: Все устройства — последний, padding-bottom 120px -->
+        <div class="how__slide">
+          <div class="how__slide-img">
+            <img src="images/image-6.png" alt="Меркури на телефоне и компьютере" width="358" height="304" />
+          </div>
+          <div class="how__slide-content">
+            <div class="how__slide-text">
+              <h2 class="how__slide-title">Используйте любой формат: бот в телефоне или личный кабинет на компьютере</h2>
+              <p class="how__slide-lead">Создайте аккаунт в личном кабинете, подключите бота и просматривайте свои данные так, как вам удобно</p>
+            </div>
+            <div class="how__bubble-wrap">
+              <div class="how__bubble">
+                <div class="how__bubble-avatar" aria-hidden="true">
+                  <img src="images/bot-face.svg" width="50" height="50" alt="" />
+                </div>
+                <div class="how__bubble-msg">
+                  <p>Я рядом на всех твоих устройствах ❤️</p>
+                  <span class="how__bubble-tail" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+    <!-- ===================== КАК НАЧАТЬ ===================== -->
+    <section class="start" id="start">
+      <div class="start__container">
+        <div class="start__inner">
+
+          <!-- Левая колонка: текст + шаги -->
+          <div class="start__content">
+            <div class="start__head">
+              <h2 class="start__title">Как начать пользоваться ботом?</h2>
+              <p class="start__desc">Выбирайте тот формат бота, который вам больше всего подходит: в Telegram или через виджет в личном кабинете.</p>
+            </div>
+            <ol class="start__steps">
+              <li class="start__step">
+                <span class="start__step-label">Шаг 1.</span>
+                <p class="start__step-text">Откройте бот в Telegram или создайте аккаунт на сайте. Виджет Бота можно установить на экран телефона</p>
+              </li>
+              <li class="start__step">
+                <span class="start__step-label">Шаг 2.</span>
+                <p class="start__step-text">Активируйте пробный период на 30 дней</p>
+              </li>
+              <li class="start__step">
+                <span class="start__step-label">Шаг 3.</span>
+                <p class="start__step-text">Сделайте свою первую запись!</p>
+              </li>
+            </ol>
+          </div>
+
+          <!-- Правая колонка: картинка -->
+          <div class="start__visual">
+            <img src="images/image-start.png" alt="Запись расхода в боте Меркури" width="462" height="304" />
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ПРЕИМУЩЕСТВА ===================== -->
+    <section class="features" id="features">
+      <div class="features__container">
+
+        <h2 class="features__title">Все, что нужно для контроля финансов, — в одном чат-боте:</h2>
+
+        <div class="features__grid">
+
+          <div class="features__card">
+            <div class="features__card-header">
+              <img src="images/icons/icon_Свободныи__ввод.svg" width="40" height="40" alt="" aria-hidden="true" />
+              <h3 class="features__card-name">Свободный ввод</h3>
+            </div>
+            <p class="features__card-text">Не нужно вручную заполнять сложные формы. Просто пишите сообщением или записывайте голосовое сообщение</p>
+          </div>
+
+          <div class="features__card">
+            <div class="features__card-header">
+              <img src="images/icons/icon_Контроль_бюджета.svg" width="40" height="40" alt="" aria-hidden="true" />
+              <h3 class="features__card-name">Контроль бюджета</h3>
+            </div>
+            <p class="features__card-text">Устанавливайте свой бюджет на месяц и отслеживайте, сколько уже потратили и сколько еще осталось в этом месяце</p>
+          </div>
+
+          <div class="features__card">
+            <div class="features__card-header">
+              <img src="images/icons/icon_Финансовые_цели.svg" width="40" height="40" alt="" aria-hidden="true" />
+              <h3 class="features__card-name">Финансовые цели</h3>
+            </div>
+            <p class="features__card-text">Ставьте цель и получайте понятный расчет: сколько откладывать каждый месяц</p>
+          </div>
+
+          <div class="features__card">
+            <div class="features__card-header">
+              <img src="images/icons/icon_Простая_аналитика.svg" width="40" height="40" alt="" aria-hidden="true" />
+              <h3 class="features__card-name">Простая аналитика</h3>
+            </div>
+            <p class="features__card-text">Доходы, расходы, категории трат и главные финансовые итоги — без перегруза</p>
+          </div>
+
+          <div class="features__card">
+            <div class="features__card-header">
+              <img src="images/icons/icon_Быстрыи__старт.svg" width="40" height="40" alt="" aria-hidden="true" />
+              <h3 class="features__card-name">Быстрый старт</h3>
+            </div>
+            <p class="features__card-text">Зарегистрируйтесь на сайте и сохраните бота на экран своего телефона или компьютера</p>
+          </div>
+
+          <div class="features__card">
+            <div class="features__card-header">
+              <img src="images/icons/icon_Удобныи__доступ.svg" width="40" height="40" alt="" aria-hidden="true" />
+              <h3 class="features__card-name">Удобный доступ</h3>
+            </div>
+            <p class="features__card-text features__card-text--bold">Бот работает в Телеграмм, а также через личный кабинет. В телефоне и на компьютере</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===================== ДЛЯ КОГО ===================== -->
+    <section class="forwhom" id="forwhom">
+      <div class="forwhom__container">
+        <div class="forwhom__inner">
+
+          <!-- Левая колонка: текст -->
+          <div class="forwhom__content">
+            <h2 class="forwhom__title">
+              Меркури подойдет тем, кто <span class="forwhom__title-blue">хочет навести порядок в личных финансах</span>
+            </h2>
+            <ul class="forwhom__list">
+              <li>✔️&nbsp; Тем, кто хочет понять, <strong>куда уходят деньги</strong></li>
+              <li>✔️&nbsp; Тем, кто хочет <strong>держать месячный бюджет под контролем</strong></li>
+              <li>✔️&nbsp; Тем, кто хочет <strong>начать копить на важную цель</strong></li>
+              <li>✔️&nbsp; Тем, кому нужен <strong>простой и понятный формат</strong> без таблиц и сложных интерфейсов</li>
+            </ul>
+            <p class="forwhom__note">Особенно удобно для тех, кто и так живет в телефоне и хочет решать финансовые задачи быстро, в привычном формате переписки в мессенджере.</p>
+          </div>
+
+          <!-- Правая колонка: картинка -->
+          <div class="forwhom__visual">
+            <img src="images/image-for-whom.png" alt="Меркури подходит всем" width="462" height="318" />
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== ТАРИФЫ ===================== -->
+    <section class="pricing" id="pricing">
+      <div class="pricing__container">
+
+        <h2 class="pricing__title">Тарифы и стоимость</h2>
+
+        <div class="pricing__grid">
+
+          <!-- Карточка 1: Бесплатный -->
+          <div class="pricing__card">
+            <div class="pricing__card-head">
+              <h3 class="pricing__card-name">Бесплатный тариф</h3>
+              <div class="pricing__card-price">0 руб. / мес</div>
+            </div>
+            <p class="pricing__card-desc">Подойдет, чтобы попробовать формат, начать вести учет и поставить первую финансовую цель</p>
+
+            <div class="pricing__features">
+              <div class="pricing__feature">
+                <div class="pricing__feature-icon">🎯</div>
+                <div class="pricing__feature-body">
+                  <div class="pricing__feature-name">Финансовые цели</div>
+                  <div class="pricing__feature-list">✔️ 1 финансовая цель<br>✔️ Расчет цели с учетом инфляции<br>✔️ Редактирование параметров 1 цели<br>✔️ Контроль прогресса по накоплениям</div>
+                </div>
+              </div>
+              <div class="pricing__feature">
+                <div class="pricing__feature-icon">💸</div>
+                <div class="pricing__feature-body">
+                  <div class="pricing__feature-name">Учет операций</div>
+                  <div class="pricing__feature-list">✔️ Запись доходов и расходов<br>✔️ История транзакций<br>✔️ Редактирование и удаление записей</div>
+                </div>
+              </div>
+              <div class="pricing__feature pricing__feature--last">
+                <div class="pricing__feature-icon">🛍️</div>
+                <div class="pricing__feature-body">
+                  <div class="pricing__feature-name">Аналитика и бюджет</div>
+                  <div class="pricing__feature-list">✔️ Ежемесячная аналитика (общий доход, общий расход, траты по категориям, категории с наибольшими расходами)<br>✔️ Доступ в личный кабинет</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pricing__card-cta">
+              <a href="https://t.me/mercury_finbot" class="btn btn--blue btn--full" target="_blank" rel="noopener">Попробовать бесплатно</a>
+            </div>
+          </div>
+
+          <!-- Карточка 2: Подписка -->
+          <div class="pricing__card">
+            <div class="pricing__card-head">
+              <h3 class="pricing__card-name">Подписка на 1, 6 или 12 месяцев</h3>
+              <div class="pricing__card-price">от 499 руб. / мес</div>
+            </div>
+            <p class="pricing__card-desc">Подписка для тех, кто хочет полный контроль над финансами. Без автоматических списаний. Все, что в бесплатном тарифе плюс:</p>
+
+            <div class="pricing__features">
+              <div class="pricing__feature">
+                <div class="pricing__feature-icon">🎯</div>
+                <div class="pricing__feature-body">
+                  <div class="pricing__feature-name">Финансовые цели</div>
+                  <div class="pricing__feature-list">✔️ До 3 целей одновременно<br>✔️ Выбор расчета: с учетом инфляции или доходности<br>✔️ Редактирование параметров 3 целей<br>✔️ Контроль прогресса по накоплениям</div>
+                </div>
+              </div>
+              <div class="pricing__feature">
+                <div class="pricing__feature-icon">💸</div>
+                <div class="pricing__feature-body">
+                  <div class="pricing__feature-name">Учет операций</div>
+                  <div class="pricing__feature-list">✔️ Распознавание аудио сообщений и изображений<br>✔️ Создание собственных категорий</div>
+                </div>
+              </div>
+              <div class="pricing__feature pricing__feature--last">
+                <div class="pricing__feature-icon">🛍️</div>
+                <div class="pricing__feature-body">
+                  <div class="pricing__feature-name">Аналитика и бюджет</div>
+                  <div class="pricing__feature-list">✔️ Аналитика в любой момент времени<br>✔️ Бюджет на месяц<br>✔️ Контроль сальдо<br>✔️ Предупреждения о риске превышения бюджета</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pricing__card-cta">
+              <button class="btn btn--accent btn--full" id="openPricingModal" type="button">Выбрать подписку</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===================== ТРИАЛ ===================== -->
+    <section class="trial" id="subscription">
+      <div class="trial__container">
+        <div class="trial__inner">
+
+          <!-- Левая колонка -->
+          <div class="trial__content">
+            <div class="trial__text">
+              <h2 class="trial__title">
+                Попробуйте все возможности <span class="trial__title-green">бесплатно 30 дней</span>
+              </h2>
+              <p class="trial__desc">Без оплаты в Пробном тарифе.<br>После завершения можно выбрать подходящий тариф подписки.</p>
+            </div>
+
+            <div class="trial__bubble-wrap">
+              <div class="how__bubble">
+                <div class="how__bubble-avatar" aria-hidden="true">
+                  <img src="images/bot-face.svg" width="50" height="50" alt="" />
+                </div>
+                <div class="how__bubble-msg">
+                  <p>После старта не забудь нажать "Активировать пробный период"</p>
+                  <span class="how__bubble-tail" aria-hidden="true"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="trial__actions">
+              <a href="https://t.me/mercury_finbot" class="btn btn--accent" target="_blank" rel="noopener">Начать в Telegram</a>
+              <a href="https://t.me/mercury_finbot" class="btn btn--dark" target="_blank" rel="noopener">Войти через сайт</a>
+            </div>
+          </div>
+
+          <!-- Правая колонка: картинка -->
+          <div class="trial__visual">
+            <img src="images/image-trial.png" alt="Личный кабинет Меркури — пробный период" width="462" height="304" />
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===================== ДОВЕРИЕ / ПОДХОД ===================== -->
+    <section class="trust" id="trust">
+      <div class="trust__container">
+        <div class="trust__inner">
+
+          <!-- Картинка слева -->
+          <div class="trust__visual">
+            <img src="images/image-trust.png" alt="Меркури — понятный подход к финансам" width="358" height="304" />
+          </div>
+
+          <!-- Текст справа -->
+          <div class="trust__content">
+            <div class="trust__text">
+              <h2 class="trust__title">Понятный и аккуратный подход к личным финансам</h2>
+              <p class="trust__desc">Меркури помогает учитывать личные финансы и следить за бюджетом</p>
+            </div>
+
+            <div class="trust__card">
+              <p>😌 Автопродление отключено — <strong>никаких автоматических списаний</strong></p>
+              <p>🫣 Нет банковских интеграций и <strong>нет доступа к банковским транзакциям</strong></p>
+              <p>🗄️ <strong>Ваши данные в безопасности</strong> — вся информация хранится на серверах в РФ</p>
+              <p>🤐 Бот <strong>не дает инвестиционных рекомендаций</strong></p>
+              <p>🏦 Оплата происходит через <strong>внешний платежный провайдер</strong></p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== FAQ ===================== -->
+    <section class="faq" id="faq">
+      <div class="faq__container">
+
+        <div class="faq__head">
+          <h2 class="faq__title">Вопросы и <span class="faq__title-blue">ответы</span></h2>
+
+          <!-- Фильтры по категориям -->
+          <div class="faq__tabs" role="tablist" aria-label="Категории вопросов">
+            <button class="faq__tab faq__tab--active" data-tab="bot" role="tab" aria-selected="true">Бот и подписка</button>
+            <button class="faq__tab" data-tab="expenses" role="tab" aria-selected="false">Учет расходов</button>
+            <button class="faq__tab" data-tab="goals" role="tab" aria-selected="false">Цели</button>
+            <button class="faq__tab" data-tab="budget" role="tab" aria-selected="false">Бюджет и аналитика</button>
+          </div>
+        </div>
+
+        <div class="faq__list">
+
+          <!-- Бот и подписка -->
+          <div class="faq__group" data-group="bot">
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Нужно ли устанавливать приложение?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Вы можете пользоваться ботом в Телеграмм или зарегистрировать аккаунт на сайте и получить доступ к своему личному кабинету с полной информацией. Установить мини-приложение на экран своего телефона можно по инструкции в личном кабинете.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">У меня не работает Телеграмм. Как пользоваться ботом?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Зарегистрируйте аккаунт на сайте и установите быстрый доступ к боту на экран своего телефона.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Можно ли пользоваться бесплатно?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Да, в бесплатном тарифе доступны базовые функции учета, одна финансовая цель и ежемесячная аналитика.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Что дает Пробный период?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Пробный период на 30 дней открывает весь функционал подписки бесплатно.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Как происходит оплата?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Оплата проходит через платежный сервис ЮКасса. Бот пришлет ссылку на выбранный тариф. Проверка оплаты автоматическая — после оплаты просто перезайдите в чат-бота.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Есть ли автопродление?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Нет, автопродление отключено. Мы осознанно хотим, чтобы вы самостоятельно решали, хотите ли вы дальше платить за полный доступ.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Как отменить подписку?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Подписка автоматически завершится по окончании оплаченного периода. Если вы хотите отменить подписку раньше, пожалуйста, напишите нам на почту с темой письма «Отмена подписки»: <a href="mailto:help@mercuryfinbot.ru">help@mercuryfinbot.ru</a></div>
+            </div>
+          </div>
+
+          <!-- Учет расходов -->
+          <div class="faq__group faq__group--hidden" data-group="expenses">
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Можно ли редактировать или удалять записи?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Да, эта функция доступна и в боте, и в личном кабинете. В личном кабинете вы можете отредактировать или удалить любую историческую запись.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Как посмотреть мои записи о расходах и доходах?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>В личном кабинете в разделе «История транзакций» или в боте по кнопке.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Можно ли интегрировать бот с банковским приложением?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Нет, интеграции с банковскими приложениями у бота нет. Но боту можно прислать историю транзакций из банковского приложения — он расшифрует её и сделает нужные записи.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Как вести семейный бюджет вместе?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Раздел сейчас в разработке. Бот пришлет сообщение, когда функция «Семейный бюджет» будет доступна.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Можно ли добавлять свои категории?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Да, создание собственных категорий доступно в тарифе с подпиской.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Можно ли изменить валюту?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Пока доступна только валюта рубли. Если вам необходима мультивалютность — напишите нам об этом.</div>
+            </div>
+          </div>
+
+          <!-- Цели -->
+          <div class="faq__group faq__group--hidden" data-group="goals">
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Можно ли вести несколько финансовых целей или отредактировать существующие?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>В Пробном тарифе и подписке — до 3 целей. На любом тарифе вы можете отредактировать цель: название, сумму, срок.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Как рассчитывается ежемесячный платеж для достижения цели?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>На бесплатном тарифе доступен расчет с учетом инфляции. Вы задаете боту сумму и желаемую дату — бот считает, сколько нужно накопить с учётом сегодняшних цен и уровня инфляции. По подписке вы можете рассчитать ежемесячный платёж как с учётом инфляции, так и с учётом потенциальной доходности (например, если инвестируете или откладываете на вклад).</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Может бот подсказать, как лучше инвестировать или выбрать вклад?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Нет, бот не дает инвестиционных советов.</div>
+            </div>
+          </div>
+
+          <!-- Бюджет и аналитика -->
+          <div class="faq__group faq__group--hidden" data-group="budget">
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Зачем устанавливать бюджет?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Бюджет — это ваш личный лимит расходов на месяц. Когда он установлен, Меркури отслеживает темп трат и предупреждает заранее, если вы рискуете выйти за рамки. Без бюджета бот просто фиксирует расходы.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Я не знаю, какой бюджет установить на месяц<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Начните с наблюдения: поведите расходы без бюджета 2–3 месяца, посмотрите на аналитику по категориям и поймёте реальную картину. Либо возьмите за основу доход минус обязательные платежи (аренда, кредиты, коммунальные услуги).</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Где посмотреть аналитику по моим финансам?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Нажмите кнопку «Аналитика» в главном меню бота. По подписке доступна аналитика в любой момент: расходы и доходы за месяц, топ категорий трат, сравнение с прошлым месяцем и прогноз до конца месяца.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Как вести семейный бюджет?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Сейчас каждый член семьи ведёт свой личный бюджет. Семейный общий бюджет — в ближайшем обновлении. Пока удобный способ: каждый записывает свои расходы, а в конце месяца сравниваете результаты.</div>
+            </div>
+            <div class="faq__item">
+              <button class="faq__q" aria-expanded="false">Что может проанализировать бот?<span class="faq__arrow" aria-hidden="true"></span></button>
+              <div class="faq__a" hidden>Меркури умеет показывать: общую сумму доходов и расходов за месяц, разбивку трат по категориям, топ-5 категорий, сравнение расходов с доходами, прогноз — уложитесь ли вы в бюджет до конца месяца.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+
+    <!-- ===================== FOOTER ===================== -->
+  <footer class="footer" id="footer">
+    <div class="footer__container">
+
+      <!-- Строка 1: логотип + контакты -->
+      <div class="footer__top">
+        <a href="/" class="footer__logo" aria-label="Mercury — главная">
+          <img src="images/logo-footer.svg" alt="mercury — твой финансовый бот" class="footer__logo-img" />
+        </a>
+        <div class="footer__contacts">
+          <a href="mailto:help@mercuryfinbot.ru" class="footer__contact-pill">
+            <img src="images/icon_mail.svg" width="24" height="24" alt="" aria-hidden="true" />
+            <span>help@mercuryfinbot.ru</span>
+          </a>
+          <a href="https://t.me/mercury_finbot" class="footer__contact-pill" target="_blank" rel="noopener">
+            <img src="images/icon_telegram.svg" width="24" height="24" alt="" aria-hidden="true" />
+            <span>Запустить бота</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Строка 2: ИНН + документы -->
+      <div class="footer__bottom">
+        <p class="footer__legal">Недорезова Анастасия Вячеславовна, самозанятая</p>
+        <div class="footer__docs">
+          <a href="https://telegra.ph/Politika-konfidencialnosti-servisa-Merkuri-03-31" class="footer__doc-link" target="_blank" rel="noopener">Политика конфиденциальности</a>
+          <a href="https://telegra.ph/Polzovatelskoe-soglashenie-servisa-Merkuri-03-31" class="footer__doc-link" target="_blank" rel="noopener">Пользовательское соглашение</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+
+
+
+  <!-- ===================== МОДАЛ: ВЫБОР ТАРИФА ===================== -->
+  <div class="modal-overlay" id="pricingModal" aria-hidden="true" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
+    <div class="modal-box" role="document">
+
+      <!-- Кнопка закрытия -->
+      <button class="modal-close" id="modalClose" aria-label="Закрыть">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+          <path d="M1 1L14 14M14 1L1 14" stroke="#6B7280" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+
+      <h2 class="modal-title" id="modalTitle">Выберите тариф</h2>
+
+      <div class="modal-plans">
+
+        <!-- 1 месяц -->
+        <div class="modal-plan">
+          <div class="modal-plan__top">
+            <span class="modal-plan__period">1 месяц</span>
+          </div>
+          <div class="modal-plan__bottom">
+            <div class="modal-plan__prices">
+              <span class="modal-plan__price">499 руб.</span>
+            </div>
+            <a href="https://t.me/mercury_finbot" class="modal-plan__btn" target="_blank" rel="noopener">Оплатить</a>
+          </div>
+        </div>
+
+        <!-- 6 месяцев -->
+        <div class="modal-plan">
+          <div class="modal-plan__top">
+            <span class="modal-plan__period modal-plan__period--active">6 месяцев</span>
+            <span class="modal-plan__badge">
+              <span class="modal-plan__badge-dot" aria-hidden="true"></span>
+              скидка 17%
+            </span>
+          </div>
+          <div class="modal-plan__bottom">
+            <div class="modal-plan__prices">
+              <span class="modal-plan__old-price">2 994 руб.</span>
+              <span class="modal-plan__new-price">2 490 руб.</span>
+            </div>
+            <a href="https://t.me/mercury_finbot" class="modal-plan__btn" target="_blank" rel="noopener">Оплатить</a>
+          </div>
+        </div>
+
+        <!-- 12 месяцев -->
+        <div class="modal-plan">
+          <div class="modal-plan__top">
+            <span class="modal-plan__period modal-plan__period--active">12 месяцев</span>
+            <span class="modal-plan__badge">
+              <span class="modal-plan__badge-dot" aria-hidden="true"></span>
+              скидка 20%
+            </span>
+          </div>
+          <div class="modal-plan__bottom">
+            <div class="modal-plan__prices">
+              <span class="modal-plan__old-price">5 988 руб.</span>
+              <span class="modal-plan__new-price">4 490 руб.</span>
+            </div>
+            <a href="https://t.me/mercury_finbot" class="modal-plan__btn" target="_blank" rel="noopener">Оплатить</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
