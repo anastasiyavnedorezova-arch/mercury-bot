@@ -1,7 +1,9 @@
-import { queryOne, run } from '../db.js';
+import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { parseAmount } from '../utils/parseAmount.js';
+
+// ── Вспомогательные функции ───────────────────────────────────────────────────
 
 const MONTHS_RU_NAMES = [
   'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
@@ -16,6 +18,7 @@ const MENU_KEYBOARD = {
 
 function getMonthStart() {
   const now = new Date();
+  // Строим дату без конвертации в UTC, чтобы избежать сдвига часового пояса
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
@@ -40,27 +43,37 @@ function progressBar(percent) {
 }
 
 async function getUserId(telegramId) {
-  const { data } = await queryOne(
-    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
-    [String(telegramId)]
-  );
+  const { data } = await supabase
+    .from('users')
+    .select('id')
+    .eq('external_id', String(telegramId))
+    .eq('channel', 'telegram')
+    .single();
   return data?.id ?? null;
 }
 
 async function getSpentThisMonth(userId) {
-  const { data } = await queryOne(
-    `SELECT COALESCE(SUM(t.amount), 0) AS total
-     FROM transactions t
-     JOIN categories c ON t.category_id = c.id
-     WHERE t.user_id = $1
-       AND t.type = 'expense'
-       AND c.is_system = false
-       AND t.transaction_date >= $2
-       AND t.transaction_date < $3`,
-    [userId, getMonthStart(), getNextMonthStart()]
-  );
-  return parseFloat(data?.total ?? 0);
+  const { data: cats } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('is_system', false);
+
+  const catIds = cats?.map(c => c.id) ?? [];
+  if (catIds.length === 0) return 0;
+
+  const { data: txData } = await supabase
+    .from('transactions')
+    .select('amount')
+    .eq('user_id', userId)
+    .eq('type', 'expense')
+    .gte('transaction_date', getMonthStart())
+    .lt('transaction_date', getNextMonthStart())
+    .in('category_id', catIds);
+
+  return txData?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0;
 }
+
+// ── Прогноз до конца месяца ───────────────────────────────────────────────────
 
 async function showForecast(bot, chatId, userId, budget) {
   const spent = await getSpentThisMonth(userId);
@@ -101,6 +114,8 @@ async function showForecast(bot, chatId, userId, budget) {
   await bot.sendMessage(chatId, text, MENU_KEYBOARD);
 }
 
+// ── Точка входа: /budget и menu:budget ───────────────────────────────────────
+
 export async function showBudget(bot, chatId, telegramId) {
   const userId = await getUserId(telegramId);
   if (!userId) {
@@ -126,11 +141,13 @@ export async function showBudget(bot, chatId, telegramId) {
     return;
   }
 
-  const { data: budget } = await queryOne(
-    `SELECT * FROM budget
-     WHERE user_id = $1 AND month >= $2 AND month < $3`,
-    [userId, getMonthStart(), getNextMonthStart()]
-  );
+  const { data: budget } = await supabase
+    .from('budget')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('month', getMonthStart())
+    .lt('month', getNextMonthStart())
+    .maybeSingle();
 
   if (!budget) {
     userStates.set(telegramId, { awaitingBudget: true });
@@ -168,6 +185,8 @@ export async function showBudget(bot, chatId, telegramId) {
   );
 }
 
+// ── Ввод суммы бюджета (вызывается из handleMessage) ─────────────────────────
+
 export async function handleBudgetState(bot, msg) {
   const telegramId = msg.from.id;
   const chatId = msg.chat.id;
@@ -191,17 +210,14 @@ export async function handleBudgetState(bot, msg) {
   const monthStart = getMonthStart();
 
   if (state.editing) {
-    await run(
-      `UPDATE budget SET amount = $1 WHERE user_id = $2 AND month = $3`,
-      [amount, userId, monthStart]
-    );
+    await supabase.from('budget')
+      .update({ amount })
+      .eq('user_id', userId)
+      .eq('month', monthStart);
     userStates.delete(telegramId);
     await bot.sendMessage(chatId, `Бюджет обновлён: ${formatNum(amount)} ₽ 💰`, MENU_KEYBOARD);
   } else {
-    await run(
-      `INSERT INTO budget (user_id, month, amount) VALUES ($1, $2, $3)`,
-      [userId, monthStart, amount]
-    );
+    await supabase.from('budget').insert({ user_id: userId, month: monthStart, amount });
     userStates.delete(telegramId);
     await bot.sendMessage(
       chatId,
@@ -214,6 +230,8 @@ export async function handleBudgetState(bot, msg) {
 
   return true;
 }
+
+// ── Кнопки budget: ───────────────────────────────────────────────────────────
 
 export async function handleBudgetCallback(bot, query) {
   const chatId = query.message.chat.id;
@@ -235,11 +253,12 @@ export async function handleBudgetCallback(bot, query) {
     const userId = await getUserId(telegramId);
     if (!userId) return;
 
-    const { data: budget } = await queryOne(
-      `SELECT amount FROM budget
-       WHERE user_id = $1 AND month >= $2 AND month < $3`,
-      [userId, getMonthStart(), getNextMonthStart()]
-    );
+    const { data: budget } = await supabase
+      .from('budget')
+      .select('amount')
+      .eq('user_id', userId)
+      .eq('month', getMonthStart())
+      .single();
 
     await showForecast(bot, chatId, userId, budget ?? null);
     return;
@@ -249,11 +268,12 @@ export async function handleBudgetCallback(bot, query) {
     const userId = await getUserId(telegramId);
     if (!userId) return;
 
-    const { data: budget } = await queryOne(
-      `SELECT amount FROM budget
-       WHERE user_id = $1 AND month >= $2 AND month < $3`,
-      [userId, getMonthStart(), getNextMonthStart()]
-    );
+    const { data: budget } = await supabase
+      .from('budget')
+      .select('amount')
+      .eq('user_id', userId)
+      .eq('month', getMonthStart())
+      .single();
 
     userStates.set(telegramId, { awaitingBudget: true, editing: true });
     await bot.sendMessage(

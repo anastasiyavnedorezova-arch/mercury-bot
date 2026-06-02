@@ -1,4 +1,4 @@
-import { queryOne, queryAll, queryCount, run } from '../db.js';
+import { supabase } from '../db.js';
 import { userStates } from '../state.js';
 
 const MENU_KEYBOARD = {
@@ -8,10 +8,12 @@ const MENU_KEYBOARD = {
 };
 
 async function getUserId(telegramId) {
-  const { data } = await queryOne(
-    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
-    [String(telegramId)]
-  );
+  const { data } = await supabase
+    .from('users')
+    .select('id')
+    .eq('external_id', String(telegramId))
+    .eq('channel', 'telegram')
+    .single();
   return data?.id ?? null;
 }
 
@@ -38,12 +40,13 @@ async function showMyCategories(bot, chatId, telegramId) {
   const userId = await getUserId(telegramId);
   if (!userId) return;
 
-  const { data: userCats } = await queryAll(
-    `SELECT id, name, type FROM categories
-     WHERE user_id = $1 AND is_system = false AND is_active = true
-     ORDER BY name`,
-    [userId]
-  );
+  const { data: userCats } = await supabase
+    .from('categories')
+    .select('id, name, type')
+    .eq('user_id', userId)
+    .eq('is_system', false)
+    .eq('is_active', true)
+    .order('name');
 
   const keyboard = [];
 
@@ -116,25 +119,32 @@ export async function handleCategoriesCallback(bot, query) {
     return;
   }
 
+  // ── Добавить категорию: шаг 1 — выбор типа ──────────────────────────────
+
   if (action === 'add_category') {
     await bot.sendMessage(chatId, 'Это расход или доход?', {
       reply_markup: {
-        inline_keyboard: [[
-          { text: 'Расход', callback_data: 'add_cat_type:expense' },
-          { text: 'Доход', callback_data: 'add_cat_type:income' },
-        ]],
+        inline_keyboard: [
+          [
+            { text: 'Расход', callback_data: 'add_cat_type:expense' },
+            { text: 'Доход', callback_data: 'add_cat_type:income' },
+          ],
+        ],
       },
     });
     return;
   }
 
+  // ── Шаг 2 — выбор группы ────────────────────────────────────────────────
+
   if (action.startsWith('add_cat_type:')) {
     const type = action.split(':')[1];
 
-    const { data: groups } = await queryAll(
-      `SELECT id, name FROM category_groups WHERE type = $1 ORDER BY name`,
-      [type]
-    );
+    const { data: groups } = await supabase
+      .from('category_groups')
+      .select('id, name')
+      .eq('type', type)
+      .order('name');
 
     if (!groups?.length) {
       await bot.sendMessage(chatId, 'Не нашёл группы для этого типа 🤔', MENU_KEYBOARD);
@@ -152,26 +162,33 @@ export async function handleCategoriesCallback(bot, query) {
     return;
   }
 
+  // ── Шаг 3 — запросить название ───────────────────────────────────────────
+
   if (action.startsWith('add_cat_group:')) {
     const parts = action.split(':');
     const groupId = parts[1];
     const type = parts[2];
 
     userStates.set(telegramId, { awaitingCategoryName: true, groupId, type });
+
     await bot.sendMessage(chatId, 'Напиши название новой категории 👇');
     return;
   }
+
+  // ── Удаление: запрос подтверждения ───────────────────────────────────────
 
   if (action.startsWith('delete_category:')) {
     const categoryId = action.split(':')[1];
     const userId = await getUserId(telegramId);
     if (!userId) return;
 
-    const { data: cat } = await queryOne(
-      `SELECT id, name FROM categories
-       WHERE id = $1 AND is_system = false AND user_id = $2`,
-      [categoryId, userId]
-    );
+    const { data: cat } = await supabase
+      .from('categories')
+      .select('id, name')
+      .eq('id', categoryId)
+      .eq('is_system', false)
+      .eq('user_id', userId)
+      .maybeSingle();
 
     if (!cat) {
       await bot.sendMessage(chatId, 'Категория не найдена 🤔', MENU_KEYBOARD);
@@ -183,26 +200,31 @@ export async function handleCategoriesCallback(bot, query) {
       `Удалить категорию «${cat.name}»?\nЗаписи с этой категорией останутся.`,
       {
         reply_markup: {
-          inline_keyboard: [[
-            { text: 'Удалить', callback_data: `confirm_delete:${cat.id}` },
-            { text: 'Отмена', callback_data: 'cancel_delete' },
-          ]],
+          inline_keyboard: [
+            [
+              { text: 'Удалить', callback_data: `confirm_delete:${cat.id}` },
+              { text: 'Отмена', callback_data: 'cancel_delete' },
+            ],
+          ],
         },
       }
     );
     return;
   }
 
+  // ── Подтверждение удаления ───────────────────────────────────────────────
+
   if (action.startsWith('confirm_delete:')) {
     const categoryId = action.split(':')[1];
     const userId = await getUserId(telegramId);
     if (!userId) return;
 
-    await run(
-      `UPDATE categories SET is_active = false
-       WHERE id = $1 AND is_system = false AND user_id = $2`,
-      [categoryId, userId]
-    );
+    await supabase
+      .from('categories')
+      .update({ is_active: false })
+      .eq('id', categoryId)
+      .eq('is_system', false)
+      .eq('user_id', userId);
 
     await bot.sendMessage(chatId, 'Категория удалена ✅');
     await showCategories(bot, chatId, telegramId);
@@ -237,11 +259,13 @@ export async function handleCategoryNameState(bot, msg) {
     return true;
   }
 
-  const { count } = await queryCount(
-    `SELECT COUNT(*) FROM categories
-     WHERE user_id = $1 AND name = $2 AND is_active = true`,
-    [userId, name]
-  );
+  // Проверяем дубликат у пользователя
+  const { count } = await supabase
+    .from('categories')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('name', name)
+    .eq('is_active', true);
 
   if (count > 0) {
     await bot.sendMessage(chatId, 'Такая категория уже существует 🤔\nПопробуй другое название:');
@@ -250,11 +274,15 @@ export async function handleCategoryNameState(bot, msg) {
 
   userStates.delete(telegramId);
 
-  await run(
-    `INSERT INTO categories (group_id, user_id, name, type, is_system, is_active, synonyms)
-     VALUES ($1, $2, $3, $4, false, true, '{}')`,
-    [groupId, userId, name, type]
-  );
+  await supabase.from('categories').insert({
+    group_id: groupId,
+    user_id: userId,
+    name,
+    type,
+    is_system: false,
+    is_active: true,
+    synonyms: '{}',
+  });
 
   await bot.sendMessage(
     chatId,
@@ -263,10 +291,12 @@ export async function handleCategoryNameState(bot, msg) {
     `Например: «${name} 1500»`,
     {
       reply_markup: {
-        inline_keyboard: [[
-          { text: '➕ Добавить ещё', callback_data: 'add_category' },
-          { text: '☰ Главное меню', callback_data: 'menu:main' },
-        ]],
+        inline_keyboard: [
+          [
+            { text: '➕ Добавить ещё', callback_data: 'add_category' },
+            { text: '☰ Главное меню', callback_data: 'menu:main' },
+          ],
+        ],
       },
     }
   );

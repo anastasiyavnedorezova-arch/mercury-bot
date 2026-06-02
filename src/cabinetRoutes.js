@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { queryOne, queryAll } from './db.js';
+import { supabase } from './db.js';
 import { requireAuth } from './authMiddleware.js';
 
 const router = Router();
@@ -44,20 +44,26 @@ router.post('/auth/telegram', async (req, res) => {
     const telegramId = String(data.id);
 
     // Ищем или создаём пользователя
-    let { data: user } = await queryOne(
-      `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
-      [telegramId]
-    );
+    let { data: users, error } = await supabase
+      .from('users')
+      .select('id, external_id, channel')
+      .eq('external_id', telegramId)
+      .limit(1);
+
+    if (error) throw error;
 
     let userId;
 
-    if (user) {
-      userId = user.id;
+    if (users?.length) {
+      userId = users[0].id;
     } else {
-      const { data: created, error: createErr } = await queryOne(
-        `INSERT INTO users (external_id, channel) VALUES ($1, 'telegram') RETURNING id`,
-        [telegramId]
-      );
+      // Создаём нового пользователя (без подписки)
+      const { data: created, error: createErr } = await supabase
+        .from('users')
+        .insert({ external_id: telegramId, channel: 'telegram' })
+        .select('id')
+        .single();
+
       if (createErr) throw createErr;
       userId = created.id;
     }
@@ -90,19 +96,22 @@ router.post('/auth/telegram', async (req, res) => {
 // ──────────────────────────────────────────
 router.get('/api/me', requireAuth, async (req, res) => {
   try {
-    const { data: user } = await queryOne(
-      `SELECT id, external_id, channel, created_at FROM users WHERE id = $1`,
-      [req.userId]
-    );
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, external_id, channel, created_at')
+      .eq('id', req.userId)
+      .single();
 
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (error || !user) return res.status(404).json({ error: 'User not found' });
 
-    const { data: sub } = await queryOne(
-      `SELECT status, starts_at, ends_at, period_months FROM subscriptions
-       WHERE user_id = $1 AND status = 'active' AND ends_at > NOW()
-       ORDER BY ends_at DESC LIMIT 1`,
-      [req.userId]
-    );
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('status, starts_at, ends_at, period_months')
+      .eq('user_id', req.userId)
+      .eq('status', 'active')
+      .order('ends_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     res.json({ ...user, subscription: sub ?? null });
   } catch (err) {
@@ -119,38 +128,27 @@ router.get('/api/transactions', requireAuth, async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     const offset = parseInt(req.query.offset) || 0;
 
-    let whereClause = `WHERE t.user_id = $1`;
-    const params = [req.userId];
+    let query = supabase
+      .from('transactions')
+      .select(
+        'id, type, amount, description, transaction_date, categories(name, category_groups(name))',
+        { count: 'exact' }
+      )
+      .eq('user_id', req.userId)
+      .order('transaction_date', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (req.query.month) {
       const [year, month] = req.query.month.split('-').map(Number);
       const from = new Date(year, month - 1, 1).toISOString().slice(0, 10);
       const to = new Date(year, month, 0).toISOString().slice(0, 10);
-      params.push(from, to);
-      whereClause += ` AND t.transaction_date >= $${params.length - 1} AND t.transaction_date <= $${params.length}`;
+      query = query.gte('transaction_date', from).lte('transaction_date', to);
     }
 
-    const { data: countRow } = await queryOne(
-      `SELECT COUNT(*) AS total FROM transactions t ${whereClause}`,
-      params
-    );
-    const total = parseInt(countRow?.total ?? 0);
+    const { data, error, count } = await query;
+    if (error) throw error;
 
-    params.push(limit, offset);
-    const { data: rows } = await queryAll(
-      `SELECT t.id, t.type, t.amount, t.comment, t.transaction_date,
-              json_build_object('name', c.name,
-                'category_groups', json_build_object('name', cg.name)) AS categories
-       FROM transactions t
-       LEFT JOIN categories c ON t.category_id = c.id
-       LEFT JOIN category_groups cg ON c.group_id = cg.id
-       ${whereClause}
-       ORDER BY t.transaction_date DESC
-       LIMIT $${params.length - 1} OFFSET $${params.length}`,
-      params
-    );
-
-    res.json({ data: rows ?? [], total, limit, offset });
+    res.json({ data, total: count, limit, offset });
   } catch (err) {
     console.error('[cabinet] /api/transactions error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -162,11 +160,14 @@ router.get('/api/transactions', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.get('/api/goals', requireAuth, async (req, res) => {
   try {
-    const { data } = await queryAll(
-      `SELECT * FROM goals WHERE user_id = $1 ORDER BY created_at DESC`,
-      [req.userId]
-    );
-    res.json({ data: data ?? [] });
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json({ data });
   } catch (err) {
     console.error('[cabinet] /api/goals error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -191,18 +192,14 @@ router.get('/api/budget', requireAuth, async (req, res) => {
         .slice(0, 10);
     }
 
-    const { data } = await queryAll(
-      `SELECT b.*,
-              json_build_object('name', c.name,
-                'category_groups', json_build_object('name', cg.name)) AS categories
-       FROM budget b
-       LEFT JOIN categories c ON b.category_id = c.id
-       LEFT JOIN category_groups cg ON c.group_id = cg.id
-       WHERE b.user_id = $1 AND b.month = $2`,
-      [req.userId, monthDate]
-    );
+    const { data, error } = await supabase
+      .from('budget')
+      .select('*, categories(name, category_groups(name))')
+      .eq('user_id', req.userId)
+      .eq('month', monthDate);
 
-    res.json({ data: data ?? [], month: monthDate });
+    if (error) throw error;
+    res.json({ data, month: monthDate });
   } catch (err) {
     console.error('[cabinet] /api/budget error:', err.message);
     res.status(500).json({ error: 'Internal server error' });

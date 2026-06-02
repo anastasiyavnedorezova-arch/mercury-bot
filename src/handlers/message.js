@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import 'dotenv/config';
-import { queryOne, queryAll, run } from '../db.js';
+import { supabase } from '../db.js';
 import { getSystemPrompt } from '../prompts/system_prompt.js';
 import { userStates } from '../state.js';
 import { requireTerms } from './onboarding.js';
@@ -39,39 +39,47 @@ const MANUAL_ERROR_KEYBOARD = {
 };
 
 async function getUserId(telegramId) {
-  const { data } = await queryOne(
-    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
-    [String(telegramId)]
-  );
+  const { data } = await supabase
+    .from('users')
+    .select('id')
+    .eq('external_id', String(telegramId))
+    .eq('channel', 'telegram')
+    .single();
   return data?.id ?? null;
 }
 
 async function getCategoryId(name) {
-  const { data } = await queryOne(
-    `SELECT id FROM categories WHERE name = $1`,
-    [name]
-  );
+  const { data } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('name', name)
+    .single();
   if (data?.id) return data.id;
 
   // Fallback: если категория не найдена — используем «Остальное»
   console.warn('[getCategoryId] Category not found:', name, '— falling back to Остальное');
-  const { data: fallback } = await queryOne(
-    `SELECT id FROM categories WHERE name = 'Остальное'`
-  );
+  const { data: fallback } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('name', 'Остальное')
+    .single();
   return fallback?.id ?? null;
 }
 
 export async function saveTransaction(userId, parsed, rawMessage) {
   const categoryId = await getCategoryId(parsed.category);
-  const { data, error } = await queryOne(
-    `INSERT INTO transactions (user_id, type, amount, category_id, comment, transaction_date, raw_message)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id`,
-    [userId, parsed.type, parsed.amount, categoryId, parsed.comment ?? null, parsed.transaction_date, rawMessage]
-  );
+  const { data, error } = await supabase.from('transactions').insert({
+    user_id: userId,
+    type: parsed.type,
+    amount: parsed.amount,
+    category_id: categoryId,
+    comment: parsed.comment ?? null,
+    transaction_date: parsed.transaction_date,
+    raw_message: rawMessage,
+  }).select('id').single();
 
   if (error) {
-    console.error('[saveTransaction] DB error:', error.message, '| category:', parsed.category, '| categoryId:', categoryId);
+    console.error('[saveTransaction] Supabase error:', error.message, '| category:', parsed.category, '| categoryId:', categoryId);
     return null;
   }
   return data?.id ?? null;
@@ -393,10 +401,13 @@ export async function handleMessage(bot, msg) {
   // Обновляем username и активность при каждом сообщении
   const telegramUsername = msg.from?.username || msg.from?.first_name || null;
   if (telegramUsername) {
-    run(
-      `UPDATE users SET username = $1, last_active_at = $2 WHERE external_id = $3 AND channel = 'telegram'`,
-      [telegramUsername, new Date().toISOString(), String(telegramId)]
-    ).catch(err => console.error('[username update]', err.message));
+    supabase
+      .from('users')
+      .update({ username: telegramUsername, last_active_at: new Date().toISOString() })
+      .eq('external_id', String(telegramId))
+      .eq('channel', 'telegram')
+      .then(() => {})
+      .catch(err => console.error('[username update]', err.message));
   }
 
   // Сброс зависшего state (старше 30 минут)
@@ -489,13 +500,13 @@ export async function handleMessage(bot, msg) {
     if (pureAmount === null && trimmed.length > 1 && /^[а-яА-ЯёЁa-zA-Z\s,.-]+$/.test(trimmed)) {
       const userId = await getUserId(telegramId);
       if (userId) {
-        const { data: matchedCat } = await queryOne(
-          `SELECT name FROM categories
-           WHERE (user_id IS NULL OR user_id = $1)
-             AND is_active = true
-             AND name ILIKE $2`,
-          [userId, trimmed]
-        );
+        const { data: matchedCat } = await supabase
+          .from('categories')
+          .select('name')
+          .or(`user_id.is.null,user_id.eq.${userId}`)
+          .eq('is_active', true)
+          .ilike('name', trimmed)
+          .maybeSingle();
 
         if (matchedCat) {
           userStates.set(telegramId, {
@@ -522,10 +533,11 @@ export async function handleMessage(bot, msg) {
     const userId = await getUserId(telegramId);
     let userCategories = [];
     if (userId) {
-      const { data } = await queryAll(
-        `SELECT name, type, synonyms FROM categories WHERE user_id = $1 AND is_active = true`,
-        [userId]
-      );
+      const { data } = await supabase
+        .from('categories')
+        .select('name, type, synonyms')
+        .eq('user_id', userId)
+        .eq('is_active', true);
       userCategories = data ?? [];
     }
     parsed = await callLLM(effectiveText, userCategories);

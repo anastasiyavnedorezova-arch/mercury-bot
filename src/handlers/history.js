@@ -1,28 +1,58 @@
-import { queryOne, queryAll } from '../db.js';
+import { supabase } from '../db.js';
 import { userStates } from '../state.js';
+
+// ── Константы ─────────────────────────────────────────────────────────────────
 
 const MONTHS_RU = [
   'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
 ];
 
+// ── Хелперы дат ───────────────────────────────────────────────────────────────
+
 function dateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-function today() { return dateStr(new Date()); }
-function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return dateStr(d); }
+
+function today() {
+  return dateStr(new Date());
+}
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return dateStr(d);
+}
+
 function currentMonthStart() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
-function monthsAgo(n) { const d = new Date(); d.setMonth(d.getMonth() - n); return dateStr(d); }
-function yearAgo() { const d = new Date(); d.setFullYear(d.getFullYear() - 1); return dateStr(d); }
 
-function formatNum(n) { return Math.round(n).toLocaleString('ru-RU'); }
-function formatRuDate(ds) {
-  const [, m, d] = ds.split('-');
+function monthsAgo(n) {
+  const d = new Date();
+  d.setMonth(d.getMonth() - n);
+  return dateStr(d);
+}
+
+function yearAgo() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 1);
+  return dateStr(d);
+}
+
+// ── Форматирование ────────────────────────────────────────────────────────────
+
+function formatNum(n) {
+  return Math.round(n).toLocaleString('ru-RU');
+}
+
+function formatRuDate(dateStr) {
+  const [, m, d] = dateStr.split('-');
   return `${parseInt(d)} ${MONTHS_RU[parseInt(m) - 1]}`;
 }
+
+// Парсит ДД.ММ.ГГГГ → 'YYYY-MM-DD' или null
 function parseDate(text) {
   const match = text.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
   if (!match) return null;
@@ -31,60 +61,64 @@ function parseDate(text) {
   return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
+// ── DB ────────────────────────────────────────────────────────────────────────
+
 async function getUserId(telegramId) {
-  const { data } = await queryOne(
-    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
-    [String(telegramId)]
-  );
+  const { data } = await supabase
+    .from('users')
+    .select('id')
+    .eq('external_id', String(telegramId))
+    .eq('channel', 'telegram')
+    .single();
   return data?.id ?? null;
 }
 
 async function fetchTransactions(userId, startDate, endDate, typeFilter) {
-  const params = [userId, startDate, endDate];
-  let typeClause = '';
+  let query = supabase
+    .from('transactions')
+    .select('amount, type, transaction_date, comment, categories(name, is_system)')
+    .eq('user_id', userId)
+    .gte('transaction_date', startDate)
+    .lte('transaction_date', endDate)
+    .order('transaction_date', { ascending: false })
+    .limit(50);
+
   if (typeFilter === 'expense') {
-    typeClause = `AND t.type IN ('expense', 'goal')`;
+    query = query.in('type', ['expense', 'goal']);
   } else if (typeFilter === 'income') {
-    typeClause = `AND t.type = 'income'`;
+    query = query.eq('type', 'income');
   }
 
-  const { data } = await queryAll(
-    `SELECT t.amount, t.type, t.transaction_date, t.comment,
-            json_build_object('name', c.name, 'is_system', c.is_system) AS categories
-     FROM transactions t
-     LEFT JOIN categories c ON t.category_id = c.id
-     WHERE t.user_id = $1
-       AND t.transaction_date >= $2
-       AND t.transaction_date <= $3
-       ${typeClause}
-     ORDER BY t.transaction_date DESC
-     LIMIT 50`,
-    params
-  );
+  const { data } = await query;
   return data ?? [];
 }
 
+// Итоги всегда по ВСЕМ транзакциям периода, без фильтра типа
 async function fetchTotals(userId, startDate, endDate) {
-  const { data } = await queryAll(
-    `SELECT amount, type FROM transactions
-     WHERE user_id = $1
-       AND transaction_date >= $2
-       AND transaction_date <= $3`,
-    [userId, startDate, endDate]
-  );
+  const { data } = await supabase
+    .from('transactions')
+    .select('amount, type')
+    .eq('user_id', userId)
+    .gte('transaction_date', startDate)
+    .lte('transaction_date', endDate);
+
   const rows = data ?? [];
-  const sumIncome  = rows.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
-  const sumExpense = rows.filter(t => t.type !== 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+  const sumIncome  = rows.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const sumExpense = rows.filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
   return { sumIncome, sumExpense };
 }
 
+// ── Лимиты по дате ────────────────────────────────────────────────────────────
+
 function applyDateLimit(startDate) {
-  const limit = yearAgo();
+  const limit = yearAgo(); // 12 месяцев назад
   if (startDate < limit) {
     return { effectiveStart: limit, limitNote: 'Показаны записи за последние 12 месяцев' };
   }
   return { effectiveStart: startDate, limitNote: null };
 }
+
+// ── Форматирование истории ────────────────────────────────────────────────────
 
 function buildHistoryText(transactions, totals, startDate, endDate, limitNote) {
   const { sumIncome, sumExpense } = totals;
@@ -97,11 +131,10 @@ function buildHistoryText(transactions, totals, startDate, endDate, limitNote) {
   if (limitNote) text += `ℹ️ ${limitNote}\n`;
   text += '\n';
 
+  // Группируем по дате
   const byDate = {};
   for (const t of transactions) {
-    const d = t.transaction_date instanceof Date
-      ? dateStr(t.transaction_date)
-      : String(t.transaction_date).slice(0, 10);
+    const d = t.transaction_date;
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push(t);
   }
@@ -118,18 +151,22 @@ function buildHistoryText(transactions, totals, startDate, endDate, limitNote) {
   }
 
   const balanceStr = balance > 0 ? `+${formatNum(balance)}` :
-                     balance < 0 ? `-${formatNum(Math.abs(balance))}` : '0';
+                     balance < 0 ? `-${formatNum(Math.abs(balance))}` :
+                     '0';
   text +=
     `💰 Доходы: +${formatNum(sumIncome)} ₽\n` +
     `💸 Расходы: -${formatNum(sumExpense)} ₽\n` +
     `📊 Баланс: ${balanceStr} ₽`;
 
+  // Telegram лимит 4096 символов
   if (text.length > 3900) {
     text = text.slice(0, 3850) + '\n\n…(сокращено, показаны первые записи)';
   }
 
   return text;
 }
+
+// ── Шаг 1: выбор периода ─────────────────────────────────────────────────────
 
 export async function showHistory(bot, chatId) {
   await bot.sendMessage(
@@ -152,6 +189,8 @@ export async function showHistory(bot, chatId) {
   );
 }
 
+// ── Шаг 2: фильтр по типу ────────────────────────────────────────────────────
+
 async function askTypeFilter(bot, chatId) {
   await bot.sendMessage(
     chatId,
@@ -168,6 +207,8 @@ async function askTypeFilter(bot, chatId) {
   );
 }
 
+// ── Шаг 3: запрос и вывод ─────────────────────────────────────────────────────
+
 async function showHistoryResult(bot, chatId, telegramId, startDate, endDate, typeFilter) {
   const userId = await getUserId(telegramId);
   if (!userId) {
@@ -177,6 +218,7 @@ async function showHistoryResult(bot, chatId, telegramId, startDate, endDate, ty
 
   const { effectiveStart, limitNote } = applyDateLimit(startDate);
 
+  // Два запроса параллельно: список (с фильтром) и итоги (без фильтра)
   const [transactions, totals] = await Promise.all([
     fetchTransactions(userId, effectiveStart, endDate, typeFilter),
     fetchTotals(userId, effectiveStart, endDate),
@@ -210,6 +252,8 @@ async function showHistoryResult(bot, chatId, telegramId, startDate, endDate, ty
   const text = buildHistoryText(transactions, totals, effectiveStart, endDate, limitNote);
   await bot.sendMessage(chatId, text, actionKeyboard);
 }
+
+// ── Обработчик текстового ввода дат (из handleMessage) ────────────────────────
 
 export async function handleHistoryState(bot, msg) {
   const telegramId = msg.from.id;
@@ -247,6 +291,8 @@ export async function handleHistoryState(bot, msg) {
   return false;
 }
 
+// ── Обработчик кнопок history: ───────────────────────────────────────────────
+
 export async function handleHistoryCallback(bot, query) {
   const chatId = query.message.chat.id;
   const telegramId = query.from.id;
@@ -254,11 +300,14 @@ export async function handleHistoryCallback(bot, query) {
 
   await bot.answerCallbackQuery(query.id);
 
+  // Сброс — вернуться к выбору периода
   if (action === 'history:new') {
     userStates.delete(telegramId);
     await showHistory(bot, chatId);
     return;
   }
+
+  // ── Выбор периода — сохраняем даты и спрашиваем тип ─────────────────────
 
   const todayStr = today();
 
@@ -267,24 +316,31 @@ export async function handleHistoryCallback(bot, query) {
     await askTypeFilter(bot, chatId);
     return;
   }
+
   if (action === 'history:month') {
     userStates.set(telegramId, { awaitingHistory: 'type_filter', startDate: currentMonthStart(), endDate: todayStr });
     await askTypeFilter(bot, chatId);
     return;
   }
+
   if (action === 'history:3months') {
     userStates.set(telegramId, { awaitingHistory: 'type_filter', startDate: monthsAgo(3), endDate: todayStr });
     await askTypeFilter(bot, chatId);
     return;
   }
+
   if (action === 'history:custom') {
     userStates.set(telegramId, { awaitingHistory: 'custom_start' });
     await bot.sendMessage(chatId, 'Напиши начальную дату в формате ДД.ММ.ГГГГ 👇');
     return;
   }
 
+  // ── Выбор типа — guard: только если state.awaitingHistory === 'type_filter' ─
+
   if (action === 'history:all' || action === 'history:expenses' || action === 'history:income') {
     const state = userStates.get(telegramId);
+    // Игнорируем нажатие если состояние не соответствует этому шагу
+    // (защита от повторного срабатывания старых кнопок)
     if (state?.awaitingHistory !== 'type_filter' || !state?.startDate) return;
 
     const { startDate, endDate } = state;
