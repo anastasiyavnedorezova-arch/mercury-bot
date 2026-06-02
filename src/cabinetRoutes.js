@@ -24,7 +24,7 @@ router.post('/api/auth/telegram', async (req, res) => {
 
     const secretKey = crypto
       .createHash('sha256')
-      .update(process.env.BOT_TOKEN)
+      .update(process.env.TELEGRAM_BOT_TOKEN)
       .digest();
 
     const expectedHash = crypto
