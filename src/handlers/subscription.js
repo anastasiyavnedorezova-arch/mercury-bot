@@ -1,14 +1,12 @@
-import { supabase } from '../db.js';
+import { queryOne, run } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 
 async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(telegramId)]
+  );
   return data?.id ?? null;
 }
 
@@ -35,13 +33,12 @@ export async function showSubscription(bot, chatId, telegramId) {
 
   const access = await getUserAccess(userId);
 
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('status, ends_at')
-    .eq('user_id', userId)
-    .order('ends_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { data: sub } = await queryOne(
+    `SELECT status, ends_at FROM subscriptions
+     WHERE user_id = $1
+     ORDER BY ends_at DESC LIMIT 1`,
+    [userId]
+  );
 
   if (access === 'free') {
     await bot.sendMessage(
@@ -154,11 +151,10 @@ export async function handleSubscriptionEmailState(bot, msg) {
   userStates.delete(telegramId);
 
   // Сохраняем email в таблице users
-  await supabase
-    .from('users')
-    .update({ email })
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram');
+  await run(
+    `UPDATE users SET email = $1 WHERE external_id = $2 AND channel = 'telegram'`,
+    [email, String(telegramId)]
+  );
 
   await showPaymentLink(bot, chatId, telegramId, selectedPeriod, email);
   return true;
@@ -231,12 +227,10 @@ export async function handleSubscriptionCallback(bot, query) {
 }
 
 export async function activateSubscription(bot, targetExternalId, months) {
-  const { data: user } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(targetExternalId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data: user } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(targetExternalId)]
+  );
 
   if (!user) return { ok: false, reason: 'user not found' };
 
@@ -244,18 +238,14 @@ export async function activateSubscription(bot, targetExternalId, months) {
   const endsAt = new Date(now);
   endsAt.setMonth(endsAt.getMonth() + months);
 
-  await supabase
-    .from('subscriptions')
-    .upsert(
-      {
-        user_id: user.id,
-        status: 'active',
-        starts_at: now.toISOString(),
-        ends_at: endsAt.toISOString(),
-        period_months: months,
-      },
-      { onConflict: 'user_id' }
-    );
+  await run(
+    `INSERT INTO subscriptions (user_id, status, starts_at, ends_at, period_months)
+     VALUES ($1, 'active', $2, $3, $4)
+     ON CONFLICT (user_id) DO UPDATE
+       SET status = 'active', starts_at = EXCLUDED.starts_at,
+           ends_at = EXCLUDED.ends_at, period_months = EXCLUDED.period_months`,
+    [user.id, now.toISOString(), endsAt.toISOString(), months]
+  );
 
   await bot.sendMessage(
     targetExternalId,

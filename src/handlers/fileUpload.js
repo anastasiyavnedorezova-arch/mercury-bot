@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import https from 'https';
 import OpenAI from 'openai';
-import { supabase } from '../db.js';
+import { queryOne } from '../db.js';
 import { userStates } from '../state.js';
 import { getUserAccess } from '../utils/access.js';
 import { saveTransaction } from './message.js';
@@ -122,13 +122,12 @@ async function analyzeStatement(base64Content, mimeType) {
 async function checkDuplicates(userId, transactions) {
   const result = [];
   for (const tx of transactions) {
-    const { count } = await supabase
-      .from('transactions')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('transaction_date', tx.transaction_date)
-      .eq('amount', tx.amount);
-    result.push({ ...tx, isDuplicate: count > 0 });
+    const { data } = await queryOne(
+      `SELECT COUNT(*) AS cnt FROM transactions
+       WHERE user_id = $1 AND transaction_date = $2 AND amount = $3`,
+      [userId, tx.transaction_date, tx.amount]
+    );
+    result.push({ ...tx, isDuplicate: parseInt(data?.cnt ?? 0) > 0 });
   }
   return result;
 }
@@ -164,12 +163,10 @@ export async function handleFileUpload(bot, msg, fileType) {
   const telegramId = msg.from.id;
 
   // Get user
-  const { data: userData } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data: userData } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(telegramId)]
+  );
 
   if (!userData?.id) {
     await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏');
