@@ -7,11 +7,11 @@ import { requireAuth } from './authMiddleware.js';
 const router = Router();
 
 // ──────────────────────────────────────────
-// POST /auth/telegram
+// POST /api/auth/telegram
 // Принимает данные Telegram Login Widget,
 // проверяет HMAC-SHA256, возвращает JWT.
 // ──────────────────────────────────────────
-router.post('/auth/telegram', async (req, res) => {
+router.post('/api/auth/telegram', async (req, res) => {
   try {
     const { hash, ...data } = req.body;
     if (!hash) return res.status(400).json({ error: 'Missing hash' });
