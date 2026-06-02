@@ -1,14 +1,7 @@
 import pg from 'pg';
-import { readFileSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
 const { Pool } = pg;
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const caCert = readFileSync(path.join(__dirname, '../ca.crt')).toString();
 
 export const pool = new Pool({
   host:     process.env.TIMEWEB_DB_HOST,
@@ -17,11 +10,11 @@ export const pool = new Pool({
   user:     process.env.TIMEWEB_DB_USER,
   password: process.env.TIMEWEB_DB_PASSWORD,
   ssl: {
-    rejectUnauthorized: true,
-    ca: caCert,
+    rejectUnauthorized: false,
   },
   max: 10,
   idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
 });
 
 pool.on('error', (err) => {
