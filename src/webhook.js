@@ -16,6 +16,12 @@ function monthsWord(n) {
 export function startWebhookServer(bot) {
   const app = express();
   app.use(express.json());
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(301, 'https://' + req.headers.host + req.url);
+    }
+    next();
+  });
   app.use(express.static(path.join(__dirname, '../public')));
   app.use(cabinetRoutes);
 
