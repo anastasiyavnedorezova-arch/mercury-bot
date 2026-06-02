@@ -57,11 +57,16 @@ export async function showConsentScreen(bot, chatId) {
 }
 
 export async function hasAcceptedTerms(telegramId) {
-  const { data } = await queryOne(
+  const { data, error } = await queryOne(
     `SELECT terms_accepted_at FROM users
      WHERE external_id = $1 AND channel = 'telegram'`,
     [String(telegramId)]
   );
+  if (error) {
+    console.error('[onboarding] DB error in hasAcceptedTerms for', telegramId, ':', error.message);
+    return false;
+  }
+  console.log('[onboarding] hasAcceptedTerms:', telegramId, '→', data?.terms_accepted_at ?? 'NOT FOUND');
   return !!data?.terms_accepted_at;
 }
 
