@@ -17,6 +17,14 @@ export function startWebhookServer(bot) {
   const app = express();
   app.use(express.json());
   app.use((req, res, next) => {
+    if (req.path.startsWith('/cabinet')) {
+      res.setHeader('Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org; frame-src https://oauth.telegram.org; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.supabase.co https://*.supabase.co"
+      );
+    }
+    next();
+  });
+  app.use((req, res, next) => {
     if (req.headers['x-forwarded-proto'] !== 'https') {
       return res.redirect(301, 'https://' + req.headers.host + req.url);
     }
