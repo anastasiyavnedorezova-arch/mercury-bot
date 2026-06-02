@@ -13,8 +13,10 @@ export const pool = new Pool({
     rejectUnauthorized: false,
   },
   max: 10,
-  idleTimeoutMillis: 30_000,
+  idleTimeoutMillis: 10_000,
   connectionTimeoutMillis: 10_000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10_000,
 });
 
 pool.on('error', (err) => {
