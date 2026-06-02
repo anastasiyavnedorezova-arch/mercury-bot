@@ -1,15 +1,14 @@
-import { supabase } from '../db.js';
+import { queryOne } from '../db.js';
 
 export async function getUserAccess(userId) {
-  const { data } = await supabase
-    .from('subscriptions')
-    .select('status')
-    .eq('user_id', userId)
-    .in('status', ['trial', 'active'])
-    .gt('ends_at', new Date().toISOString())
-    .order('ends_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
+  const { data } = await queryOne(
+    `SELECT status FROM subscriptions
+     WHERE user_id = $1
+       AND status IN ('trial', 'active')
+       AND ends_at > NOW()
+     ORDER BY ends_at DESC
+     LIMIT 1`,
+    [userId]
+  );
   return data?.status ?? 'free';
 }

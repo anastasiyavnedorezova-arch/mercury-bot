@@ -17,7 +17,7 @@ import { handleVoiceMessage } from './handlers/voice.js';
 import { handleFileUpload, handleFileCallback } from './handlers/fileUpload.js';
 import { startWebhookServer } from './webhook.js';
 import { userStates } from './state.js';
-import { supabase } from './db.js';
+import { queryAll } from './db.js';
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -128,10 +128,9 @@ bot.onText(/\/broadcast (.+)/s, async (msg, match) => {
 
   const text = match[1];
 
-  const { data: users } = await supabase
-    .from('users')
-    .select('external_id')
-    .eq('channel', 'telegram');
+  const { data: users } = await queryAll(
+    `SELECT external_id FROM users WHERE channel = 'telegram'`
+  );
 
   if (!users?.length) {
     await bot.sendMessage(msg.chat.id, 'Пользователей не найдено');

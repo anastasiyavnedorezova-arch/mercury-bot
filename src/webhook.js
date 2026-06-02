@@ -1,5 +1,5 @@
 import express from 'express';
-import { supabase } from './db.js';
+import { queryOne, run } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cabinetRoutes from './cabinetRoutes.js';
@@ -57,31 +57,30 @@ export function startWebhookServer(bot) {
         'amount:', amount, 'email:', customerEmail, 'months:', months);
 
       // Идемпотентность — не обрабатывать один платёж дважды
-      const { data: existing } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('payment_id', paymentId)
-        .limit(1);
+      const { data: existing } = await queryOne(
+        `SELECT id FROM subscriptions WHERE payment_id = $1 LIMIT 1`,
+        [paymentId]
+      );
 
-      if (existing?.length) {
+      if (existing) {
         console.log('[webhook] Payment already processed:', paymentId);
         return res.status(200).send('ok');
       }
 
       // Ищем пользователя по email
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, external_id')
-        .eq('email', customerEmail)
-        .limit(1);
+      const { data: userRow } = await queryOne(
+        `SELECT id, external_id FROM users WHERE email = $1 LIMIT 1`,
+        [customerEmail]
+      );
 
-      if (!users?.length) {
+      if (!userRow) {
         console.error('[webhook] User not found for email:', customerEmail);
 
         // Сохраняем необработанный платёж для ручной активации
-        await supabase.from('feedback').insert({
-          message: `НЕОБРАБОТАННЫЙ ПЛАТЁЖ: paymentId=${paymentId}, amount=${amount}, email=${customerEmail}`,
-        }).catch(e => console.error('[webhook] feedback insert error:', e.message));
+        await run(
+          `INSERT INTO feedback (message) VALUES ($1)`,
+          [`НЕОБРАБОТАННЫЙ ПЛАТЁЖ: paymentId=${paymentId}, amount=${amount}, email=${customerEmail}`]
+        ).catch(e => console.error('[webhook] feedback insert error:', e.message));
 
         // Уведомляем администратора
         await bot.sendMessage(
@@ -96,21 +95,17 @@ export function startWebhookServer(bot) {
         return res.status(200).send('ok');
       }
 
-      const { id: userId, external_id: telegramId } = users[0];
+      const { id: userId, external_id: telegramId } = userRow;
 
       const startsAt = new Date();
       const endsAt = new Date();
       endsAt.setMonth(endsAt.getMonth() + months);
 
-      await supabase.from('subscriptions').insert({
-        user_id: userId,
-        status: 'active',
-        period_months: months,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        payment_id: paymentId,
-        amount_rub: Math.round(amount),
-      });
+      await run(
+        `INSERT INTO subscriptions (user_id, status, period_months, starts_at, ends_at, payment_id, amount_rub)
+         VALUES ($1, 'active', $2, $3, $4, $5, $6)`,
+        [userId, months, startsAt.toISOString(), endsAt.toISOString(), paymentId, Math.round(amount)]
+      );
 
       console.log('[webhook] Subscription created for user:', userId);
 

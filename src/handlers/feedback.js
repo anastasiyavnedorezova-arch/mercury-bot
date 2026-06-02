@@ -1,4 +1,4 @@
-import { supabase } from '../db.js';
+import { queryOne, run } from '../db.js';
 import { userStates } from '../state.js';
 
 const MENU_KEYBOARD = {
@@ -8,16 +8,13 @@ const MENU_KEYBOARD = {
 };
 
 async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(telegramId)]
+  );
   return data?.id ?? null;
 }
 
-// Точка входа: /feedback и menu:feedback
 export async function showFeedback(bot, chatId, telegramId) {
   userStates.set(telegramId, { awaitingFeedback: true });
   await bot.sendMessage(
@@ -27,7 +24,6 @@ export async function showFeedback(bot, chatId, telegramId) {
   );
 }
 
-// Обработчик текста (вызывается из handleMessage)
 export async function handleFeedbackMessage(bot, msg) {
   const telegramId = msg.from.id;
   const chatId = msg.chat.id;
@@ -45,11 +41,10 @@ export async function handleFeedbackMessage(bot, msg) {
 
   const userId = await getUserId(telegramId);
   if (userId) {
-    await supabase.from('feedback').insert({
-      user_id: userId,
-      message: text,
-      status: 'new',
-    });
+    await run(
+      `INSERT INTO feedback (user_id, message, status) VALUES ($1, $2, 'new')`,
+      [userId, text]
+    );
   }
 
   const adminId = process.env.ADMIN_TELEGRAM_ID;

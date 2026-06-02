@@ -1,4 +1,4 @@
-import { supabase } from '../db.js';
+import { queryOne, queryAll, run } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 
@@ -14,11 +14,14 @@ const MENU_KEYBOARD = {
 };
 
 async function fetchAndShowTx(bot, chatId, txId) {
-  const { data } = await supabase
-    .from('transactions')
-    .select('amount, type, transaction_date, categories(name)')
-    .eq('id', txId)
-    .single();
+  const { data } = await queryOne(
+    `SELECT t.amount, t.type, t.transaction_date,
+            json_build_object('name', c.name) AS categories
+     FROM transactions t
+     LEFT JOIN categories c ON t.category_id = c.id
+     WHERE t.id = $1`,
+    [txId]
+  );
 
   if (!data) {
     await bot.sendMessage(chatId, 'Запись обновлена ✅', MENU_KEYBOARD);
@@ -27,7 +30,7 @@ async function fetchAndShowTx(bot, chatId, txId) {
 
   const text =
     `✅ Исправлено!\n\n` +
-    `📅 Дата: ${data.transaction_date}\n` +
+    `📅 Дата: ${String(data.transaction_date).slice(0, 10)}\n` +
     `📌 Тип: ${TYPE_RU[data.type] ?? data.type}\n` +
     `📂 Категория: ${data.categories?.name ?? '—'}\n` +
     `💸 Сумма: ${data.amount} ₽`;
@@ -36,16 +39,13 @@ async function fetchAndShowTx(bot, chatId, txId) {
 }
 
 async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(telegramId)]
+  );
   return data?.id ?? null;
 }
 
-// Возвращает false и отправляет paywall-сообщение, если доступ 'free'.
 async function checkAccess(bot, chatId, telegramId) {
   const userId = await getUserId(telegramId);
   if (!userId) return false;
@@ -57,8 +57,6 @@ async function checkAccess(bot, chatId, telegramId) {
   return true;
 }
 
-// Вызывается из handleMessage когда state.awaitingTxEdit установлен.
-// Возвращает true если состояние было обработано.
 export async function handleTxEditState(bot, msg) {
   const telegramId = msg.from.id;
   const chatId = msg.chat.id;
@@ -81,7 +79,7 @@ export async function handleTxEditState(bot, msg) {
       await bot.sendMessage(chatId, 'Не распознал сумму. Напиши числом, например: 2500 🙏');
       return true;
     }
-    await supabase.from('transactions').update({ amount }).eq('id', txId);
+    await run(`UPDATE transactions SET amount = $1 WHERE id = $2`, [amount, txId]);
     await fetchAndShowTx(bot, chatId, txId);
     return true;
   }
@@ -89,10 +87,7 @@ export async function handleTxEditState(bot, msg) {
   if (field === 'date') {
     const match = text.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
     if (!match) {
-      await bot.sendMessage(
-        chatId,
-        'Не распознал дату. Напиши в формате ДД.ММ.ГГГГ, например 25.03.2026 🙏'
-      );
+      await bot.sendMessage(chatId, 'Не распознал дату. Напиши в формате ДД.ММ.ГГГГ, например 25.03.2026 🙏');
       return true;
     }
     const [, dd, mm, yyyy] = match;
@@ -101,10 +96,10 @@ export async function handleTxEditState(bot, msg) {
       await bot.sendMessage(chatId, 'Дата некорректная. Попробуй ещё раз 🙏');
       return true;
     }
-    await supabase
-      .from('transactions')
-      .update({ transaction_date: `${yyyy}-${mm}-${dd}` })
-      .eq('id', txId);
+    await run(
+      `UPDATE transactions SET transaction_date = $1 WHERE id = $2`,
+      [`${yyyy}-${mm}-${dd}`, txId]
+    );
     await fetchAndShowTx(bot, chatId, txId);
     return true;
   }
@@ -115,14 +110,12 @@ export async function handleTxEditState(bot, msg) {
 export async function handleTransactionCallback(bot, query) {
   const chatId = query.message.chat.id;
   const telegramId = query.from.id;
-  const action = query.data; // 'tx:verb:arg1:arg2'
+  const action = query.data;
 
   await bot.answerCallbackQuery(query.id);
 
   const parts = action.split(':');
   const verb = parts[1];
-
-  // ── [Исправить] ───────────────────────────────────────────────────────────
 
   if (verb === 'edit') {
     const txId = parts[2];
@@ -145,18 +138,13 @@ export async function handleTransactionCallback(bot, query) {
     return;
   }
 
-  // ── [Сумму] ───────────────────────────────────────────────────────────────
-
   if (verb === 'amount') {
     const txId = parts[2];
     if (!(await checkAccess(bot, chatId, telegramId))) return;
-
     userStates.set(telegramId, { awaitingTxEdit: 'amount', transactionId: txId });
     await bot.sendMessage(chatId, 'Напиши новую сумму числом 👇');
     return;
   }
-
-  // ── [Категорию] ───────────────────────────────────────────────────────────
 
   if (verb === 'category') {
     const txId = parts[2];
@@ -164,10 +152,9 @@ export async function handleTransactionCallback(bot, query) {
 
     userStates.set(telegramId, { awaitingTxCategoryEdit: true, transactionId: txId });
 
-    const { data: groups } = await supabase
-      .from('category_groups')
-      .select('id, name')
-      .order('name');
+    const { data: groups } = await queryAll(
+      `SELECT id, name FROM category_groups ORDER BY name`
+    );
 
     if (!groups?.length) {
       await bot.sendMessage(chatId, 'Не удалось загрузить категории 🙏');
@@ -177,31 +164,23 @@ export async function handleTransactionCallback(bot, query) {
     const rows = [];
     for (let i = 0; i < groups.length; i += 2) {
       rows.push(
-        groups.slice(i, i + 2).map((g) => ({
-          text: g.name,
-          callback_data: `tx:cg:${g.id}`,
-        }))
+        groups.slice(i, i + 2).map(g => ({ text: g.name, callback_data: `tx:cg:${g.id}` }))
       );
     }
 
-    await bot.sendMessage(chatId, 'Выбери группу категорий:', {
-      reply_markup: { inline_keyboard: rows },
-    });
+    await bot.sendMessage(chatId, 'Выбери группу категорий:', { reply_markup: { inline_keyboard: rows } });
     return;
   }
-
-  // ── Выбор группы → показать категории ────────────────────────────────────
 
   if (verb === 'cg') {
     const groupId = parts[2];
     const state = userStates.get(telegramId);
     if (!state?.awaitingTxCategoryEdit) return;
 
-    const { data: cats } = await supabase
-      .from('categories')
-      .select('id, name')
-      .eq('group_id', groupId)
-      .order('name');
+    const { data: cats } = await queryAll(
+      `SELECT id, name FROM categories WHERE group_id = $1 ORDER BY name`,
+      [groupId]
+    );
 
     if (!cats?.length) {
       await bot.sendMessage(chatId, 'В этой группе нет категорий 🙏');
@@ -211,20 +190,13 @@ export async function handleTransactionCallback(bot, query) {
     const rows = [];
     for (let i = 0; i < cats.length; i += 2) {
       rows.push(
-        cats.slice(i, i + 2).map((c) => ({
-          text: c.name,
-          callback_data: `tx:cc:${c.id}`,
-        }))
+        cats.slice(i, i + 2).map(c => ({ text: c.name, callback_data: `tx:cc:${c.id}` }))
       );
     }
 
-    await bot.sendMessage(chatId, 'Выбери категорию:', {
-      reply_markup: { inline_keyboard: rows },
-    });
+    await bot.sendMessage(chatId, 'Выбери категорию:', { reply_markup: { inline_keyboard: rows } });
     return;
   }
-
-  // ── Выбор категории → обновить в БД ──────────────────────────────────────
 
   if (verb === 'cc') {
     const categoryId = parts[2];
@@ -233,32 +205,22 @@ export async function handleTransactionCallback(bot, query) {
 
     const txId = state.transactionId;
     userStates.delete(telegramId);
-
-    await supabase.from('transactions').update({ category_id: categoryId }).eq('id', txId);
+    await run(`UPDATE transactions SET category_id = $1 WHERE id = $2`, [categoryId, txId]);
     await fetchAndShowTx(bot, chatId, txId);
     return;
   }
 
-  // ── [Дату] ────────────────────────────────────────────────────────────────
-
   if (verb === 'date') {
     const txId = parts[2];
     if (!(await checkAccess(bot, chatId, telegramId))) return;
-
     userStates.set(telegramId, { awaitingTxEdit: 'date', transactionId: txId });
-    await bot.sendMessage(
-      chatId,
-      'Напиши дату в формате ДД.ММ.ГГГГ, например 25.03.2026 👇'
-    );
+    await bot.sendMessage(chatId, 'Напиши дату в формате ДД.ММ.ГГГГ, например 25.03.2026 👇');
     return;
   }
-
-  // ── [Тип операции] ────────────────────────────────────────────────────────
 
   if (verb === 'type') {
     const txId = parts[2];
     if (!(await checkAccess(bot, chatId, telegramId))) return;
-
     await bot.sendMessage(chatId, 'Выбери тип операции:', {
       reply_markup: {
         inline_keyboard: [[
@@ -270,23 +232,17 @@ export async function handleTransactionCallback(bot, query) {
     return;
   }
 
-  // ── Применить тип операции ────────────────────────────────────────────────
-
   if (verb === 'type_pick') {
-    const type = parts[2]; // 'expense' или 'income'
+    const type = parts[2];
     const txId = parts[3];
-
-    await supabase.from('transactions').update({ type }).eq('id', txId);
+    await run(`UPDATE transactions SET type = $1 WHERE id = $2`, [type, txId]);
     await fetchAndShowTx(bot, chatId, txId);
     return;
   }
 
-  // ── [Удалить] — запросить подтверждение ───────────────────────────────────
-
   if (verb === 'delete') {
     const txId = parts[2];
     if (!(await checkAccess(bot, chatId, telegramId))) return;
-
     await bot.sendMessage(chatId, 'Удалить эту запись безвозвратно?', {
       reply_markup: {
         inline_keyboard: [[
@@ -298,17 +254,12 @@ export async function handleTransactionCallback(bot, query) {
     return;
   }
 
-  // ── Подтверждение удаления ────────────────────────────────────────────────
-
   if (verb === 'confirm_delete') {
     const txId = parts[2];
-
-    await supabase.from('transactions').delete().eq('id', txId);
+    await run(`DELETE FROM transactions WHERE id = $1`, [txId]);
     await bot.sendMessage(chatId, 'Запись удалена ✅');
     return;
   }
-
-  // ── Отмена удаления ───────────────────────────────────────────────────────
 
   if (verb === 'cancel_delete') {
     await bot.sendMessage(chatId, 'Запись сохранена 💛');

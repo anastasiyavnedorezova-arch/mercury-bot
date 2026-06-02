@@ -1,24 +1,16 @@
-import { supabase } from '../db.js';
+import { queryOne, queryAll, run } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { calculateMonthlyPayment } from '../utils/goalCalc.js';
 import { parseAmount } from '../utils/parseAmount.js';
 
-// ── Константы и форматирование ────────────────────────────────────────────────
-
 const MONTHS_RU = {
-  'январь': 0, 'января': 0,
-  'февраль': 1, 'февраля': 1,
-  'март': 2, 'марта': 2,
-  'апрель': 3, 'апреля': 3,
-  'май': 4, 'мая': 4,
-  'июнь': 5, 'июня': 5,
-  'июль': 6, 'июля': 6,
-  'август': 7, 'августа': 7,
-  'сентябрь': 8, 'сентября': 8,
-  'октябрь': 9, 'октября': 9,
-  'ноябрь': 10, 'ноября': 10,
-  'декабрь': 11, 'декабря': 11,
+  'январь': 0, 'января': 0, 'февраль': 1, 'февраля': 1,
+  'март': 2, 'марта': 2, 'апрель': 3, 'апреля': 3,
+  'май': 4, 'мая': 4, 'июнь': 5, 'июня': 5,
+  'июль': 6, 'июля': 6, 'август': 7, 'августа': 7,
+  'сентябрь': 8, 'сентября': 8, 'октябрь': 9, 'октября': 9,
+  'ноябрь': 10, 'ноября': 10, 'декабрь': 11, 'декабря': 11,
 };
 
 const MONTHS_RU_NAMES = [
@@ -32,21 +24,16 @@ const MENU_KEYBOARD = {
   },
 };
 
-function formatNum(n) {
-  return Math.round(n).toLocaleString('ru-RU');
-}
-
-function formatGoalDate(dateStr) {
-  const [year, month] = dateStr.split('-');
+function formatNum(n) { return Math.round(n).toLocaleString('ru-RU'); }
+function formatGoalDate(ds) {
+  const [year, month] = ds.split('-');
   return `${MONTHS_RU_NAMES[parseInt(month, 10) - 1]} ${year}`;
 }
-
 function pluralGoal(n) {
   if (n === 1) return 'цель';
   if (n >= 2 && n <= 4) return 'цели';
   return 'целей';
 }
-
 function parseRuDate(text) {
   const parts = text.trim().toLowerCase().split(/\s+/);
   if (parts.length < 2) return null;
@@ -58,29 +45,21 @@ function parseRuDate(text) {
   return new Date(year, monthIdx, 1);
 }
 
-// ── DB-хелперы ────────────────────────────────────────────────────────────────
-
 async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(telegramId)]
+  );
   return data?.id ?? null;
 }
 
 async function getActiveGoals(userId) {
-  const { data } = await supabase
-    .from('goals')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false });
+  const { data } = await queryAll(
+    `SELECT * FROM goals WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC`,
+    [userId]
+  );
   return data ?? [];
 }
-
-// ── Карточка цели: текст + кнопки ────────────────────────────────────────────
 
 function goalCardText(goal, total, maxCount) {
   return (
@@ -93,7 +72,6 @@ function goalCardText(goal, total, maxCount) {
   );
 }
 
-// canAdd — лимит не достигнут, показываем кнопку добавления
 function goalCardKeyboard(goal, canAdd) {
   const id = goal.id;
   const keyboard = [
@@ -110,8 +88,6 @@ function goalCardKeyboard(goal, canAdd) {
   }
   return { reply_markup: { inline_keyboard: keyboard } };
 }
-
-// ── Точка входа: /goal и menu:goal ────────────────────────────────────────────
 
 export async function showGoal(bot, chatId, telegramId) {
   const userId = await getUserId(telegramId);
@@ -144,7 +120,6 @@ export async function showGoal(bot, chatId, telegramId) {
     return;
   }
 
-  // Несколько целей — показываем список одним сообщением
   let text = `У тебя ${goals.length} ${pluralGoal(goals.length)} из ${maxCount}:\n\n`;
   for (const g of goals) {
     text += `🎯 ${g.name} — ${formatGoalDate(g.target_date)}, ${formatNum(g.monthly_payment)} ₽/мес\n`;
@@ -157,8 +132,6 @@ export async function showGoal(bot, chatId, telegramId) {
 
   await bot.sendMessage(chatId, text, { reply_markup: { inline_keyboard: keyboard } });
 }
-
-// ── Сохранение цели и отправка подтверждения ──────────────────────────────────
 
 async function saveGoalAndConfirm(bot, chatId, userId, state, yieldRate) {
   const { futureValue: fv, monthlyPayment: monthly } = calculateMonthlyPayment({
@@ -178,19 +151,16 @@ async function saveGoalAndConfirm(bot, chatId, userId, state, yieldRate) {
     }));
   }
 
-  await supabase.from('goals').insert({
-    user_id: userId,
-    name: state.name,
-    target_amount: state.amount,
-    future_value: Math.round(fv),
-    initial_saved: state.saved,
-    monthly_payment: Math.round(monthly),
-    target_date: state.date,
-    inflation_rate: 0.06,
-    yield_rate: yieldRate ?? null,
-    status: 'active',
-    last_recalculated_at: new Date().toISOString(),
-  });
+  await run(
+    `INSERT INTO goals
+       (user_id, name, target_amount, future_value, initial_saved, monthly_payment,
+        target_date, inflation_rate, yield_rate, status, last_recalculated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,0.06,$8,'active',NOW())`,
+    [
+      userId, state.name, state.amount, Math.round(fv),
+      state.saved, Math.round(monthly), state.date, yieldRate ?? null,
+    ]
+  );
 
   let confirmText =
     `🎯 Цель поставлена!\n\n` +
@@ -211,11 +181,8 @@ async function saveGoalAndConfirm(bot, chatId, userId, state, yieldRate) {
   }
 
   confirmText += `Чтобы фиксировать пополнения копилки — пиши мне «на цель [сумма]» 💪`;
-
   await bot.sendMessage(chatId, confirmText, MENU_KEYBOARD);
 }
-
-// ── Диалог создания/редактирования цели (вызывается из handleMessage) ─────────
 
 export async function handleGoalState(bot, msg) {
   const telegramId = msg.from.id;
@@ -225,31 +192,19 @@ export async function handleGoalState(bot, msg) {
   const state = userStates.get(telegramId);
   if (!state) return false;
 
-  // ── Ветка создания новой цели ─────────────────────────────────────────────
-
   if (state.awaitingGoal) {
     const step = state.awaitingGoal;
 
     if (step === 'name') {
       userStates.set(telegramId, { ...state, awaitingGoal: 'date', name: text });
-      await bot.sendMessage(
-        chatId,
-        `Отлично! Когда хочешь достичь этой цели?\n` +
-        `Напиши месяц и год, например: март 2030 👇`
-      );
+      await bot.sendMessage(chatId, `Отлично! Когда хочешь достичь этой цели?\nНапиши месяц и год, например: март 2030 👇`);
       return true;
     }
 
     if (step === 'date') {
       const targetDate = parseRuDate(text);
-      if (!targetDate) {
-        await bot.sendMessage(chatId, 'Не распознал дату. Напиши месяц и год, например: март 2030 👇');
-        return true;
-      }
-      if (targetDate <= new Date()) {
-        await bot.sendMessage(chatId, 'Дата должна быть в будущем. Попробуй ещё раз 👇');
-        return true;
-      }
+      if (!targetDate) { await bot.sendMessage(chatId, 'Не распознал дату. Напиши месяц и год, например: март 2030 👇'); return true; }
+      if (targetDate <= new Date()) { await bot.sendMessage(chatId, 'Дата должна быть в будущем. Попробуй ещё раз 👇'); return true; }
       const yyyy = targetDate.getFullYear();
       const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
       userStates.set(telegramId, { ...state, awaitingGoal: 'amount', date: `${yyyy}-${mm}-01` });
@@ -259,10 +214,7 @@ export async function handleGoalState(bot, msg) {
 
     if (step === 'amount') {
       const amount = parseAmount(text);
-      if (!amount || amount <= 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
-        return true;
-      }
+      if (!amount || amount <= 0) { await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇'); return true; }
       userStates.set(telegramId, { ...state, awaitingGoal: 'saved', amount });
       await bot.sendMessage(chatId, `Сколько уже накоплено на эту цель?\nЕсли ничего — напиши 0 👇`);
       return true;
@@ -270,117 +222,75 @@ export async function handleGoalState(bot, msg) {
 
     if (step === 'saved') {
       const saved = parseAmount(text);
-      if (saved === null || saved < 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
-        return true;
-      }
+      if (saved === null || saved < 0) { await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом 👇'); return true; }
 
       if (saved >= state.amount) {
         userStates.delete(telegramId);
-        await bot.sendMessage(
-          chatId,
-          'Похоже ты уже достиг(ла) цели! 🎉 Хочешь поставить новую?',
-          {
-            reply_markup: {
-              inline_keyboard: [[
-                { text: 'Поставить новую цель', callback_data: 'goal:new' },
-                { text: '☰ Главное меню', callback_data: 'menu:main' },
-              ]],
-            },
-          }
-        );
+        await bot.sendMessage(chatId, 'Похоже ты уже достиг(ла) цели! 🎉 Хочешь поставить новую?', {
+          reply_markup: { inline_keyboard: [[
+            { text: 'Поставить новую цель', callback_data: 'goal:new' },
+            { text: '☰ Главное меню', callback_data: 'menu:main' },
+          ]]},
+        });
         return true;
       }
 
-      // Проверка лимита тарифа
       const userId = await getUserId(telegramId);
-      if (!userId) {
-        userStates.delete(telegramId);
-        await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏');
-        return true;
-      }
+      if (!userId) { userStates.delete(telegramId); await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏'); return true; }
 
-      const [access, goals] = await Promise.all([
-        getUserAccess(userId),
-        getActiveGoals(userId),
-      ]);
+      const [access, goals] = await Promise.all([getUserAccess(userId), getActiveGoals(userId)]);
       const limit = access === 'free' ? 1 : 3;
 
       if (goals.length >= limit) {
         userStates.delete(telegramId);
-        await bot.sendMessage(
-          chatId,
-          `У тебя уже ${goals.length} активных цели — это максимум для твоего тарифа.`
-        );
+        await bot.sendMessage(chatId, `У тебя уже ${goals.length} активных цели — это максимум для твоего тарифа.`);
         return true;
       }
 
-      // Для trial/active — спросить про доходность
       if (access === 'trial' || access === 'active') {
         userStates.set(telegramId, { ...state, awaitingGoal: 'yield_question', saved, userId });
-        await bot.sendMessage(
-          chatId,
-          `Планируешь копить с доходностью? Например, если откладываешь ` +
-          `на вклад или инвестируешь 📈`,
-          {
-            reply_markup: {
-              inline_keyboard: [[
-                { text: '📈 Да, с доходностью', callback_data: 'goal:with_yield' },
-                { text: 'Нет, без доходности', callback_data: 'goal:no_yield' },
-              ]],
-            },
-          }
-        );
+        await bot.sendMessage(chatId, `Планируешь копить с доходностью? Например, если откладываешь на вклад или инвестируешь 📈`, {
+          reply_markup: { inline_keyboard: [[
+            { text: '📈 Да, с доходностью', callback_data: 'goal:with_yield' },
+            { text: 'Нет, без доходности', callback_data: 'goal:no_yield' },
+          ]]},
+        });
         return true;
       }
 
-      // Для free — расчёт без доходности и сохранение
       userStates.delete(telegramId);
       await saveGoalAndConfirm(bot, chatId, userId, { ...state, saved }, null);
       return true;
     }
 
     if (step === 'yield_question') {
-      // Пользователь написал текст вместо нажатия кнопки
       await bot.sendMessage(chatId, 'Нажми одну из кнопок выше 👆');
       return true;
     }
 
     if (step === 'yield_rate') {
       const yieldPct = parseAmount(text);
-      if (!yieldPct || yieldPct <= 0) {
-        await bot.sendMessage(chatId, 'Введи число больше нуля, например: 10 👇');
-        return true;
-      }
-      if (yieldPct > 35) {
-        await bot.sendMessage(chatId, 'Максимум 35%. Введи реалистичную доходность 👇');
-        return true;
-      }
+      if (!yieldPct || yieldPct <= 0) { await bot.sendMessage(chatId, 'Введи число больше нуля, например: 10 👇'); return true; }
+      if (yieldPct > 35) { await bot.sendMessage(chatId, 'Максимум 35%. Введи реалистичную доходность 👇'); return true; }
 
       const yieldRate = yieldPct / 100;
       const userId = state.userId;
 
       let warningText = '';
-      if (yieldPct < 6) {
-        warningText =
-          `⚠️ Доходность ниже инфляции — цель дорожает быстрее чем растут твои взносы.\n\n`;
-      }
+      if (yieldPct < 6) warningText = `⚠️ Доходность ниже инфляции — цель дорожает быстрее чем растут твои взносы.\n\n`;
 
       userStates.delete(telegramId);
-
       if (warningText) await bot.sendMessage(chatId, warningText);
       await saveGoalAndConfirm(bot, chatId, userId, state, yieldRate);
       return true;
     }
   }
 
-  // ── Ветка редактирования поля цели ────────────────────────────────────────
-
   if (state.awaitingGoalEdit) {
     const { awaitingGoalEdit: field, goalId } = state;
 
     if (field === 'name') {
-      await supabase.from('goals').update({ name: text }).eq('id', goalId);
+      await run(`UPDATE goals SET name = $1 WHERE id = $2`, [text, goalId]);
       userStates.delete(telegramId);
       await bot.sendMessage(chatId, `Название изменено на «${text}» ✅`);
       return true;
@@ -388,26 +298,16 @@ export async function handleGoalState(bot, msg) {
 
     if (field === 'amount') {
       const amount = parseAmount(text);
-      if (!amount || amount <= 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
-        return true;
-      }
-      const { data: goal } = await supabase.from('goals').select('*').eq('id', goalId).single();
+      if (!amount || amount <= 0) { await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом 👇'); return true; }
+      const { data: goal } = await queryOne(`SELECT * FROM goals WHERE id = $1`, [goalId]);
       let calc;
       try {
-        calc = calculateMonthlyPayment({
-          targetAmount: amount,
-          initialSaved: goal.initial_saved ?? 0,
-          targetDate: goal.target_date,
-          yieldRate: goal.yield_rate ?? null,
-        });
-      } catch (e) {
-        await bot.sendMessage(chatId, `${e.message} 🎉`);
-        return true;
-      }
-      await supabase.from('goals')
-        .update({ target_amount: amount, future_value: calc.futureValue, monthly_payment: calc.monthlyPayment, last_recalculated_at: new Date().toISOString() })
-        .eq('id', goalId);
+        calc = calculateMonthlyPayment({ targetAmount: amount, initialSaved: goal.initial_saved ?? 0, targetDate: goal.target_date, yieldRate: goal.yield_rate ?? null });
+      } catch (e) { await bot.sendMessage(chatId, `${e.message} 🎉`); return true; }
+      await run(
+        `UPDATE goals SET target_amount=$1, future_value=$2, monthly_payment=$3, last_recalculated_at=NOW() WHERE id=$4`,
+        [amount, calc.futureValue, calc.monthlyPayment, goalId]
+      );
       userStates.delete(telegramId);
       await bot.sendMessage(chatId, `Сумма цели изменена. Новый взнос: ${formatNum(calc.monthlyPayment)} ₽/мес ✅`);
       return true;
@@ -415,33 +315,20 @@ export async function handleGoalState(bot, msg) {
 
     if (field === 'date') {
       const targetDate = parseRuDate(text);
-      if (!targetDate) {
-        await bot.sendMessage(chatId, 'Не распознал дату. Напиши месяц и год, например: март 2030 👇');
-        return true;
-      }
-      if (targetDate <= new Date()) {
-        await bot.sendMessage(chatId, 'Дата должна быть в будущем. Попробуй ещё раз 👇');
-        return true;
-      }
+      if (!targetDate) { await bot.sendMessage(chatId, 'Не распознал дату. Напиши месяц и год, например: март 2030 👇'); return true; }
+      if (targetDate <= new Date()) { await bot.sendMessage(chatId, 'Дата должна быть в будущем. Попробуй ещё раз 👇'); return true; }
       const yyyy = targetDate.getFullYear();
       const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
       const newDate = `${yyyy}-${mm}-01`;
-      const { data: goal } = await supabase.from('goals').select('*').eq('id', goalId).single();
+      const { data: goal } = await queryOne(`SELECT * FROM goals WHERE id = $1`, [goalId]);
       let calc;
       try {
-        calc = calculateMonthlyPayment({
-          targetAmount: goal.target_amount,
-          initialSaved: goal.initial_saved ?? 0,
-          targetDate: newDate,
-          yieldRate: goal.yield_rate ?? null,
-        });
-      } catch (e) {
-        await bot.sendMessage(chatId, `${e.message} 🎉`);
-        return true;
-      }
-      await supabase.from('goals')
-        .update({ target_date: newDate, future_value: calc.futureValue, monthly_payment: calc.monthlyPayment, last_recalculated_at: new Date().toISOString() })
-        .eq('id', goalId);
+        calc = calculateMonthlyPayment({ targetAmount: goal.target_amount, initialSaved: goal.initial_saved ?? 0, targetDate: newDate, yieldRate: goal.yield_rate ?? null });
+      } catch (e) { await bot.sendMessage(chatId, `${e.message} 🎉`); return true; }
+      await run(
+        `UPDATE goals SET target_date=$1, future_value=$2, monthly_payment=$3, last_recalculated_at=NOW() WHERE id=$4`,
+        [newDate, calc.futureValue, calc.monthlyPayment, goalId]
+      );
       userStates.delete(telegramId);
       await bot.sendMessage(chatId, `Срок изменён на ${formatGoalDate(newDate)}. Новый взнос: ${formatNum(calc.monthlyPayment)} ₽/мес ✅`);
       return true;
@@ -449,26 +336,16 @@ export async function handleGoalState(bot, msg) {
 
     if (field === 'saved') {
       const saved = parseAmount(text);
-      if (saved === null || saved < 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
-        return true;
-      }
-      const { data: goal } = await supabase.from('goals').select('*').eq('id', goalId).single();
+      if (saved === null || saved < 0) { await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом 👇'); return true; }
+      const { data: goal } = await queryOne(`SELECT * FROM goals WHERE id = $1`, [goalId]);
       let calc;
       try {
-        calc = calculateMonthlyPayment({
-          targetAmount: goal.target_amount,
-          initialSaved: saved,
-          targetDate: goal.target_date,
-          yieldRate: goal.yield_rate ?? null,
-        });
-      } catch (e) {
-        await bot.sendMessage(chatId, `${e.message} 🎉`);
-        return true;
-      }
-      await supabase.from('goals')
-        .update({ initial_saved: saved, future_value: calc.futureValue, monthly_payment: calc.monthlyPayment, last_recalculated_at: new Date().toISOString() })
-        .eq('id', goalId);
+        calc = calculateMonthlyPayment({ targetAmount: goal.target_amount, initialSaved: saved, targetDate: goal.target_date, yieldRate: goal.yield_rate ?? null });
+      } catch (e) { await bot.sendMessage(chatId, `${e.message} 🎉`); return true; }
+      await run(
+        `UPDATE goals SET initial_saved=$1, future_value=$2, monthly_payment=$3, last_recalculated_at=NOW() WHERE id=$4`,
+        [saved, calc.futureValue, calc.monthlyPayment, goalId]
+      );
       userStates.delete(telegramId);
       await bot.sendMessage(chatId, `Накопленная сумма обновлена. Новый взнос: ${formatNum(calc.monthlyPayment)} ₽/мес ✅`);
       return true;
@@ -478,23 +355,18 @@ export async function handleGoalState(bot, msg) {
   return false;
 }
 
-// ── Прогресс по цели ──────────────────────────────────────────────────────────
-
 async function showGoalProgress(bot, chatId, userId, goal) {
-  const { data: catData } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('name', 'Цель')
-    .single();
+  const { data: catData } = await queryOne(
+    `SELECT id FROM categories WHERE name = 'Цель' LIMIT 1`
+  );
 
   let totalGoalTx = 0;
   if (catData?.id) {
-    const { data: txData } = await supabase
-      .from('transactions')
-      .select('amount')
-      .eq('user_id', userId)
-      .eq('category_id', catData.id);
-    totalGoalTx = txData?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0;
+    const { data: txData } = await queryOne(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE user_id = $1 AND category_id = $2`,
+      [userId, catData.id]
+    );
+    totalGoalTx = parseFloat(txData?.total ?? 0);
   }
 
   const accumulated = (goal.initial_saved ?? 0) + totalGoalTx;
@@ -511,10 +383,8 @@ async function showGoalProgress(bot, chatId, userId, goal) {
 
   if (goal.yield_rate) {
     const { monthlyPayment: monthlyNoYield } = calculateMonthlyPayment({
-      targetAmount: goal.target_amount,
-      initialSaved: goal.initial_saved ?? 0,
-      targetDate: goal.target_date,
-      yieldRate: null,
+      targetAmount: goal.target_amount, initialSaved: goal.initial_saved ?? 0,
+      targetDate: goal.target_date, yieldRate: null,
     });
     const savings = Math.max(0, monthlyNoYield - goal.monthly_payment);
     text +=
@@ -528,8 +398,6 @@ async function showGoalProgress(bot, chatId, userId, goal) {
   await bot.sendMessage(chatId, text, MENU_KEYBOARD);
 }
 
-// ── Обработчик кнопок goal: ───────────────────────────────────────────────────
-
 export async function handleGoalCallback(bot, query) {
   const chatId = query.message.chat.id;
   const telegramId = query.from.id;
@@ -538,20 +406,11 @@ export async function handleGoalCallback(bot, query) {
 
   await bot.answerCallbackQuery(query.id);
 
-  // ── Начать диалог новой/первой цели ───────────────────────────────────────
-
   if (action === 'goal:new') {
     userStates.set(telegramId, { awaitingGoal: 'name' });
-    await bot.sendMessage(
-      chatId,
-      `🎯 Давай поставим финансовую цель!\n\n` +
-      `Как она называется? Например: «Купить квартиру», ` +
-      `«Накопить подушку безопасности», «Новая машина» 👇`
-    );
+    await bot.sendMessage(chatId, `🎯 Давай поставим финансовую цель!\n\nКак она называется? Например: «Купить квартиру», «Накопить подушку безопасности», «Новая машина» 👇`);
     return;
   }
-
-  // ── Добавить новую цель (с проверкой лимита) ─────────────────────────────
 
   if (action === 'goal:add_new') {
     const userId = await getUserId(telegramId);
@@ -563,16 +422,9 @@ export async function handleGoalCallback(bot, query) {
       return;
     }
     userStates.set(telegramId, { awaitingGoal: 'name' });
-    await bot.sendMessage(
-      chatId,
-      `🎯 Давай поставим ещё одну финансовую цель!\n\n` +
-      `Как она называется? Например: «Купить квартиру», ` +
-      `«Накопить подушку безопасности», «Новая машина» 👇`
-    );
+    await bot.sendMessage(chatId, `🎯 Давай поставим ещё одну финансовую цель!\n\nКак она называется? 👇`);
     return;
   }
-
-  // ── Доходность: нет ───────────────────────────────────────────────────────
 
   if (action === 'goal:no_yield') {
     const state = userStates.get(telegramId);
@@ -582,55 +434,35 @@ export async function handleGoalCallback(bot, query) {
     return;
   }
 
-  // ── Доходность: да ────────────────────────────────────────────────────────
-
   if (action === 'goal:with_yield') {
     const state = userStates.get(telegramId);
     if (!state) return;
     userStates.set(telegramId, { ...state, awaitingGoal: 'yield_rate' });
-    await bot.sendMessage(
-      chatId,
-      `Какую доходность ожидаешь? Напиши число в процентах годовых, например: 10\n\n` +
-      `Максимум 35%. Это твой прогноз — бот не даёт инвестиционных рекомендаций 🙏`
-    );
+    await bot.sendMessage(chatId, `Какую доходность ожидаешь? Напиши число в процентах годовых, например: 10\n\nМаксимум 35%. Это твой прогноз — бот не даёт инвестиционных рекомендаций 🙏`);
     return;
   }
-
-  // ── Показать карточку цели из списка: goal:show:{goalId} ─────────────────
 
   if (parts[1] === 'show' && parts[2]) {
     const userId = await getUserId(telegramId);
     if (!userId) return;
     const [{ data: goal }, goals, access] = await Promise.all([
-      supabase.from('goals').select('*').eq('id', parts[2]).single(),
+      queryOne(`SELECT * FROM goals WHERE id = $1`, [parts[2]]),
       getActiveGoals(userId),
       getUserAccess(userId),
     ]);
-    if (!goal) {
-      await bot.sendMessage(chatId, 'Цель не найдена 🤔');
-      return;
-    }
+    if (!goal) { await bot.sendMessage(chatId, 'Цель не найдена 🤔'); return; }
     const maxCount = access === 'free' ? 1 : 3;
-    await bot.sendMessage(
-      chatId,
-      goalCardText(goal, goals.length, maxCount),
-      goalCardKeyboard(goal, goals.length < maxCount)
-    );
+    await bot.sendMessage(chatId, goalCardText(goal, goals.length, maxCount), goalCardKeyboard(goal, goals.length < maxCount));
     return;
   }
 
-  // ── Прогресс: goal:progress:{goalId} ─────────────────────────────────────
-
   if (parts[1] === 'progress') {
     const userId = await getUserId(telegramId);
-    if (!userId) {
-      await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏');
-      return;
-    }
+    if (!userId) { await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏'); return; }
 
     let goal;
     if (parts[2]) {
-      const { data } = await supabase.from('goals').select('*').eq('id', parts[2]).single();
+      const { data } = await queryOne(`SELECT * FROM goals WHERE id = $1`, [parts[2]]);
       goal = data;
     } else {
       const goals = await getActiveGoals(userId);
@@ -639,103 +471,57 @@ export async function handleGoalCallback(bot, query) {
 
     if (!goal) {
       await bot.sendMessage(chatId, 'У тебя пока нет активной цели. Хочешь поставить? 💛', {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: '🎯 Поставить цель', callback_data: 'goal:new' }],
-            [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
-          ],
-        },
+        reply_markup: { inline_keyboard: [
+          [{ text: '🎯 Поставить цель', callback_data: 'goal:new' }],
+          [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+        ]},
       });
       return;
     }
-
     await showGoalProgress(bot, chatId, userId, goal);
     return;
   }
 
-  // ── Изменить: goal:edit:{goalId} — показать меню ─────────────────────────
-
   if (parts[1] === 'edit' && parts[2]) {
     const goalId = parts[2];
-    const { data: goal } = await supabase.from('goals').select('name').eq('id', goalId).single();
-
-    await bot.sendMessage(
-      chatId,
-      `Что хочешь изменить в цели «${goal?.name ?? ''}»?`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: 'Название', callback_data: `goal:edit_name:${goalId}` },
-              { text: 'Сумму цели', callback_data: `goal:edit_amount:${goalId}` },
-            ],
-            [
-              { text: 'Срок', callback_data: `goal:edit_date:${goalId}` },
-              { text: 'Сколько накоплено', callback_data: `goal:edit_saved:${goalId}` },
-            ],
-          ],
-        },
-      }
-    );
+    const { data: goal } = await queryOne(`SELECT name FROM goals WHERE id = $1`, [goalId]);
+    await bot.sendMessage(chatId, `Что хочешь изменить в цели «${goal?.name ?? ''}»?`, {
+      reply_markup: { inline_keyboard: [
+        [
+          { text: 'Название', callback_data: `goal:edit_name:${goalId}` },
+          { text: 'Сумму цели', callback_data: `goal:edit_amount:${goalId}` },
+        ],
+        [
+          { text: 'Срок', callback_data: `goal:edit_date:${goalId}` },
+          { text: 'Сколько накоплено', callback_data: `goal:edit_saved:${goalId}` },
+        ],
+      ]},
+    });
     return;
   }
 
-  // ── Редактирование поля: goal:edit_{field}:{goalId} ───────────────────────
-
-  if (parts[1] === 'edit_name') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'name', goalId: parts[2] });
-    await bot.sendMessage(chatId, 'Напиши новое название цели 👇');
-    return;
-  }
-
-  if (parts[1] === 'edit_amount') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'amount', goalId: parts[2] });
-    await bot.sendMessage(chatId, 'Напиши новую стоимость цели в рублях 👇');
-    return;
-  }
-
-  if (parts[1] === 'edit_date') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'date', goalId: parts[2] });
-    await bot.sendMessage(chatId, 'Напиши новый срок — месяц и год, например: март 2032 👇');
-    return;
-  }
-
-  if (parts[1] === 'edit_saved') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'saved', goalId: parts[2] });
-    await bot.sendMessage(chatId, 'Сколько уже накоплено? Напиши сумму 👇');
-    return;
-  }
-
-  // ── Удалить: goal:delete:{goalId} — запросить подтверждение ──────────────
+  if (parts[1] === 'edit_name')   { userStates.set(telegramId, { awaitingGoalEdit: 'name',   goalId: parts[2] }); await bot.sendMessage(chatId, 'Напиши новое название цели 👇'); return; }
+  if (parts[1] === 'edit_amount') { userStates.set(telegramId, { awaitingGoalEdit: 'amount', goalId: parts[2] }); await bot.sendMessage(chatId, 'Напиши новую стоимость цели в рублях 👇'); return; }
+  if (parts[1] === 'edit_date')   { userStates.set(telegramId, { awaitingGoalEdit: 'date',   goalId: parts[2] }); await bot.sendMessage(chatId, 'Напиши новый срок — месяц и год, например: март 2032 👇'); return; }
+  if (parts[1] === 'edit_saved')  { userStates.set(telegramId, { awaitingGoalEdit: 'saved',  goalId: parts[2] }); await bot.sendMessage(chatId, 'Сколько уже накоплено? Напиши сумму 👇'); return; }
 
   if (parts[1] === 'delete' && parts[2]) {
     const goalId = parts[2];
-    const { data: goal } = await supabase.from('goals').select('name').eq('id', goalId).single();
-
-    await bot.sendMessage(
-      chatId,
-      `Удалить цель «${goal?.name ?? goalId}» безвозвратно?\nВсе данные о пополнениях сохранятся.`,
-      {
-        reply_markup: {
-          inline_keyboard: [[
-            { text: '🗑 Да, удалить', callback_data: `goal:confirm_delete:${goalId}` },
-            { text: 'Оставить', callback_data: 'goal:cancel_delete' },
-          ]],
-        },
-      }
-    );
+    const { data: goal } = await queryOne(`SELECT name FROM goals WHERE id = $1`, [goalId]);
+    await bot.sendMessage(chatId, `Удалить цель «${goal?.name ?? goalId}» безвозвратно?\nВсе данные о пополнениях сохранятся.`, {
+      reply_markup: { inline_keyboard: [[
+        { text: '🗑 Да, удалить', callback_data: `goal:confirm_delete:${goalId}` },
+        { text: 'Оставить', callback_data: 'goal:cancel_delete' },
+      ]]},
+    });
     return;
   }
 
-  // ── Подтверждение удаления ────────────────────────────────────────────────
-
   if (parts[1] === 'confirm_delete') {
-    await supabase.from('goals').update({ status: 'archived' }).eq('id', parts[2]);
+    await run(`UPDATE goals SET status = 'archived' WHERE id = $1`, [parts[2]]);
     await bot.sendMessage(chatId, 'Цель удалена ✅');
     return;
   }
-
-  // ── Отмена удаления ───────────────────────────────────────────────────────
 
   if (action === 'goal:cancel_delete') {
     await bot.sendMessage(chatId, 'Цель сохранена 💛');

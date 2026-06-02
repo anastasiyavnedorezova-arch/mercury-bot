@@ -1,4 +1,4 @@
-import { supabase } from '../db.js';
+import { queryOne, run } from '../db.js';
 import { showMainMenu } from './menu.js';
 import { showGoal } from './goal.js';
 import { showBudget } from './budget.js';
@@ -57,17 +57,14 @@ export async function showConsentScreen(bot, chatId) {
 }
 
 export async function hasAcceptedTerms(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('terms_accepted_at')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data } = await queryOne(
+    `SELECT terms_accepted_at FROM users
+     WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(telegramId)]
+  );
   return !!data?.terms_accepted_at;
 }
 
-// Возвращает true и показывает экран согласия, если terms НЕ приняты.
-// Используй как: if (await requireTerms(bot, telegramId, chatId)) return;
 export async function requireTerms(bot, telegramId, chatId) {
   if (await hasAcceptedTerms(telegramId)) return false;
   await showConsentScreen(bot, chatId);
@@ -75,12 +72,10 @@ export async function requireTerms(bot, telegramId, chatId) {
 }
 
 async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', telegramId)
-    .eq('channel', 'telegram')
-    .single();
+  const { data } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [telegramId]
+  );
   return data?.id ?? null;
 }
 
@@ -96,8 +91,6 @@ export async function handleOnboardingCallback(bot, query) {
 
   await bot.answerCallbackQuery(query.id);
 
-  // ── Шаг 0: документы ─────────────────────────────────────────────────────
-
   if (action === 'onboarding:docs') {
     await bot.sendMessage(chatId, DOCS_TEXT, { disable_web_page_preview: true });
     await showConsentScreen(bot, chatId);
@@ -105,17 +98,14 @@ export async function handleOnboardingCallback(bot, query) {
   }
 
   if (action === 'onboarding:accept') {
-    await supabase
-      .from('users')
-      .update({ terms_accepted_at: new Date().toISOString(), terms_version: '1.0' })
-      .eq('external_id', telegramId)
-      .eq('channel', 'telegram');
-
+    await run(
+      `UPDATE users SET terms_accepted_at = NOW(), terms_version = '1.0'
+       WHERE external_id = $1 AND channel = 'telegram'`,
+      [telegramId]
+    );
     await bot.sendMessage(chatId, STEP1_TEXT, STEP1_KEYBOARD);
     return;
   }
-
-  // ── Кнопка 1: Как записывать расходы и доходы? ───────────────────────────
 
   if (action === 'onboarding:how_to_record') {
     await bot.sendMessage(
@@ -143,8 +133,6 @@ export async function handleOnboardingCallback(bot, query) {
     await bot.sendMessage(chatId, START_TRANSACTION_TEXT);
     return;
   }
-
-  // ── Кнопка 2: Расскажи о целях ────────────────────────────────────────────
 
   if (action === 'onboarding:about_goals') {
     await bot.sendMessage(
@@ -193,8 +181,6 @@ export async function handleOnboardingCallback(bot, query) {
     return;
   }
 
-  // ── Кнопка 3: Подробнее об аналитике ─────────────────────────────────────
-
   if (action === 'onboarding:about_analytics') {
     await bot.sendMessage(
       chatId,
@@ -232,8 +218,6 @@ export async function handleOnboardingCallback(bot, query) {
     );
     return;
   }
-
-  // ── Кнопка 4: Зачем устанавливать бюджет? ────────────────────────────────
 
   if (action === 'onboarding:about_budget') {
     await bot.sendMessage(
@@ -276,18 +260,16 @@ export async function handleOnboardingCallback(bot, query) {
     return;
   }
 
-  // ── Кнопка 5: Активировать пробный период ────────────────────────────────
-
   if (action === 'onboarding:activate_trial') {
     const userId = await getUserId(telegramId);
 
     if (userId) {
-      const { data: existingSub } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('user_id', userId)
-        .in('status', ['trial', 'active'])
-        .maybeSingle();
+      const { data: existingSub } = await queryOne(
+        `SELECT id FROM subscriptions
+         WHERE user_id = $1 AND status IN ('trial', 'active')
+         LIMIT 1`,
+        [userId]
+      );
 
       if (existingSub) {
         await bot.sendMessage(chatId, `У тебя уже активирован пробный период 💛`);
@@ -298,15 +280,11 @@ export async function handleOnboardingCallback(bot, query) {
       const endsAt = new Date(now);
       endsAt.setDate(endsAt.getDate() + 30);
 
-      await supabase.from('subscriptions').insert({
-        user_id: userId,
-        status: 'trial',
-        starts_at: now.toISOString(),
-        ends_at: endsAt.toISOString(),
-        period_months: null,
-        payment_id: null,
-        amount_rub: null,
-      });
+      await run(
+        `INSERT INTO subscriptions (user_id, status, starts_at, ends_at, period_months, payment_id, amount_rub)
+         VALUES ($1, 'trial', $2, $3, NULL, NULL, NULL)`,
+        [userId, now.toISOString(), endsAt.toISOString()]
+      );
     }
 
     await bot.sendMessage(

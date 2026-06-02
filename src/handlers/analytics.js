@@ -1,32 +1,17 @@
-import { supabase } from '../db.js';
+import { queryOne, queryAll } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { showBudget } from './budget.js';
 import { showGoal } from './goal.js';
 
-// ── Константы ─────────────────────────────────────────────────────────────────
+const MONTHS_NOM = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
-const MONTHS_NOM = [
-  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
-  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
-];
-
-const MONTHS_GEN = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
-
-// Именительный падеж — для "за [месяц]": "Расходы за апрель"
-function getMonthName(d = new Date()) {
-  return MONTHS_NOM[d.getMonth()];
-}
+function getMonthName(d = new Date()) { return MONTHS_NOM[d.getMonth()]; }
 
 const MENU_KEYBOARD = {
-  reply_markup: {
-    inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]],
-  },
+  reply_markup: { inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]] },
 };
 
-// Доступ по тарифам
 const FEATURE_ACCESS = {
   analytics_expenses:      ['free', 'trial', 'active'],
   analytics_income:        ['free', 'trial', 'active'],
@@ -38,185 +23,116 @@ const FEATURE_ACCESS = {
   analytics_forecast:      ['trial', 'active'],
 };
 
-// ── Хелперы дат ───────────────────────────────────────────────────────────────
-
 function dateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
-
 function getMonthStart(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
-
 function getNextMonthStart(d = new Date()) {
   const y = d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear();
   const m = d.getMonth() === 11 ? 1 : d.getMonth() + 2;
   return `${y}-${String(m).padStart(2, '0')}-01`;
 }
-
-function daysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return dateStr(d);
-}
-
-function formatNum(n) {
-  return Math.round(n).toLocaleString('ru-RU');
-}
-
-// ── DB-хелперы ────────────────────────────────────────────────────────────────
+function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return dateStr(d); }
+function formatNum(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
 async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
-    .single();
+  const { data } = await queryOne(
+    `SELECT id FROM users WHERE external_id = $1 AND channel = 'telegram'`,
+    [String(telegramId)]
+  );
   return data?.id ?? null;
 }
 
-// Расходы по нeсистемным категориям текущего месяца (для прогноза, как в budget.js)
 async function getBudgetSpent(userId) {
-  const { data: cats } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('is_system', false);
-
-  const catIds = cats?.map(c => c.id) ?? [];
-  if (catIds.length === 0) return 0;
-
-  const { data } = await supabase
-    .from('transactions')
-    .select('amount')
-    .eq('user_id', userId)
-    .eq('type', 'expense')
-    .gte('transaction_date', getMonthStart())
-    .lt('transaction_date', getNextMonthStart())
-    .in('category_id', catIds);
-
-  return data?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0;
+  const { data } = await queryOne(
+    `SELECT COALESCE(SUM(t.amount), 0) AS total
+     FROM transactions t
+     JOIN categories c ON t.category_id = c.id
+     WHERE t.user_id = $1
+       AND t.type = 'expense'
+       AND c.is_system = false
+       AND t.transaction_date >= $2
+       AND t.transaction_date < $3`,
+    [userId, getMonthStart(), getNextMonthStart()]
+  );
+  return parseFloat(data?.total ?? 0);
 }
-
-// ── Paywall ───────────────────────────────────────────────────────────────────
 
 async function showPaywall(bot, chatId) {
-  await bot.sendMessage(
-    chatId,
-    'Эта функция доступна в подписке 💛\nХочешь активировать 30 дней бесплатно?',
-    {
-      reply_markup: {
-        inline_keyboard: [[
-          { text: 'Активировать trial', callback_data: 'budget:trial' },
-          { text: 'Не сейчас', callback_data: 'menu:main' },
-        ]],
-      },
-    }
-  );
+  await bot.sendMessage(chatId, 'Эта функция доступна в подписке 💛\nХочешь активировать 30 дней бесплатно?', {
+    reply_markup: { inline_keyboard: [[
+      { text: 'Активировать trial', callback_data: 'budget:trial' },
+      { text: 'Не сейчас', callback_data: 'menu:main' },
+    ]]},
+  });
 }
-
-// ── 1. Расходы за месяц ───────────────────────────────────────────────────────
 
 async function analyticsExpenses(bot, chatId, userId) {
   const now = new Date();
-  const { data } = await supabase
-    .from('transactions')
-    .select('amount')
-    .eq('user_id', userId)
-    .eq('type', 'expense')
-    .gte('transaction_date', getMonthStart(now))
-    .lt('transaction_date', getNextMonthStart(now));
-
-  const total = (data ?? []).reduce((s, t) => s + t.amount, 0);
-
+  const { data } = await queryOne(
+    `SELECT COALESCE(SUM(amount), 0) AS total FROM transactions
+     WHERE user_id = $1 AND type = 'expense'
+       AND transaction_date >= $2 AND transaction_date < $3`,
+    [userId, getMonthStart(now), getNextMonthStart(now)]
+  );
+  const total = parseFloat(data?.total ?? 0);
   if (total === 0) {
-    await bot.sendMessage(
-      chatId,
-      'За этот месяц расходов пока нет. Напиши мне о первой трате! 💛',
-      MENU_KEYBOARD
-    );
+    await bot.sendMessage(chatId, 'За этот месяц расходов пока нет. Напиши мне о первой трате! 💛', MENU_KEYBOARD);
     return;
   }
-
-  await bot.sendMessage(
-    chatId,
-    `💸 Расходы за ${getMonthName(now)}: ${formatNum(total)} ₽`,
-    MENU_KEYBOARD
-  );
+  await bot.sendMessage(chatId, `💸 Расходы за ${getMonthName(now)}: ${formatNum(total)} ₽`, MENU_KEYBOARD);
 }
-
-// ── 2. Доходы за месяц ────────────────────────────────────────────────────────
 
 async function analyticsIncome(bot, chatId, userId) {
   const now = new Date();
-  const { data } = await supabase
-    .from('transactions')
-    .select('amount')
-    .eq('user_id', userId)
-    .eq('type', 'income')
-    .gte('transaction_date', getMonthStart(now))
-    .lt('transaction_date', getNextMonthStart(now));
-
-  const total = (data ?? []).reduce((s, t) => s + t.amount, 0);
-
+  const { data } = await queryOne(
+    `SELECT COALESCE(SUM(amount), 0) AS total FROM transactions
+     WHERE user_id = $1 AND type = 'income'
+       AND transaction_date >= $2 AND transaction_date < $3`,
+    [userId, getMonthStart(now), getNextMonthStart(now)]
+  );
+  const total = parseFloat(data?.total ?? 0);
   if (total === 0) {
-    await bot.sendMessage(
-      chatId,
-      'За этот месяц доходов пока нет. Не забудь записать когда получишь 💛',
-      MENU_KEYBOARD
-    );
+    await bot.sendMessage(chatId, 'За этот месяц доходов пока нет. Не забудь записать когда получишь 💛', MENU_KEYBOARD);
     return;
   }
-
-  await bot.sendMessage(
-    chatId,
-    `💰 Доходы за ${getMonthName(now)}: ${formatNum(total)} ₽`,
-    MENU_KEYBOARD
-  );
+  await bot.sendMessage(chatId, `💰 Доходы за ${getMonthName(now)}: ${formatNum(total)} ₽`, MENU_KEYBOARD);
 }
-
-// ── 5. Топ-5 категорий за 90 дней ─────────────────────────────────────────────
 
 async function analyticsTopExpenses(bot, chatId, userId) {
   const startDate = daysAgo(90);
   const today = dateStr(new Date());
 
-  const { data } = await supabase
-    .from('transactions')
-    .select('amount, transaction_date, categories(name)')
-    .eq('user_id', userId)
-    .eq('type', 'expense')
-    .gte('transaction_date', startDate)
-    .lte('transaction_date', today);
+  const { data: rows } = await queryAll(
+    `SELECT t.amount, t.transaction_date, c.name AS category_name
+     FROM transactions t
+     LEFT JOIN categories c ON t.category_id = c.id
+     WHERE t.user_id = $1 AND t.type = 'expense'
+       AND t.transaction_date >= $2 AND t.transaction_date <= $3`,
+    [userId, startDate, today]
+  );
 
-  const rows = data ?? [];
-
-  if (rows.length === 0) {
+  if (!rows?.length) {
     await bot.sendMessage(chatId, 'Данных о расходах пока нет. Запиши первые траты! 💛', MENU_KEYBOARD);
     return;
   }
 
-  // Есть ли транзакции раньше 90 дней назад?
-  const { data: earliest } = await supabase
-    .from('transactions')
-    .select('transaction_date')
-    .eq('user_id', userId)
-    .eq('type', 'expense')
-    .order('transaction_date', { ascending: true })
-    .limit(1);
-
-  const hasFullPeriod = earliest?.[0]?.transaction_date <= startDate;
+  const { data: earliest } = await queryOne(
+    `SELECT transaction_date FROM transactions WHERE user_id = $1 AND type = 'expense' ORDER BY transaction_date ASC LIMIT 1`,
+    [userId]
+  );
+  const hasFullPeriod = earliest?.transaction_date && String(earliest.transaction_date).slice(0, 10) <= startDate;
 
   const byCategory = {};
   for (const row of rows) {
-    const cat = row.categories?.name ?? 'Другое';
-    byCategory[cat] = (byCategory[cat] ?? 0) + row.amount;
+    const cat = row.category_name ?? 'Другое';
+    byCategory[cat] = (byCategory[cat] ?? 0) + parseFloat(row.amount);
   }
 
-  const total = rows.reduce((s, r) => s + r.amount, 0);
-  const sorted = Object.entries(byCategory)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
+  const total = rows.reduce((s, r) => s + parseFloat(r.amount), 0);
+  const sorted = Object.entries(byCategory).sort(([, a], [, b]) => b - a).slice(0, 5);
 
   const periodLabel = hasFullPeriod
     ? 'За последние 3 месяца топ-5 категорий трат'
@@ -231,43 +147,29 @@ async function analyticsTopExpenses(bot, chatId, userId) {
   await bot.sendMessage(chatId, text.trim(), MENU_KEYBOARD);
 }
 
-// ── 5b. Топ-5 категорий за текущий месяц (из алертов бюджета) ────────────────
-
 async function analyticsTopExpensesMonth(bot, chatId, userId) {
   const now = new Date();
 
-  const { data: nonSystemCats } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('is_system', false);
-  const catIds = nonSystemCats?.map(c => c.id) ?? [];
+  const { data: rows } = await queryAll(
+    `SELECT t.amount, c.name AS category_name
+     FROM transactions t
+     JOIN categories c ON t.category_id = c.id
+     WHERE t.user_id = $1 AND t.type = 'expense'
+       AND c.is_system = false
+       AND t.transaction_date >= $2 AND t.transaction_date < $3`,
+    [userId, getMonthStart(now), getNextMonthStart(now)]
+  );
 
-  const { data } = await supabase
-    .from('transactions')
-    .select('amount, categories(name)')
-    .eq('user_id', userId)
-    .eq('type', 'expense')
-    .gte('transaction_date', getMonthStart(now))
-    .lt('transaction_date', getNextMonthStart(now))
-    .in('category_id', catIds.length > 0 ? catIds : ['00000000-0000-0000-0000-000000000000']);
-
-  const rows = data ?? [];
-
-  if (rows.length === 0) {
-    await bot.sendMessage(chatId, 'В этом месяце расходов пока нет 💛', MENU_KEYBOARD);
-    return;
-  }
+  if (!rows?.length) { await bot.sendMessage(chatId, 'В этом месяце расходов пока нет 💛', MENU_KEYBOARD); return; }
 
   const byCategory = {};
   for (const row of rows) {
-    const cat = row.categories?.name ?? 'Другое';
-    byCategory[cat] = (byCategory[cat] ?? 0) + row.amount;
+    const cat = row.category_name ?? 'Другое';
+    byCategory[cat] = (byCategory[cat] ?? 0) + parseFloat(row.amount);
   }
 
-  const total = rows.reduce((s, r) => s + r.amount, 0);
-  const sorted = Object.entries(byCategory)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
+  const total = rows.reduce((s, r) => s + parseFloat(r.amount), 0);
+  const sorted = Object.entries(byCategory).sort(([, a], [, b]) => b - a).slice(0, 5);
 
   let text = `📊 В этом месяце топ категорий трат:\n\n`;
   sorted.forEach(([cat, sum], i) => {
@@ -278,32 +180,30 @@ async function analyticsTopExpensesMonth(bot, chatId, userId) {
   await bot.sendMessage(chatId, text.trim(), MENU_KEYBOARD);
 }
 
-// ── 6. Сравнить доходы и расходы ─────────────────────────────────────────────
-
 async function analyticsCompare(bot, chatId, userId) {
   const now = new Date();
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
-  const { data: currData } = await supabase
-    .from('transactions')
-    .select('amount, type')
-    .eq('user_id', userId)
-    .gte('transaction_date', getMonthStart(now))
-    .lt('transaction_date', getNextMonthStart(now));
+  const [{ data: currData }, { data: prevData }] = await Promise.all([
+    queryAll(
+      `SELECT amount, type FROM transactions WHERE user_id=$1 AND transaction_date>=$2 AND transaction_date<$3`,
+      [userId, getMonthStart(now), getNextMonthStart(now)]
+    ),
+    queryAll(
+      `SELECT amount, type FROM transactions WHERE user_id=$1 AND transaction_date>=$2 AND transaction_date<$3`,
+      [userId, getMonthStart(prevDate), getMonthStart(now)]
+    ),
+  ]);
 
-  const currIncome  = (currData ?? []).filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const currExpense = (currData ?? []).filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
+  const sum = (rows, typeCheck) =>
+    (rows ?? []).filter(t => typeCheck(t.type)).reduce((s, t) => s + parseFloat(t.amount), 0);
+
+  const currIncome  = sum(currData, t => t === 'income');
+  const currExpense = sum(currData, t => t !== 'income');
   const currPct = currIncome > 0 ? Math.round((currExpense / currIncome) * 100) : 0;
 
-  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const { data: prevData } = await supabase
-    .from('transactions')
-    .select('amount, type')
-    .eq('user_id', userId)
-    .gte('transaction_date', getMonthStart(prevDate))
-    .lt('transaction_date', getMonthStart(now));
-
-  const prevIncome  = (prevData ?? []).filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const prevExpense = (prevData ?? []).filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
+  const prevIncome  = sum(prevData, t => t === 'income');
+  const prevExpense = sum(prevData, t => t !== 'income');
   const prevPct = prevIncome > 0 ? Math.round((prevExpense / prevIncome) * 100) : null;
 
   let text =
@@ -319,23 +219,14 @@ async function analyticsCompare(bot, chatId, userId) {
   await bot.sendMessage(chatId, text, MENU_KEYBOARD);
 }
 
-// ── 7. Прогноз до конца месяца ────────────────────────────────────────────────
-
 async function analyticsForecast(bot, chatId, userId) {
   const spent = await getBudgetSpent(userId);
+  if (spent === 0) { await bot.sendMessage(chatId, 'Пока нет данных для прогноза — внеси первые расходы 💛', MENU_KEYBOARD); return; }
 
-  if (spent === 0) {
-    await bot.sendMessage(chatId, 'Пока нет данных для прогноза — внеси первые расходы 💛', MENU_KEYBOARD);
-    return;
-  }
-
-  const { data: budget } = await supabase
-    .from('budget')
-    .select('amount')
-    .eq('user_id', userId)
-    .gte('month', getMonthStart())
-    .lt('month', getNextMonthStart())
-    .maybeSingle();
+  const { data: budget } = await queryOne(
+    `SELECT amount FROM budget WHERE user_id=$1 AND month>=$2 AND month<$3`,
+    [userId, getMonthStart(), getNextMonthStart()]
+  );
 
   const now = new Date();
   const passedDays = now.getDate();
@@ -354,21 +245,13 @@ async function analyticsForecast(bot, chatId, userId) {
     text += `При текущем темпе до конца месяца потратишь примерно ${formatNum(forecast)} ₽`;
   } else {
     const forecastPct = (forecast / budget.amount) * 100;
-    if (forecastPct <= 100) {
-      text +=
-        `Без учёта крупных трат, если сохранишь темп расходов — ` +
-        `израсходуешь ${Math.round(forecastPct)}% своего бюджета 💛`;
-    } else {
-      text +=
-        `⚠️ Без учёта крупных трат, если сохранишь темп расходов — ` +
-        `перерасходуешь бюджет на ${Math.round(forecastPct - 100)}%`;
-    }
+    text += forecastPct <= 100
+      ? `Без учёта крупных трат, если сохранишь темп расходов — израсходуешь ${Math.round(forecastPct)}% своего бюджета 💛`
+      : `⚠️ Без учёта крупных трат, если сохранишь темп расходов — перерасходуешь бюджет на ${Math.round(forecastPct - 100)}%`;
   }
 
   await bot.sendMessage(chatId, text, MENU_KEYBOARD);
 }
-
-// ── Ежемесячный отчёт (по нажатию кнопки) ────────────────────────────────────
 
 async function showMonthlyReport(bot, chatId, userId) {
   const now = new Date();
@@ -379,44 +262,36 @@ async function showMonthlyReport(bot, chatId, userId) {
 
   console.log('[monthly_analytics] fetching for month:', startDate);
 
-  const { data: txData } = await supabase
-    .from('transactions')
-    .select('amount, type, categories(name)')
-    .eq('user_id', userId)
-    .gte('transaction_date', startDate)
-    .lt('transaction_date', endDate);
+  const { data: txData } = await queryAll(
+    `SELECT t.amount, t.type, c.name AS category_name
+     FROM transactions t
+     LEFT JOIN categories c ON t.category_id = c.id
+     WHERE t.user_id = $1 AND t.transaction_date >= $2 AND t.transaction_date < $3`,
+    [userId, startDate, endDate]
+  );
 
   const rows = txData ?? [];
-  const income  = rows.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expense = rows.filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
+  const income  = rows.filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+  const expense = rows.filter(t => t.type !== 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
 
-  console.log('[monthly_analytics] income:', income);
-  console.log('[monthly_analytics] expenses:', expense);
+  console.log('[monthly_analytics] income:', income, 'expenses:', expense);
 
   if (rows.length === 0) {
-    await bot.sendMessage(
-      chatId,
-      'За прошлый месяц записей не найдено.\nДанные появятся когда ты начнёшь вести записи 💛',
-      MENU_KEYBOARD
-    );
+    await bot.sendMessage(chatId, 'За прошлый месяц записей не найдено.\nДанные появятся когда ты начнёшь вести записи 💛', MENU_KEYBOARD);
     return;
   }
 
   const byCategory = {};
   for (const row of rows.filter(t => t.type !== 'income')) {
-    const cat = row.categories?.name ?? 'Другое';
-    byCategory[cat] = (byCategory[cat] ?? 0) + row.amount;
+    const cat = row.category_name ?? 'Другое';
+    byCategory[cat] = (byCategory[cat] ?? 0) + parseFloat(row.amount);
   }
-  const top5 = Object.entries(byCategory)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
+  const top5 = Object.entries(byCategory).sort(([, a], [, b]) => b - a).slice(0, 5);
 
-  const { data: goals } = await supabase
-    .from('goals')
-    .select('name, future_value, initial_saved')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .limit(1);
+  const { data: goals } = await queryAll(
+    `SELECT name, future_value, initial_saved FROM goals WHERE user_id = $1 AND status = 'active' LIMIT 1`,
+    [userId]
+  );
 
   let text = `📊 Аналитика за ${monthName}\n\n`;
   text += `💰 Доходы: ${formatNum(income)} ₽\n`;
@@ -432,17 +307,15 @@ async function showMonthlyReport(bot, chatId, userId) {
 
   if (goals?.[0]) {
     const g = goals[0];
-    const { data: catData } = await supabase
-      .from('categories').select('id').eq('name', 'Цель').single();
-
+    const { data: catData } = await queryOne(`SELECT id FROM categories WHERE name = 'Цель' LIMIT 1`);
     let goalTxTotal = 0;
     if (catData?.id) {
-      const { data: goalTxs } = await supabase
-        .from('transactions').select('amount')
-        .eq('user_id', userId).eq('category_id', catData.id);
-      goalTxTotal = goalTxs?.reduce((s, t) => s + t.amount, 0) ?? 0;
+      const { data: sum } = await queryOne(
+        `SELECT COALESCE(SUM(amount), 0) AS total FROM transactions WHERE user_id=$1 AND category_id=$2`,
+        [userId, catData.id]
+      );
+      goalTxTotal = parseFloat(sum?.total ?? 0);
     }
-
     const accumulated = (g.initial_saved ?? 0) + goalTxTotal;
     const percent = Math.min(100, Math.round((accumulated / g.future_value) * 100));
     text += `\n🎯 Прогресс по цели «${g.name}»: ${percent}%`;
@@ -450,8 +323,6 @@ async function showMonthlyReport(bot, chatId, userId) {
 
   await bot.sendMessage(chatId, text.trim(), MENU_KEYBOARD);
 }
-
-// ── Меню аналитики ────────────────────────────────────────────────────────────
 
 export async function showAnalyticsMenu(bot, chatId) {
   await bot.sendMessage(chatId, '📊 Какую аналитику показать?', {
@@ -469,15 +340,11 @@ export async function showAnalyticsMenu(bot, chatId) {
           { text: 'На что трачу больше', callback_data: 'analytics_top_expenses' },
           { text: 'Сравнить доходы и расходы', callback_data: 'analytics_compare' },
         ],
-        [
-          { text: 'Прогноз до конца месяца', callback_data: 'analytics_forecast' },
-        ],
+        [{ text: 'Прогноз до конца месяца', callback_data: 'analytics_forecast' }],
       ],
     },
   });
 }
-
-// ── Обработчик кнопок analytics_ и show_monthly_analytics ────────────────────
 
 export async function handleAnalyticsCallback(bot, query) {
   const chatId = query.message.chat.id;
@@ -496,47 +363,22 @@ export async function handleAnalyticsCallback(bot, query) {
   }
 
   const userId = await getUserId(telegramId);
-  if (!userId) {
-    await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏');
-    return;
-  }
+  if (!userId) { await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏'); return; }
 
   const access = await getUserAccess(userId);
-
-  if (!FEATURE_ACCESS[action]?.includes(access)) {
-    await showPaywall(bot, chatId);
-    return;
-  }
+  if (!FEATURE_ACCESS[action]?.includes(access)) { await showPaywall(bot, chatId); return; }
 
   switch (action) {
-    case 'analytics_expenses':
-      await analyticsExpenses(bot, chatId, userId);
-      break;
-    case 'analytics_income':
-      await analyticsIncome(bot, chatId, userId);
-      break;
-    case 'analytics_budget_left':
-      await showBudget(bot, chatId, telegramId);
-      break;
-    case 'analytics_goal_progress':
-      await showGoal(bot, chatId, telegramId);
-      break;
-    case 'analytics_top_expenses':
-      await analyticsTopExpenses(bot, chatId, userId);
-      break;
-    case 'analytics_top_month':
-      await analyticsTopExpensesMonth(bot, chatId, userId);
-      break;
-    case 'analytics_compare':
-      await analyticsCompare(bot, chatId, userId);
-      break;
-    case 'analytics_forecast':
-      await analyticsForecast(bot, chatId, userId);
-      break;
+    case 'analytics_expenses':     await analyticsExpenses(bot, chatId, userId); break;
+    case 'analytics_income':       await analyticsIncome(bot, chatId, userId); break;
+    case 'analytics_budget_left':  await showBudget(bot, chatId, telegramId); break;
+    case 'analytics_goal_progress': await showGoal(bot, chatId, telegramId); break;
+    case 'analytics_top_expenses': await analyticsTopExpenses(bot, chatId, userId); break;
+    case 'analytics_top_month':    await analyticsTopExpensesMonth(bot, chatId, userId); break;
+    case 'analytics_compare':      await analyticsCompare(bot, chatId, userId); break;
+    case 'analytics_forecast':     await analyticsForecast(bot, chatId, userId); break;
   }
 }
-
-// ── Ежемесячная рассылка (вызывать из bot.js) ─────────────────────────────────
 
 export async function sendMonthlyAnalytics(bot) {
   const today = new Date();
@@ -547,56 +389,36 @@ export async function sendMonthlyAnalytics(bot) {
   const thisMonthStart = getMonthStart(today);
   const monthName = MONTHS_NOM[prevDate.getMonth()];
 
-  const { data: users } = await supabase
-    .from('users')
-    .select('id, external_id')
-    .eq('channel', 'telegram')
-    .not('terms_accepted_at', 'is', null);
-
+  const { data: users } = await queryAll(
+    `SELECT id, external_id FROM users WHERE channel = 'telegram' AND terms_accepted_at IS NOT NULL`
+  );
   if (!users?.length) return;
 
   for (const user of users) {
     try {
-      // Проверяем, не отправляли ли уже за этот месяц
-      const { data: existing } = await supabase
-        .from('notifications')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('type', 'analytics_ready')
-        .eq('month', lastMonthStart)
-        .maybeSingle();
-
+      const { data: existing } = await queryOne(
+        `SELECT id FROM notifications WHERE user_id=$1 AND type='analytics_ready' AND month=$2`,
+        [user.id, lastMonthStart]
+      );
       if (existing) continue;
 
-      // Отправляем только если есть транзакции за прошлый месяц
-      const { data: txCheck } = await supabase
-        .from('transactions')
-        .select('id')
-        .eq('user_id', user.id)
-        .gte('transaction_date', lastMonthStart)
-        .lt('transaction_date', thisMonthStart)
-        .limit(1);
-
-      if (!txCheck?.length) continue;
-
-      await bot.sendMessage(
-        user.external_id,
-        `Аналитика за ${monthName} уже готова 📊\nХочешь посмотреть?`,
-        {
-          reply_markup: {
-            inline_keyboard: [[
-              { text: 'Показать аналитику', callback_data: 'show_monthly_analytics' },
-              { text: 'Позже', callback_data: 'analytics_monthly_skip' },
-            ]],
-          },
-        }
+      const { data: txCheck } = await queryOne(
+        `SELECT id FROM transactions WHERE user_id=$1 AND transaction_date>=$2 AND transaction_date<$3 LIMIT 1`,
+        [user.id, lastMonthStart, thisMonthStart]
       );
+      if (!txCheck) continue;
 
-      await supabase.from('notifications').insert({
-        user_id: user.id,
-        type: 'analytics_ready',
-        month: lastMonthStart,
+      await bot.sendMessage(user.external_id, `Аналитика за ${monthName} уже готова 📊\nХочешь посмотреть?`, {
+        reply_markup: { inline_keyboard: [[
+          { text: 'Показать аналитику', callback_data: 'show_monthly_analytics' },
+          { text: 'Позже', callback_data: 'analytics_monthly_skip' },
+        ]]},
       });
+
+      await queryOne(
+        `INSERT INTO notifications (user_id, type, month) VALUES ($1, 'analytics_ready', $2) RETURNING id`,
+        [user.id, lastMonthStart]
+      );
     } catch (err) {
       console.error(`Monthly analytics error for user ${user.external_id}:`, err.message);
     }
