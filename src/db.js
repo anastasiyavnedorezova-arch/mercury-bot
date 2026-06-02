@@ -9,9 +9,9 @@ export const pool = new Pool({
   database: process.env.TIMEWEB_DB_NAME,
   user:     process.env.TIMEWEB_DB_USER,
   password: process.env.TIMEWEB_DB_PASSWORD,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: process.env.TIMEWEB_DB_SSL_CERT
+    ? { rejectUnauthorized: true, ca: Buffer.from(process.env.TIMEWEB_DB_SSL_CERT, 'base64').toString('utf8') }
+    : { rejectUnauthorized: false },
   max: 10,
   idleTimeoutMillis: 10_000,
   connectionTimeoutMillis: 10_000,
