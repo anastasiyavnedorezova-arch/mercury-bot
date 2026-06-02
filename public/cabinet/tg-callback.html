@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Вход через Telegram — Меркури</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f9fafb;
+      color: #111827;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px 32px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    .title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .subtitle { font-size: 14px; color: #6b7280; margin-bottom: 24px; }
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      background: #111827;
+      color: #fff;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #2aabee;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="spinner" id="spinner"></div>
+  <div class="title">Входим...</div>
+  <div class="subtitle" id="subtitle">Проверяем данные Telegram</div>
+</div>
+
+<script>
+  (async () => {
+    const params = new URLSearchParams(window.location.search);
+    const payload = {};
+    for (const [k, v] of params.entries()) payload[k] = v;
+
+    if (!payload.hash) {
+      showError('Данные не получены. Попробуйте войти снова.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/auth/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 404) {
+        showNotFound();
+        return;
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showError(err.error || 'Ошибка входа. Попробуйте позже.');
+        return;
+      }
+
+      const { token } = await res.json();
+      localStorage.setItem('mercury_token', token);
+      window.location.href = '/cabinet/dashboard.html';
+    } catch (e) {
+      showError('Сетевая ошибка. Попробуйте позже.');
+    }
+  })();
+
+  function showNotFound() {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('card').innerHTML = `
+      <div class="icon">🤖</div>
+      <div class="title">Аккаунт не найден</div>
+      <div class="subtitle">Сначала запустите бота <strong>@MercuryFinBot</strong> в Telegram, а затем вернитесь для входа.</div>
+      <a href="https://t.me/MercuryFinBot" class="btn">Открыть бота</a>
+    `;
+  }
+
+  function showError(msg) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('card').innerHTML = `
+      <div class="icon">⚠️</div>
+      <div class="title">Что-то пошло не так</div>
+      <div class="subtitle">${msg}</div>
+      <a href="/cabinet/login.html" class="btn">Вернуться ко входу</a>
+    `;
+  }
+</script>
+</body>
+</html>

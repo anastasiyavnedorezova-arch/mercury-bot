@@ -43,30 +43,21 @@ router.post('/auth/telegram', async (req, res) => {
 
     const telegramId = String(data.id);
 
-    // Ищем или создаём пользователя
-    let { data: users, error } = await supabase
+    // Ищем пользователя по telegram_id
+    const { data: users, error } = await supabase
       .from('users')
       .select('id, external_id, channel')
       .eq('external_id', telegramId)
+      .eq('channel', 'telegram')
       .limit(1);
 
     if (error) throw error;
 
-    let userId;
-
-    if (users?.length) {
-      userId = users[0].id;
-    } else {
-      // Создаём нового пользователя (без подписки)
-      const { data: created, error: createErr } = await supabase
-        .from('users')
-        .insert({ external_id: telegramId, channel: 'telegram' })
-        .select('id')
-        .single();
-
-      if (createErr) throw createErr;
-      userId = created.id;
+    if (!users?.length) {
+      return res.status(404).json({ error: 'User not found' });
     }
+
+    const userId = users[0].id;
 
     const token = jwt.sign(
       { userId, telegramId },
