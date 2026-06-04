@@ -206,7 +206,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 
-    const [userRes, subRes, txRes, goalsRes, goalTxRes] = await Promise.all([
+    const [userRes, subRes, txRes, goalsRes] = await Promise.all([
       supabase.from('users').select('id, external_id, username').eq('id', req.userId).single(),
       supabase.from('subscriptions')
         .select('status, ends_at')
@@ -222,13 +222,10 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
         .gte('transaction_date', monthStart)
         .order('transaction_date', { ascending: false }),
       supabase.from('goals')
-        .select('id, name, target_amount')
+        .select('id, name, target_amount, future_value, initial_saved, target_date')
         .eq('user_id', req.userId)
+        .eq('status', 'active')
         .order('created_at', { ascending: false }),
-      supabase.from('transactions')
-        .select('goal_id, amount')
-        .eq('user_id', req.userId)
-        .not('goal_id', 'is', null),
     ]);
 
     if (userRes.error) throw userRes.error;
@@ -239,7 +236,28 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
     const sub = subRes.data;
     const transactions = txRes.data || [];
     const goals = goalsRes.data || [];
-    const goalTx = goalTxRes.data || [];
+
+    // Находим category_id категории «Цель» (системная, user_id IS NULL)
+    let goalCategoryId = null;
+    const { data: catData } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('name', 'Цель')
+      .is('user_id', null)
+      .limit(1)
+      .maybeSingle();
+    goalCategoryId = catData?.id ?? null;
+
+    // Сумма всех целевых транзакций пользователя
+    let totalGoalTx = 0;
+    if (goalCategoryId) {
+      const { data: goalTxData } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('user_id', req.userId)
+        .eq('category_id', goalCategoryId);
+      totalGoalTx = goalTxData?.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) ?? 0;
+    }
 
     // Баланс текущего месяца
     let income = 0, expenses = 0;
@@ -270,19 +288,20 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
       category: t.categories?.name || 'Другое',
     }));
 
-    // Цели с суммой накоплений
-    const savedByGoal = {};
-    goalTx.forEach(t => {
-      if (t.goal_id) {
-        savedByGoal[t.goal_id] = (savedByGoal[t.goal_id] || 0) + (parseFloat(t.amount) || 0);
-      }
+    // Цели: saved = initial_saved + все целевые транзакции (как в боте)
+    const goalsWithSaved = goals.map(g => {
+      const target = parseFloat(g.future_value) || parseFloat(g.target_amount) || 0;
+      const saved = (parseFloat(g.initial_saved) || 0) + totalGoalTx;
+      const percent = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
+      return {
+        id: g.id,
+        name: g.name,
+        target_amount: target,
+        saved,
+        percent,
+        deadline: g.target_date ?? null,
+      };
     });
-    const goalsWithSaved = goals.map(g => ({
-      id: g.id,
-      name: g.name,
-      target: parseFloat(g.target_amount) || 0,
-      saved: savedByGoal[g.id] || 0,
-    }));
 
     res.json({
       user: {

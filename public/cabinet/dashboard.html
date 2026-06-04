@@ -1042,7 +1042,7 @@
 
     const goal   = goals[idx];
     const saved  = goal.saved  || 0;
-    const target = goal.target || 1;
+    const target = goal.target_amount || 1;
     const pct    = Math.min((saved / target) * 100, 100);
 
     el.innerHTML =
