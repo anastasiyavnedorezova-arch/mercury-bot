@@ -331,7 +331,7 @@ router.get('/api/history', requireAuth, async (req, res) => {
     const { data, error, count } = await supabase
       .from('transactions')
       .select(
-        'id, transaction_date, type, amount, comment, categories(name, emoji)',
+        'id, transaction_date, type, amount, comment, categories(name)',
         { count: 'exact' }
       )
       .eq('user_id', req.userId)
@@ -349,7 +349,6 @@ router.get('/api/history', requireAuth, async (req, res) => {
         amount: t.amount,
         comment: t.comment,
         category: t.categories?.name || 'Другое',
-        category_emoji: t.categories?.emoji ?? null,
       })),
       total: count,
       limit,
