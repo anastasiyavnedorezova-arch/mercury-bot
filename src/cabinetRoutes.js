@@ -185,7 +185,7 @@ router.get('/api/budget', requireAuth, async (req, res) => {
 
     const { data, error } = await supabase
       .from('budget')
-      .select('*, categories(name, category_groups(name))')
+      .select('*')
       .eq('user_id', req.userId)
       .eq('month', monthDate);
 
