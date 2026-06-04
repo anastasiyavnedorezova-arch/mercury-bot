@@ -677,20 +677,20 @@
 
   // Sidebar toggle
   const sidebar   = document.getElementById('lkSidebar');
-  const toggleBtn   = document.getElementById('sidebarToggle');
-  const toggleIcon  = document.getElementById('sidebarToggleIcon');
+  const toggleBtn   = document.getElementById('sbToggle');
+  const toggleIcon  = document.getElementById('sbToggleIcon');
   const IC = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTcuNzUgMTlDMTcuNzUgMTkuMzEzOSAxNy41NTQ2IDE5LjU5NDYgMTcuMjYwMiAxOS43MDM1QzE2Ljk2NTggMTkuODEyMyAxNi42MzQ4IDE5LjcyNjQgMTYuNDMwNiAxOS40ODgxTDEwLjQzMDYgMTIuNDg4MUMxMC4xODk4IDEyLjIwNzMgMTAuMTg5OCAxMS43OTI4IDEwLjQzMDYgMTEuNTExOUwxNi40MzA2IDQuNTExOTRDMTYuNjM0OCA0LjI3MzY0IDE2Ljk2NTggNC4xODc3MyAxNy4yNjAyIDQuMjk2NjJDMTcuNTU0NiA0LjQwNTUxIDE3Ljc1IDQuNjg2MTggMTcuNzUgNS4wMDAwNEwxNy43NSAxOVoiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy40ODgxIDE5LjU2OTVDMTMuODAyNiAxOS4yOTk5IDEzLjgzOSAxOC44MjY0IDEzLjU2OTQgMTguNTExOUw3Ljk4NzgxIDEyTDEzLjU2OTQgNS40ODgxMUMxMy44MzkgNS4xNzM2MSAxMy44MDI2IDQuNzAwMTQgMTMuNDg4MSA0LjQzMDU3QzEzLjE3MzYgNC4xNjEgMTIuNzAwMSA0LjE5NzQzIDEyLjQzMDYgNC41MTE5Mkw2LjQzMDU2IDExLjUxMTlDNi4xODk4MSAxMS43OTI4IDYuMTg5ODEgMTIuMjA3MiA2LjQzMDU2IDEyLjQ4ODFMMTIuNDMwNiAxOS40ODgxQzEyLjcwMDEgMTkuODAyNiAxMy4xNzM2IDE5LjgzOSAxMy40ODgxIDE5LjU2OTVaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=';
   const IO = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNNi4yNSAxOUM2LjI1IDE5LjMxMzkgNi40NDU0MyAxOS41OTQ2IDYuNzM5NzkgMTkuNzAzNUM3LjAzNDE1IDE5LjgxMjMgNy4zNjUxOSAxOS43MjY0IDcuNTY5NDQgMTkuNDg4MUwxMy41Njk0IDEyLjQ4ODFDMTMuODEwMiAxMi4yMDczIDEzLjgxMDIgMTEuNzkyOCAxMy41Njk0IDExLjUxMTlMNy41Njk0NCA0LjUxMTk0QzcuMzY1MTkgNC4yNzM2NCA3LjAzNDE1IDQuMTg3NzMgNi43Mzk3OSA0LjI5NjYyQzYuNDQ1NDMgNC40MDU1MSA2LjI1IDQuNjg2MTggNi4yNSA1LjAwMDA0TDYuMjUgMTlaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTAuNTExOSAxOS41Njk1QzEwLjE5NzQgMTkuMjk5OSAxMC4xNjEgMTguODI2NCAxMC40MzA2IDE4LjUxMTlMMTYuMDEyMiAxMkwxMC40MzA2IDUuNDg4MTFDMTAuMTYxIDUuMTczNjEgMTAuMTk3NCA0LjcwMDE0IDEwLjUxMTkgNC40MzA1N0MxMC44MjY0IDQuMTYxIDExLjI5OTkgNC4xOTc0MyAxMS41Njk1IDQuNTExOTJMMTcuNTY5NSAxMS41MTE5QzE3LjgxMDIgMTEuNzkyOCAxNy44MTAyIDEyLjIwNzIgMTcuNTY5NSAxMi40ODgxTDExLjU2OTUgMTkuNDg4MUMxMS4yOTk5IDE5LjgwMjYgMTAuODI2NCAxOS44MzkgMTAuNTExOSAxOS41Njk1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K';
   let collapsed = false;
-  toggleBtn.addEventListener('click', () => {
+  if (toggleBtn) toggleBtn.addEventListener('click', () => {
     collapsed = !collapsed;
-    sidebar.classList.toggle('is-collapsed', collapsed);
-    toggleIcon.src = collapsed ? IO : IC;
+    if (sidebar) sidebar.classList.toggle('is-collapsed', collapsed);
+    if (toggleIcon) toggleIcon.src = collapsed ? IO : IC;
     toggleBtn.setAttribute('aria-label', collapsed ? 'Развернуть меню' : 'Свернуть меню');
   });
 
   // Active nav
-  document.querySelectorAll('.lk-sidebar .nav-item:not(.is-disabled-sub):not(.is-disabled-soon)').forEach(el => {
+  document.querySelectorAll('.lk-sidebar .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(el => {
     el.addEventListener('click', e => {
       e.preventDefault();
       document.querySelectorAll('.lk-sidebar .nav-item').forEach(i => i.classList.remove('is-active'));
@@ -703,13 +703,13 @@
   const drawer   = document.getElementById('lkDrawer');
   const overlay  = document.getElementById('lkOverlay');
   const closeBtn = document.getElementById('lkDrawerClose');
-  function openDrawer()  { overlay.classList.add('is-open'); requestAnimationFrame(()=>overlay.classList.add('is-visible')); drawer.classList.add('is-open'); document.body.style.overflow='hidden'; burger.setAttribute('aria-expanded','true'); }
-  function closeDrawer() { overlay.classList.remove('is-visible'); drawer.classList.remove('is-open'); document.body.style.overflow=''; burger.setAttribute('aria-expanded','false'); setTimeout(()=>overlay.classList.remove('is-open'),250); }
-  burger.addEventListener('click', openDrawer);
-  closeBtn.addEventListener('click', closeDrawer);
-  overlay.addEventListener('click', closeDrawer);
+  function openDrawer()  { if (overlay) { overlay.classList.add('is-open'); requestAnimationFrame(()=>overlay.classList.add('is-visible')); } if (drawer) drawer.classList.add('is-open'); document.body.style.overflow='hidden'; if (burger) burger.setAttribute('aria-expanded','true'); }
+  function closeDrawer() { if (overlay) { overlay.classList.remove('is-visible'); setTimeout(()=>overlay.classList.remove('is-open'),250); } if (drawer) drawer.classList.remove('is-open'); document.body.style.overflow=''; if (burger) burger.setAttribute('aria-expanded','false'); }
+  if (burger) burger.addEventListener('click', openDrawer);
+  if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+  if (overlay) overlay.addEventListener('click', closeDrawer);
   document.addEventListener('keydown', e => { if(e.key==='Escape') closeDrawer(); });
-  document.querySelectorAll('.lk-drawer .nav-item:not(.is-disabled-sub):not(.is-disabled-soon)').forEach(el => {
+  document.querySelectorAll('.lk-drawer .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(el => {
     el.addEventListener('click', e => { e.preventDefault(); setTimeout(closeDrawer,150); });
   });
 
@@ -730,7 +730,8 @@
       const lbl = subscription.status==='trial'?`Пробный период до ${d}`:`Подписка до ${d}`;
       subHtml = `<div class="lk-header__sub"><span class="lk-header__sub-text">${lbl}</span>${chip}</div>`;
     }
-    document.getElementById('lkUserInfo').innerHTML =
+    const _lkUserInfo = document.getElementById('lkUserInfo');
+    if (_lkUserInfo) _lkUserInfo.innerHTML =
       `<div class="lk-header__username">Кабинет: <strong>${name}</strong></div>${subHtml}`;
 
     let drawerSub = '';
@@ -741,7 +742,8 @@
       const lbl = subscription.status==='trial'?`Пробный период до ${d}`:`Подписка до ${d}`;
       drawerSub = `<div class="lk-drawer__sub"><span class="lk-drawer__sub-text">${lbl}</span>${chip}</div>`;
     }
-    document.getElementById('lkDrawerUserInfo').innerHTML =
+    const _drawerUserInfo = document.getElementById('drawerUserInfo');
+    if (_drawerUserInfo) _drawerUserInfo.innerHTML =
       `<div class="lk-drawer__name">Кабинет: <strong>${name}</strong></div>${drawerSub}`;
   }
 
@@ -801,7 +803,8 @@
 
     } catch (err) {
       console.error('[dashboard] load error:', err);
-      document.getElementById('lkUserInfo').textContent = 'Ошибка загрузки';
+      const _lkUserInfoErr = document.getElementById('lkUserInfo');
+    if (_lkUserInfoErr) _lkUserInfoErr.textContent = 'Ошибка загрузки';
     }
   }
 
@@ -1236,11 +1239,13 @@
   async function loadTop5Card() { /* handled by loadDashboard */ }
   // ── LOGOUT MODAL ────────────────────────────────────────────────────
   function openLogoutModal() {
-    document.getElementById('logoutOverlay').classList.add('is-open');
+    const _logoutOverlay = document.getElementById('logoutOverlay');
+    if (_logoutOverlay) _logoutOverlay.classList.add('is-open');
     document.body.style.overflow = 'hidden';
   }
   function closeLogoutModal() {
-    document.getElementById('logoutOverlay').classList.remove('is-open');
+    const _logoutOverlay2 = document.getElementById('logoutOverlay');
+    if (_logoutOverlay2) _logoutOverlay2.classList.remove('is-open');
     document.body.style.overflow = '';
   }
   function doLogout() {
