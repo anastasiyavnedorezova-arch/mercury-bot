@@ -420,7 +420,7 @@
     .hist-th--type     { width:90px; }
     .hist-th--category { width:auto; }
     .hist-th--amount   { width:140px; text-align:right; }
-    .hist-th--actions  { width:80px; text-align:center; }
+    .hist-th--actions  { width:100px; text-align:center; }
     .hist-empty { padding:60px 24px; display:flex; flex-direction:column; align-items:center; gap:16px; background:#fff; }
     .hist-empty__text { font-size:18px; font-weight:600; color:#6B7280; line-height:26px; text-align:center; }
     .hist-row { background:#fff; transition:background 120ms; }
@@ -429,8 +429,39 @@
     .hist-td--date { color:#6B7280; white-space:nowrap; }
     .hist-td--amount { text-align:right; font-weight:600; white-space:nowrap; }
     .hist-td--actions { text-align:center; }
-    .hist-action-btn { background:none; border:none; cursor:pointer; padding:6px; border-radius:6px; transition:background 150ms; display:inline-flex; }
-    .hist-action-btn:hover { background:#FFF0F0; }
+    .hist-action-btn { cursor:pointer; border-radius:6px; transition:background 150ms,border-color 150ms; display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; padding:0; }
+    .hist-action-btn--edit { background:#2D3748; border:none; }
+    .hist-action-btn--edit:hover { background:#4B5563; }
+    .hist-action-btn--del { background:#fff; border:1px solid #2D3748; }
+    .hist-action-btn--del:hover { background:#F8FAFC; }
+
+    /* ══════ MODALS ══════ */
+    .modal-overlay { display:none; position:fixed; inset:0; z-index:600; background:rgba(15,23,42,.45); backdrop-filter:blur(2px); align-items:center; justify-content:center; }
+    .modal-overlay.is-open { display:flex; }
+    .modal-box { background:#fff; border-radius:24px; padding:32px; width:500px; max-width:calc(100vw - 40px); display:flex; flex-direction:column; gap:24px; box-shadow:0 8px 32px rgba(0,0,0,.12); }
+    .modal-head { display:flex; align-items:center; justify-content:space-between; }
+    .modal-title { font-size:20px; font-weight:700; color:#2D3748; }
+    .modal-close { background:none; border:none; cursor:pointer; padding:4px; display:flex; color:#9CA3AF; }
+    .modal-close:hover { color:#2D3748; }
+    .modal-body { display:flex; flex-direction:column; gap:16px; }
+    .modal-field { display:flex; flex-direction:column; gap:6px; }
+    .modal-label { font-size:13px; font-weight:600; color:#4B5563; }
+    .modal-input,.modal-select { height:44px; padding:0 14px; border-radius:10px; border:1px solid #E2E8F0; font-family:'Manrope',sans-serif; font-size:14px; color:#2D3748; background:#fff; outline:none; transition:border-color 150ms; width:100%; }
+    .modal-input:focus,.modal-select:focus { border-color:#4C9AFF; }
+    .modal-footer { display:flex; gap:12px; }
+    .btn-modal-cancel { flex:1; height:48px; border-radius:12px; background:#fff; color:#2D3748; border:1px solid #E2E8F0; font-family:'Manrope',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:background 150ms; }
+    .btn-modal-cancel:hover { background:#F8FAFC; }
+    .btn-modal-save { flex:1; height:48px; border-radius:12px; background:#4C9AFF; color:#fff; border:none; font-family:'Manrope',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:background 150ms; }
+    .btn-modal-save:hover { background:#3B82F6; }
+    .btn-modal-delete { flex:1; height:48px; border-radius:12px; background:#E5484D; color:#fff; border:none; font-family:'Manrope',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:background 150ms; }
+    .btn-modal-delete:hover { background:#C93B40; }
+    .delete-detail { font-size:14px; color:#4B5563; line-height:24px; background:#F8FAFC; border-radius:10px; padding:14px 16px; }
+    .delete-irrev { font-size:13px; color:#9B2C2C; font-weight:500; }
+    @media (max-width:900px) {
+      .modal-box { border-radius:20px; padding:20px; }
+      .modal-footer--save { flex-direction:column-reverse; }
+      .modal-footer--del { flex-direction:column; }
+    }
 
     /* ══════ HISTORY MOBILE CARDS ══════ */
     @media (min-width: 901px) {
@@ -573,7 +604,7 @@
 
   <!-- Load more -->
     <div id="loadMoreWrap" style="display:none;text-align:center;padding:16px 0;">
-      <button id="btnLoadMore" class="btn-hdr btn-hdr--sec" style="min-width:200px;">Загрузить ещё</button>
+      <button id="btnLoadMore" class="btn-hdr btn-hdr--sec" style="width:100%;">Загрузить ещё</button>
     </div>
 
   </main>
@@ -774,7 +805,10 @@
         '</td>'+
         '<td class="hist-td hist-td--amount" style="'+amtColor+'">'+fmtMoney(r.amount,r.type)+'</td>'+
         '<td class="hist-td hist-td--actions">'+
-          '<button class="hist-action-btn" title="Удалить" data-id="'+(r.id||'')+'">'+'<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M5.333 4V2.667h5.334V4M6.667 7.333v4M9.333 7.333v4M3.333 4l.667 9.333h8L12.667 4" stroke="#9CA3AF" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+'</button>'+
+          '<div style="display:flex;gap:6px;justify-content:center;">'+
+            '<button class="hist-action-btn hist-action-btn--edit" title="Редактировать" data-id="'+(r.id||'')+'"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9.917 1.75L12.25 4.083 4.583 11.75H2.25V9.417L9.917 1.75Z" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 3.667L10.333 6" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/></svg></button>'+
+            '<button class="hist-action-btn hist-action-btn--del" title="Удалить" data-id="'+(r.id||'')+'"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5h10.5M4.667 3.5V2.333h4.666V3.5M5.833 6.417v3.5M8.167 6.417v3.5M2.917 3.5l.583 8.167h7L11.083 3.5" stroke="#2D3748" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>'+
+          '</div>'+
         '</td>'+
         '</tr>';
     });
@@ -921,7 +955,7 @@
       var badge='<span class="type-badge type-badge--'+tc+'"><span class="type-badge__dot"></span>'+(isInc?'Доход':'Расход')+'</span>';
       var amtClass=isInc?'hist-card__amount--income':'hist-card__amount--expense';
       html2+=
-        '<div class="hist-card">'+
+        '<div class="hist-card" data-id="'+(r.id||'')+'" style="cursor:pointer;">'+
           '<div class="hist-card__top">'+
             '<div class="hist-card__left">'+
               '<span class="acc-cat-icon '+iconBg+'">'+icon+'</span>'+
@@ -944,6 +978,144 @@
 
   document.getElementById('btnLoadMore') && document.getElementById('btnLoadMore').addEventListener('click', function() {
     loadHistoryData(historyOffset);
+  });
+
+  // ── Modal logic ──────────────────────────────────────────
+  var _editId = null;
+  var _deleteId = null;
+  var _detailId = null;
+
+  function closeAllModals() {
+    document.getElementById('editModal').classList.remove('is-open');
+    document.getElementById('deleteModal').classList.remove('is-open');
+    document.getElementById('detailModal').classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+
+  function fillEditCats(type, selectedCat) {
+    var cats = type === 'income' ? ALL_INCOME_CATS : ALL_EXPENSE_CATS;
+    var sel = document.getElementById('editCategory');
+    sel.innerHTML = cats.map(function(c) {
+      return '<option value="'+escH(c)+'"'+(c===selectedCat?' selected':'')+'>'+escH(c)+'</option>';
+    }).join('');
+  }
+
+  function openEditModal(id) {
+    var r = historyData.find(function(x){return x.id===id;});
+    if (!r) return;
+    _editId = id;
+    document.getElementById('editType').value = r.type;
+    fillEditCats(r.type, r.category);
+    document.getElementById('editAmount').value = Math.abs(parseFloat(r.amount)||0);
+    document.getElementById('editDate').value = r.transaction_date ? r.transaction_date.slice(0,10) : '';
+    document.getElementById('editModal').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openDeleteModal(id) {
+    var r = historyData.find(function(x){return x.id===id;});
+    if (!r) return;
+    _deleteId = id;
+    var isInc = r.type === 'income';
+    document.getElementById('deleteDetail').innerHTML =
+      '📅 ' + escH(fmtDateRow(r.transaction_date)) + '<br>' +
+      (isInc ? '📈 Доход' : '📉 Расход') + '<br>' +
+      '📂 ' + escH(r.category||'Другое') + '<br>' +
+      '💰 ' + escH(fmtMoney(r.amount, r.type));
+    document.getElementById('deleteModal').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function openDetailModal(id) {
+    var r = historyData.find(function(x){return x.id===id;});
+    if (!r) return;
+    _detailId = id;
+    var isInc = r.type === 'income';
+    document.getElementById('detailBody').innerHTML =
+      '<div class="delete-detail">' +
+      '📅 ' + escH(fmtDateRow(r.transaction_date)) + '<br>' +
+      (isInc ? '📈 Доход' : '📉 Расход') + '<br>' +
+      '📂 ' + escH(r.category||'Другое') + '<br>' +
+      '💰 ' + escH(fmtMoney(r.amount, r.type)) +
+      (r.comment ? '<br>💬 ' + escH(r.comment) : '') +
+      '</div>';
+    document.getElementById('detailModal').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Edit type change → refill categories
+  document.getElementById('editType').addEventListener('change', function() {
+    fillEditCats(this.value, '');
+  });
+
+  // Edit modal events
+  document.getElementById('editModalClose').addEventListener('click', closeAllModals);
+  document.getElementById('editModalCancel').addEventListener('click', closeAllModals);
+  document.getElementById('editModalSave').addEventListener('click', async function() {
+    if (!_editId) return;
+    var type = document.getElementById('editType').value;
+    var category = document.getElementById('editCategory').value;
+    var amount = parseFloat(document.getElementById('editAmount').value) || 0;
+    var date = document.getElementById('editDate').value;
+    if (!category || !amount || !date) return;
+    try {
+      var resp = await fetch('/api/history/'+_editId, {
+        method: 'PUT', headers: authHeaders(),
+        body: JSON.stringify({ type: type, category: category, amount: amount, transaction_date: date })
+      });
+      if (!resp.ok) throw new Error('error');
+      closeAllModals();
+      historyData = []; historyOffset = 0; historyTotal = 0;
+      loadHistoryData(0);
+    } catch(e) { alert('Ошибка при сохранении'); }
+  });
+
+  // Delete modal events
+  document.getElementById('deleteModalClose').addEventListener('click', closeAllModals);
+  document.getElementById('deleteModalCancel').addEventListener('click', closeAllModals);
+  document.getElementById('deleteModalConfirm').addEventListener('click', async function() {
+    if (!_deleteId) return;
+    try {
+      var resp = await fetch('/api/history/'+_deleteId, {
+        method: 'DELETE', headers: authHeaders()
+      });
+      if (!resp.ok) throw new Error('error');
+      var idx = historyData.findIndex(function(x){return x.id===_deleteId;});
+      if (idx >= 0) { historyData.splice(idx, 1); historyTotal = Math.max(0, historyTotal-1); }
+      closeAllModals();
+      if (!historyData.length) { renderHistEmpty(); } else { applyFilters(); }
+      updateLoadMoreBtn();
+    } catch(e) { alert('Ошибка при удалении'); }
+  });
+
+  // Detail modal events
+  document.getElementById('detailModalClose').addEventListener('click', closeAllModals);
+  document.getElementById('detailEditBtn').addEventListener('click', function() {
+    closeAllModals(); openEditModal(_detailId);
+  });
+  document.getElementById('detailDeleteBtn').addEventListener('click', function() {
+    closeAllModals(); openDeleteModal(_detailId);
+  });
+
+  // Close modals on overlay click
+  ['editModal','deleteModal','detailModal'].forEach(function(mid) {
+    document.getElementById(mid).addEventListener('click', function(e) {
+      if (e.target === this) closeAllModals();
+    });
+  });
+
+  // Desktop action button delegation
+  document.getElementById('histTbody').addEventListener('click', function(e) {
+    var editBtn = e.target.closest('.hist-action-btn--edit');
+    var delBtn  = e.target.closest('.hist-action-btn--del');
+    if (editBtn) openEditModal(editBtn.getAttribute('data-id'));
+    if (delBtn)  openDeleteModal(delBtn.getAttribute('data-id'));
+  });
+
+  // Mobile card click delegation
+  document.getElementById('histCardsWrap').addEventListener('click', function(e) {
+    var card = e.target.closest('.hist-card');
+    if (card) openDetailModal(card.getAttribute('data-id'));
   });
 
   loadHeader();
@@ -984,5 +1156,74 @@
     </div>
   </div>
 </div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Редактировать запись</span>
+      <button class="modal-close" id="editModalClose"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5l10 10" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Тип</label>
+        <select class="modal-select" id="editType">
+          <option value="expense">Расход</option>
+          <option value="income">Доход</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Категория</label>
+        <select class="modal-select" id="editCategory"></select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Сумма</label>
+        <input type="number" class="modal-input" id="editAmount" min="0" step="0.01" placeholder="0.00"/>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Дата</label>
+        <input type="date" class="modal-input" id="editDate"/>
+      </div>
+    </div>
+    <div class="modal-footer modal-footer--save">
+      <button class="btn-modal-cancel" id="editModalCancel">Отменить</button>
+      <button class="btn-modal-save" id="editModalSave">Сохранить изменения</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Удалить запись</span>
+      <button class="modal-close" id="deleteModalClose"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5l10 10" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-detail" id="deleteDetail"></div>
+      <div class="delete-irrev">⚠️ Удаление безвозвратно</div>
+    </div>
+    <div class="modal-footer modal-footer--del">
+      <button class="btn-modal-cancel" id="deleteModalCancel">Отменить</button>
+      <button class="btn-modal-delete" id="deleteModalConfirm">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL (mobile) -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-title">Детали записи</span>
+      <button class="modal-close" id="detailModalClose"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5l10 10" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer" style="flex-direction:column;gap:10px;">
+      <button class="btn-modal-save" id="detailEditBtn" style="width:100%;flex:none;">Отредактировать</button>
+      <button class="btn-modal-cancel" id="detailDeleteBtn" style="width:100%;flex:none;color:#E5484D;border-color:#E5484D;">Удалить</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

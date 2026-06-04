@@ -361,6 +361,63 @@ router.get('/api/history', requireAuth, async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// PUT /api/history/:id
+// ──────────────────────────────────────────
+router.put('/api/history/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type, category, amount, transaction_date } = req.body;
+
+    if (!type || !category || !amount || !transaction_date) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Resolve category_id by name (user's own or system)
+    const { data: catRows } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('name', category)
+      .or(`user_id.eq.${req.userId},user_id.is.null`)
+      .limit(1);
+
+    const category_id = catRows?.[0]?.id ?? null;
+
+    const { error } = await supabase
+      .from('transactions')
+      .update({ type, category_id, amount, transaction_date })
+      .eq('id', id)
+      .eq('user_id', req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] PUT /api/history/:id error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// DELETE /api/history/:id
+// ──────────────────────────────────────────
+router.delete('/api/history/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] DELETE /api/history/:id error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
 // GET /api/accounting
 // ──────────────────────────────────────────
 router.get('/api/accounting', requireAuth, async (req, res) => {
