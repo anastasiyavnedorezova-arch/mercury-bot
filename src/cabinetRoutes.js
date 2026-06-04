@@ -197,4 +197,108 @@ router.get('/api/budget', requireAuth, async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────
+// GET /api/dashboard
+// Возвращает все данные для главной страницы кабинета
+// ──────────────────────────────────────────
+router.get('/api/dashboard', requireAuth, async (req, res) => {
+  try {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+
+    const [userRes, subRes, txRes, goalsRes, goalTxRes] = await Promise.all([
+      supabase.from('users').select('id, external_id, username').eq('id', req.userId).single(),
+      supabase.from('subscriptions')
+        .select('status, ends_at')
+        .eq('user_id', req.userId)
+        .in('status', ['trial', 'active'])
+        .gt('ends_at', now.toISOString())
+        .order('ends_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase.from('transactions')
+        .select('id, type, amount, description, transaction_date, categories(name)')
+        .eq('user_id', req.userId)
+        .gte('transaction_date', monthStart)
+        .order('transaction_date', { ascending: false }),
+      supabase.from('goals')
+        .select('id, name, target_amount')
+        .eq('user_id', req.userId)
+        .order('created_at', { ascending: false }),
+      supabase.from('transactions')
+        .select('goal_id, amount')
+        .eq('user_id', req.userId)
+        .not('goal_id', 'is', null),
+    ]);
+
+    if (userRes.error) throw userRes.error;
+    if (txRes.error) throw txRes.error;
+    if (goalsRes.error) throw goalsRes.error;
+
+    const user = userRes.data;
+    const sub = subRes.data;
+    const transactions = txRes.data || [];
+    const goals = goalsRes.data || [];
+    const goalTx = goalTxRes.data || [];
+
+    // Баланс текущего месяца
+    let income = 0, expenses = 0;
+    transactions.forEach(t => {
+      const amt = parseFloat(t.amount) || 0;
+      if (t.type === 'income') income += amt;
+      else if (t.type === 'expense') expenses += amt;
+    });
+
+    // Топ-5 категорий расходов этого месяца
+    const catTotals = {};
+    transactions.filter(t => t.type === 'expense').forEach(t => {
+      const name = t.categories?.name || 'Другое';
+      catTotals[name] = (catTotals[name] || 0) + (parseFloat(t.amount) || 0);
+    });
+    const top_categories = Object.entries(catTotals)
+      .map(([name, amount]) => ({ name, amount }))
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 5);
+
+    // Последние 10 транзакций
+    const recent_transactions = transactions.slice(0, 10).map(t => ({
+      id: t.id,
+      type: t.type,
+      amount: t.amount,
+      comment: t.description,
+      date: t.transaction_date,
+      category: t.categories?.name || 'Другое',
+    }));
+
+    // Цели с суммой накоплений
+    const savedByGoal = {};
+    goalTx.forEach(t => {
+      if (t.goal_id) {
+        savedByGoal[t.goal_id] = (savedByGoal[t.goal_id] || 0) + (parseFloat(t.amount) || 0);
+      }
+    });
+    const goalsWithSaved = goals.map(g => ({
+      id: g.id,
+      name: g.name,
+      target: parseFloat(g.target_amount) || 0,
+      saved: savedByGoal[g.id] || 0,
+    }));
+
+    res.json({
+      user: {
+        name: user.username || user.external_id || 'Пользователь',
+        subscription_status: sub?.status ?? null,
+        subscription_end: sub?.ends_at ?? null,
+      },
+      balance: { income, expenses, total: income - expenses },
+      goals: goalsWithSaved,
+      top_categories,
+      recent_transactions,
+    });
+  } catch (err) {
+    console.error('[cabinet] /api/dashboard error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

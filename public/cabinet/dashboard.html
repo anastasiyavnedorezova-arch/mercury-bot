@@ -691,10 +691,13 @@
 </div>
 
 <script>
-  // CONFIG
-  const SUPABASE_URL      = 'https://ijvkcskzvwluntrsbcsj.supabase.co';
-  const SUPABASE_ANON_KEY = 'ВСТАВЬТЕ_ANON_KEY_СЮДА';
-  const USER_ID           = '146d9c64-951e-454e-be5c-e03bf5202338';
+  // ── Auth ─────────────────────────────────────────────────────
+  const _token = localStorage.getItem('mercury_token');
+  if (!_token) { window.location.replace('/cabinet/login.html'); }
+
+  function _authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _token };
+  }
 
   // Sidebar toggle
   const sidebar   = document.getElementById('lkSidebar');
@@ -739,22 +742,7 @@
   function daysLeft(iso) { return Math.max(0,Math.ceil((new Date(iso)-new Date())/86400000)); }
   function plural(n) { return n%10===1&&n%100!==11?'день':[2,3,4].includes(n%10)&&![12,13,14].includes(n%100)?'дня':'дней'; }
 
-  async function loadHeader() {
-    if (SUPABASE_ANON_KEY==='ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      const trialEnd = new Date(Date.now()+24*86400000*24).toISOString();
-      renderHeader({ username:'user_name', subscription:{status:'trial',ends_at:trialEnd} });
-      return;
-    }
-    const h = {'apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${SUPABASE_ANON_KEY}`};
-    try {
-      const [uR,sR] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${USER_ID}&select=username`,{headers:h}),
-        fetch(`${SUPABASE_URL}/rest/v1/subscriptions?user_id=eq.${USER_ID}&status=in.(trial,active)&ends_at=gt.${new Date().toISOString()}&order=ends_at.desc&limit=1&select=status,ends_at`,{headers:h})
-      ]);
-      const [uD,sD] = await Promise.all([uR.json(),sR.json()]);
-      renderHeader({ username:uD[0]?.username||'', subscription:sD[0]||null });
-    } catch { document.getElementById('lkUserInfo').textContent='Ошибка'; }
-  }
+  async function loadHeader() { /* handled by loadDashboard */ }
 
   function renderHeader({username,subscription}) {
     const name = username||'Пользователь';
@@ -781,7 +769,53 @@
       `<div class="lk-drawer__name">Кабинет: <strong>${name}</strong></div>${drawerSub}`;
   }
 
-  loadHeader();
+  // ══════════════════════════════════════════════════════
+  // MAIN DASHBOARD LOADER
+  // ══════════════════════════════════════════════════════
+  async function loadDashboard() {
+    const token = localStorage.getItem('mercury_token');
+    if (!token) { window.location.replace('/cabinet/login.html'); return; }
+
+    try {
+      const res = await fetch('/api/dashboard', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+
+      if (res.status === 401) { window.location.replace('/cabinet/login.html'); return; }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      const d = await res.json();
+
+      // Header
+      renderHeader({
+        username: d.user.name,
+        subscription: d.user.subscription_status
+          ? { status: d.user.subscription_status, ends_at: d.user.subscription_end }
+          : null
+      });
+
+      // Balance
+      renderBalanceCard(d.balance.income, d.balance.expenses);
+
+      // Goals
+      goalsList = d.goals;
+      goalIndex = 0;
+      renderGoalCard(goalsList, 0);
+
+      // Recent transactions
+      renderTransCard(d.recent_transactions);
+
+      // Top-5 categories
+      renderTop5Card(d.top_categories);
+
+    } catch (err) {
+      console.error('[dashboard] load error:', err);
+      document.getElementById('lkUserInfo').textContent = 'Ошибка загрузки';
+    }
+  }
+
+
+  loadDashboard();
 
   // ══════════════════════════════════
   // BALANCE CARD
@@ -826,40 +860,7 @@
       </div>`;
   }
 
-  async function loadBalanceCard() {
-    if (SUPABASE_ANON_KEY === 'ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      // Dev: render with test data (comment/uncomment to test states)
-      renderBalanceCard(122039, 10000);   // balance > 0
-      // renderBalanceCard(2000, 10000);  // balance < 0
-      // renderBalanceCard(10000, 10000); // balance = 0
-      // renderBalanceCard(0, 0);         // no data
-      return;
-    }
-
-    const h = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
-
-    // First day of current month in ISO
-    const now   = new Date();
-    const from  = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-    try {
-      const [incRes, expRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/transactions?user_id=eq.${USER_ID}&type=eq.income&date=gte.${from}&select=amount`, { headers: h }),
-        fetch(`${SUPABASE_URL}/rest/v1/transactions?user_id=eq.${USER_ID}&type=eq.expense&date=gte.${from}&select=amount`, { headers: h })
-      ]);
-
-      const [incData, expData] = await Promise.all([incRes.json(), expRes.json()]);
-
-      const income  = incData.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-      const expense = expData.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-
-      renderBalanceCard(income, expense);
-    } catch (err) {
-      console.error('Balance card error:', err);
-      document.getElementById('bodyBalance').innerHTML =
-        '<div style="color:#E5484D;font-size:13px;padding:16px;">Ошибка загрузки данных</div>';
-    }
-  }
+  async function loadBalanceCard() { /* handled by loadDashboard */ }
 
   // Bot widget opener — placeholder until widget is built
   function openBotWidget() {
@@ -867,7 +868,6 @@
     console.log('Open bot widget');
   }
 
-  loadBalanceCard();
 
   // ══════════════════════════════════
   // BUDGET CARD
@@ -953,62 +953,7 @@
   }
 
   async function loadBudgetCard() {
-    if (SUPABASE_ANON_KEY === 'ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      // Dev mode — uncomment one to test:
-      renderBudgetCard('locked',  null);
-      // renderBudgetCard('no-data', null);
-      // renderBudgetCard('good', { budget: 100000, spent: 15000, overBy: 0 });
-      // renderBudgetCard('risk', { budget: 100000, spent: 88000, overBy: 18000 });
-      return;
-    }
-
-    const h = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` };
-
-    // Check subscription
-    try {
-      const subRes  = await fetch(`${SUPABASE_URL}/rest/v1/subscriptions?user_id=eq.${USER_ID}&status=in.(trial,active)&ends_at=gt.${new Date().toISOString()}&select=status&limit=1`, { headers: h });
-      const subData = await subRes.json();
-      const hasSub  = subData.length > 0;
-
-      if (!hasSub) {
-        renderBudgetCard('locked', null);
-        return;
-      }
-
-      // First day of current month
-      const now  = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-      // Get budget for current month
-      const budRes  = await fetch(`${SUPABASE_URL}/rest/v1/budgets?user_id=eq.${USER_ID}&month=gte.${from}&order=month.desc&limit=1&select=amount,forecast`, { headers: h });
-      const budData = await budRes.json();
-
-      if (!budData.length || !budData[0].amount) {
-        renderBudgetCard('no-data', null);
-        return;
-      }
-
-      const budget   = parseFloat(budData[0].amount);
-      const forecast = budData[0].forecast; // 'good' | 'risk' — set by bot
-
-      // Get current expenses
-      const expRes  = await fetch(`${SUPABASE_URL}/rest/v1/transactions?user_id=eq.${USER_ID}&type=eq.expense&date=gte.${from}&select=amount`, { headers: h });
-      const expData = await expRes.json();
-      const spent   = expData.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-
-      // Forecast: project spending to end of month
-      const today    = now.getDate();
-      const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-      const projected = (spent / today) * lastDay;
-      const overBy   = Math.max(0, projected - budget);
-      const state    = overBy > 0 ? 'risk' : 'good';
-
-      renderBudgetCard(forecast || state, { budget, spent, overBy });
-    } catch (err) {
-      console.error('Budget card error:', err);
-      document.getElementById('bodyBudget').innerHTML =
-        '<div style="color:#E5484D;font-size:13px;padding:16px;">Ошибка загрузки</div>';
-    }
+    renderBudgetCard('locked', null);
   }
 
   loadBudgetCard();
@@ -1080,51 +1025,8 @@
     if (goalIndex < goalsList.length - 1) { goalIndex++; renderGoalCard(goalsList, goalIndex); }
   });
 
-  async function loadGoalCard() {
-    if (SUPABASE_ANON_KEY === 'ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      // Dev: uncomment the state you want to test
-      renderGoalCard([], 0);
-      // renderGoalCard([{ id:'g1', name:'Купить однокомнатную квартиру', target:5326970, saved:532697 }], 0);
-      // renderGoalCard([
-      //   { id:'g1', name:'Купить квартиру', target:5000000, saved:532697 },
-      //   { id:'g2', name:'Отпуск на Мальдивах', target:300000, saved:75000 }
-      // ], 0);
-      return;
-    }
+  async function loadGoalCard() { /* handled by loadDashboard */ }
 
-    const h = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
-
-    try {
-      const gRes  = await fetch(
-        SUPABASE_URL + '/rest/v1/goals?user_id=eq.' + USER_ID + '&select=id,name,target_amount&order=created_at.asc',
-        { headers: h }
-      );
-      const gData = await gRes.json();
-
-      if (!gData.length) { goalsList = []; renderGoalCard([], 0); return; }
-
-      const goalsWithProgress = await Promise.all(gData.map(async function(g) {
-        const tRes  = await fetch(
-          SUPABASE_URL + '/rest/v1/transactions?user_id=eq.' + USER_ID + '&goal_id=eq.' + g.id + '&select=amount',
-          { headers: h }
-        );
-        const tData = await tRes.json();
-        const saved = tData.reduce(function(s, r) { return s + (parseFloat(r.amount) || 0); }, 0);
-        return { id: g.id, name: g.name, target: parseFloat(g.target_amount) || 1, saved: saved };
-      }));
-
-      goalsList = goalsWithProgress;
-      goalIndex = 0;
-      renderGoalCard(goalsList, goalIndex);
-
-    } catch (err) {
-      console.error('Goal card error:', err);
-      document.getElementById('bodyGoal').innerHTML =
-        '<div style="color:#E5484D;font-size:13px;padding:16px;">Ошибка загрузки</div>';
-    }
-  }
-
-  loadGoalCard();
 
   // ══════════════════════════════════
   // CATEGORY ICON MAP
@@ -1291,42 +1193,8 @@
       '<div class="trans-mobile">' + mobileRows + '</div>';
   }
 
-  async function loadTransCard() {
-    if (SUPABASE_ANON_KEY === 'ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      // Dev mode — uncomment:
-      renderTransCard([]);
-      // renderTransCard([
-      //   { date:'2026-04-09', type:'expense', category:'Продукты',      comment:'Азбука вкуса', amount:1000  },
-      //   { date:'2026-04-08', type:'expense', category:'Дом и быт',     comment:'',             amount:134   },
-      //   { date:'2026-04-06', type:'income',  category:'Зарплата',      comment:'',             amount:120000},
-      //   { date:'2026-04-05', type:'income',  category:'Кэшбек и бонусы',comment:'',            amount:2039  },
-      //   { date:'2026-04-05', type:'expense', category:'Авто',          comment:'газпром',      amount:3500  },
-      // ]);
-      return;
-    }
+  async function loadTransCard() { /* handled by loadDashboard */ }
 
-    var h = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
-    var now  = new Date();
-    var from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-    try {
-      var res  = await fetch(
-        SUPABASE_URL + '/rest/v1/transactions?user_id=eq.' + USER_ID +
-        '&date=gte.' + from +
-        '&order=date.desc,created_at.desc&limit=5' +
-        '&select=date,type,category,comment,amount',
-        { headers: h }
-      );
-      var data = await res.json();
-      renderTransCard(data.length ? data : []);
-    } catch (err) {
-      console.error('Trans card error:', err);
-      document.getElementById('bodyTrans').innerHTML =
-        '<div style="color:#E5484D;font-size:13px;padding:16px;">Ошибка загрузки</div>';
-    }
-  }
-
-  loadTransCard();
 
     function renderTop5Card(categories) {
     const el = document.getElementById('bodyTop5');
@@ -1362,57 +1230,8 @@
     el.innerHTML = '<div class="top5-list">' + rows + '</div>';
   }
 
-  async function loadTop5Card() {
-    if (SUPABASE_ANON_KEY === 'ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      // Dev mode — uncomment to test:
-      renderTop5Card([]);
-      // renderTop5Card([
-      //   { name: 'Продукты',              amount: 2350 },
-      //   { name: 'Дом и быт',             amount: 2192 },
-      //   { name: 'Авто',                  amount: 1799 },
-      //   { name: 'Красота и уход за собой', amount: 863 },
-      //   { name: 'Кафе и рестораны',      amount: 610  },
-      // ]);
-      return;
-    }
+  async function loadTop5Card() { /* handled by loadDashboard */ }
 
-    const h = { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
-    const now  = new Date();
-    const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-    try {
-      const res  = await fetch(
-        SUPABASE_URL + '/rest/v1/transactions?user_id=eq.' + USER_ID +
-        '&type=eq.expense&date=gte.' + from + '&select=category,amount',
-        { headers: h }
-      );
-      const data = await res.json();
-
-      if (!data.length) { renderTop5Card([]); return; }
-
-      // Group by category and sum
-      var totals = {};
-      data.forEach(function(r) {
-        var cat = r.category || 'Другое';
-        totals[cat] = (totals[cat] || 0) + (parseFloat(r.amount) || 0);
-      });
-
-      // Sort desc, take top 5
-      var sorted = Object.keys(totals)
-        .map(function(k) { return { name: k, amount: totals[k] }; })
-        .sort(function(a, b) { return b.amount - a.amount; })
-        .slice(0, 5);
-
-      renderTop5Card(sorted);
-
-    } catch (err) {
-      console.error('Top5 card error:', err);
-      document.getElementById('bodyTop5').innerHTML =
-        '<div style="color:#E5484D;font-size:13px;padding:16px;">Ошибка загрузки</div>';
-    }
-  }
-
-  loadTop5Card();
 </script>
 </script>
 </body>
