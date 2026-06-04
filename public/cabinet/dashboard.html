@@ -358,27 +358,21 @@
       .dash-card--trans   { min-height: 80px; }
     }
 
-    /* ── Goal nav arrows ── */
-    .goal-nav-btn {
-      width: 20px; height: 20px;
-      background: none; border: none; padding: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      cursor: default; flex-shrink: 0;
+    /* ── Goal card ── */
+    .goal-name { font-size: 24px; font-weight: 600; color: #2D3748; line-height: 1.2; }
+    .goal-progress-label { font-size: 14px; color: #6B7280; margin-bottom: 6px; display: block; }
+    .goal-progress-bar { width: 100%; height: 20px; background: #E6F7EF; border-radius: 4px; overflow: hidden; }
+    .goal-progress-fill { height: 100%; background: #2FBF71; border-radius: 4px; transition: width 0.4s; }
+    .goal-progress-value { font-size: 20px; font-weight: 600; color: #2D3748; margin-top: 8px; }
+    .goal-next-btn {
+      font-size: 13px; font-weight: 500; color: #6B7280; background: none; border: none;
+      cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 0; white-space: nowrap;
     }
-    .goal-nav-btn img { width: 20px; height: 20px; display: block; }
-
-    /* disabled: grey (SVG already #9CA3AF — no filter needed) */
-    .goal-nav-btn:disabled { opacity: 1; }
-
-    /* enabled: recolour both arrows to #2D3748 */
-    .goal-nav-btn.is-active {
-      cursor: pointer;
+    .goal-next-btn:hover { color: #2D3748; }
+    @media (max-width: 768px) {
+      .goal-name { font-size: 20px; }
+      .goal-progress-value { font-size: 18px; }
     }
-    .goal-nav-btn.is-active img {
-      /* #9CA3AF → #2D3748 */
-      filter: brightness(0) saturate(100%) invert(18%) sepia(13%) saturate(900%) hue-rotate(183deg) brightness(90%) contrast(92%);
-    }
-    .goal-nav-btn.is-active:hover img { opacity: 0.65; }
 
     /* ══════ TRANSACTIONS CARD ══════ */
 
@@ -644,10 +638,7 @@
       <div class="dash-card dash-card--goal" id="cardGoal">
         <div class="dash-card__header">
           <span class="dash-card__title">Цель</span>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <button class="goal-nav-btn" id="goalPrev" aria-label="Предыдущая цель" disabled><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik05Ljk1MjAyIDEuMDQxNUgxMC4wNDc3QzExLjk3MTMgMS4wNDE0OSAxMy40Nzg4IDEuMDQxNDggMTQuNjU1MSAxLjE5OTYzQzE1Ljg1OSAxLjM2MTQ5IDE2LjgwOSAxLjY5OTI4IDE3LjU1NDcgMi40NDQ5NUMxOC4zMDA0IDMuMTkwNjMgMTguNjM4MiA0LjE0MDY1IDE4LjggNS4zNDQ1OUMxOC45NTgyIDYuNTIwODMgMTguOTU4MiA4LjAyODM2IDE4Ljk1ODIgOS45NTIwM1YxMC4wNDc2QzE4Ljk1ODIgMTEuOTcxMyAxOC45NTgyIDEzLjQ3ODggMTguOCAxNC42NTUxQzE4LjYzODIgMTUuODU5IDE4LjMwMDQgMTYuODA5IDE3LjU1NDcgMTcuNTU0N0MxNi44MDkgMTguMzAwNCAxNS44NTkgMTguNjM4MiAxNC42NTUxIDE4LjhDMTMuNDc4OCAxOC45NTgyIDExLjk3MTMgMTguOTU4MiAxMC4wNDc2IDE4Ljk1ODJIOS45NTIwM0M4LjAyODM2IDE4Ljk1ODIgNi41MjA4MyAxOC45NTgyIDUuMzQ0NTkgMTguOEM0LjE0MDY1IDE4LjYzODIgMy4xOTA2MyAxOC4zMDA0IDIuNDQ0OTUgMTcuNTU0N0MxLjY5OTI4IDE2LjgwOSAxLjM2MTQ5IDE1Ljg1OSAxLjE5OTYzIDE0LjY1NTFDMS4wNDE0OCAxMy40Nzg4IDEuMDQxNDkgMTEuOTcxMyAxLjA0MTUgMTAuMDQ3N1Y5Ljk1MjAyQzEuMDQxNDkgOC4wMjgzNiAxLjA0MTQ4IDYuNTIwODMgMS4xOTk2MyA1LjM0NDU5QzEuMzYxNDkgNC4xNDA2NSAxLjY5OTI4IDMuMTkwNjMgMi40NDQ5NSAyLjQ0NDk1QzMuMTkwNjMgMS42OTkyOCA0LjE0MDY1IDEuMzYxNDkgNS4zNDQ1OSAxLjE5OTYzQzYuNTIwODMgMS4wNDE0OCA4LjAyODM2IDEuMDQxNDkgOS45NTIwMiAxLjA0MTVaTTUuNTExMTUgMi40Mzg0OEM0LjQ0NTgyIDIuNTgxNzEgMy44MDM1NSAyLjg1NDEyIDMuMzI4ODMgMy4zMjg4M0MyLjg1NDEyIDMuODAzNTUgMi41ODE3MSA0LjQ0NTgyIDIuNDM4NDggNS41MTExNUMyLjI5MjgzIDYuNTk0NDcgMi4yOTE1IDguMDE3OTggMi4yOTE1IDkuOTk5ODRDMi4yOTE1IDExLjk4MTcgMi4yOTI4MyAxMy40MDUyIDIuNDM4NDggMTQuNDg4NUMyLjU4MTcxIDE1LjU1MzkgMi44NTQxMiAxNi4xOTYxIDMuMzI4ODMgMTYuNjcwOEMzLjgwMzU1IDE3LjE0NTYgNC40NDU4MiAxNy40MTggNS41MTExNSAxNy41NjEyQzYuNTk0NDcgMTcuNzA2OCA4LjAxNzk4IDE3LjcwODIgOS45OTk4NCAxNy43MDgyQzExLjk4MTcgMTcuNzA4MiAxMy40MDUyIDE3LjcwNjggMTQuNDg4NSAxNy41NjEyQzE1LjU1MzkgMTcuNDE4IDE2LjE5NjEgMTcuMTQ1NiAxNi42NzA4IDE2LjY3MDhDMTcuMTQ1NiAxNi4xOTYxIDE3LjQxOCAxNS41NTM5IDE3LjU2MTIgMTQuNDg4NUMxNy43MDY4IDEzLjQwNTIgMTcuNzA4MiAxMS45ODE3IDE3LjcwODIgOS45OTk4NEMxNy43MDgyIDguMDE3OTggMTcuNzA2OCA2LjU5NDQ3IDE3LjU2MTIgNS41MTExNUMxNy40MTggNC40NDU4MiAxNy4xNDU2IDMuODAzNTUgMTYuNjcwOCAzLjMyODgzQzE2LjE5NjEgMi44NTQxMiAxNS41NTM5IDIuNTgxNzEgMTQuNDg4NSAyLjQzODQ4QzEzLjQwNTIgMi4yOTI4MyAxMS45ODE3IDIuMjkxNSA5Ljk5OTg0IDIuMjkxNUM4LjAxNzk4IDIuMjkxNSA2LjU5NDQ3IDIuMjkyODMgNS41MTExNSAyLjQzODQ4Wk0xMS42OTE4IDcuMDU3OUMxMS45MzU5IDcuMzAxOTcgMTEuOTM1OSA3LjY5NzcgMTEuNjkxOCA3Ljk0MTc4TDkuNjMzNzIgOS45OTk4NEwxMS42OTE4IDEyLjA1NzlDMTEuOTM1OSAxMi4zMDIgMTEuOTM1OSAxMi42OTc3IDExLjY5MTggMTIuOTQxOEMxMS40NDc3IDEzLjE4NTkgMTEuMDUyIDEzLjE4NTkgMTAuODA3OSAxMi45NDE4TDguMzA3OSAxMC40NDE4QzguMDYzODIgMTAuMTk3NyA4LjA2MzgyIDkuODAxOTcgOC4zMDc5IDkuNTU3OUwxMC44MDc5IDcuMDU3OUMxMS4wNTIgNi44MTM4MiAxMS40NDc3IDYuODEzODIgMTEuNjkxOCA3LjA1NzlaIiBmaWxsPSIjOUNBM0FGIi8+Cjwvc3ZnPgo=" alt=""/></button>
-            <button class="goal-nav-btn" id="goalNext" aria-label="Следующая цель" disabled><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik05Ljk1MjAyIDEuMDQxOTlIMTAuMDQ3N0MxMS45NzEzIDEuMDQxOTggMTMuNDc4OCAxLjA0MTk3IDE0LjY1NTEgMS4yMDAxMUMxNS44NTkgMS4zNjE5OCAxNi44MDkgMS42OTk3NiAxNy41NTQ3IDIuNDQ1NDRDMTguMzAwNCAzLjE5MTExIDE4LjYzODIgNC4xNDExMyAxOC44IDUuMzQ1MDhDMTguOTU4MiA2LjUyMTMyIDE4Ljk1ODIgOC4wMjg4NSAxOC45NTgyIDkuOTUyNTJWMTAuMDQ4MUMxOC45NTgyIDExLjk3MTggMTguOTU4MiAxMy40NzkzIDE4LjggMTQuNjU1NkMxOC42MzgyIDE1Ljg1OTUgMTguMzAwNCAxNi44MDk1IDE3LjU1NDcgMTcuNTU1MkMxNi44MDkgMTguMzAwOSAxNS44NTkgMTguNjM4NyAxNC42NTUxIDE4LjgwMDVDMTMuNDc4OCAxOC45NTg3IDExLjk3MTMgMTguOTU4NyAxMC4wNDc2IDE4Ljk1ODdIOS45NTIwM0M4LjAyODM2IDE4Ljk1ODcgNi41MjA4MyAxOC45NTg3IDUuMzQ0NTkgMTguODAwNUM0LjE0MDY1IDE4LjYzODcgMy4xOTA2MyAxOC4zMDA5IDIuNDQ0OTUgMTcuNTU1MkMxLjY5OTI4IDE2LjgwOTUgMS4zNjE0OSAxNS44NTk1IDEuMTk5NjMgMTQuNjU1NkMxLjA0MTQ4IDEzLjQ3OTMgMS4wNDE0OSAxMS45NzE4IDEuMDQxNSAxMC4wNDgxVjkuOTUyNTFDMS4wNDE0OSA4LjAyODg1IDEuMDQxNDggNi41MjEzMiAxLjE5OTYzIDUuMzQ1MDhDMS4zNjE0OSA0LjE0MTEzIDEuNjk5MjggMy4xOTExMSAyLjQ0NDk1IDIuNDQ1NDRDMy4xOTA2MyAxLjY5OTc2IDQuMTQwNjUgMS4zNjE5OCA1LjM0NDU5IDEuMjAwMTFDNi41MjA4MyAxLjA0MTk3IDguMDI4MzYgMS4wNDE5OCA5Ljk1MjAyIDEuMDQxOTlaTTUuNTExMTUgMi40Mzg5N0M0LjQ0NTgyIDIuNTgyMiAzLjgwMzU1IDIuODU0NjEgMy4zMjg4MyAzLjMyOTMyQzIuODU0MTIgMy44MDQwNCAyLjU4MTcxIDQuNDQ2MyAyLjQzODQ4IDUuNTExNjRDMi4yOTI4MyA2LjU5NDk2IDIuMjkxNSA4LjAxODQ3IDIuMjkxNSAxMC4wMDAzQzIuMjkxNSAxMS45ODIyIDIuMjkyODMgMTMuNDA1NyAyLjQzODQ4IDE0LjQ4OUMyLjU4MTcxIDE1LjU1NDMgMi44NTQxMiAxNi4xOTY2IDMuMzI4ODMgMTYuNjcxM0MzLjgwMzU1IDE3LjE0NiA0LjQ0NTgyIDE3LjQxODUgNS41MTExNSAxNy41NjE3QzYuNTk0NDcgMTcuNzA3MyA4LjAxNzk4IDE3LjcwODcgOS45OTk4NCAxNy43MDg3QzExLjk4MTcgMTcuNzA4NyAxMy40MDUyIDE3LjcwNzMgMTQuNDg4NSAxNy41NjE3QzE1LjU1MzkgMTcuNDE4NSAxNi4xOTYxIDE3LjE0NiAxNi42NzA4IDE2LjY3MTNDMTcuMTQ1NiAxNi4xOTY2IDE3LjQxOCAxNS41NTQzIDE3LjU2MTIgMTQuNDg5QzE3LjcwNjggMTMuNDA1NyAxNy43MDgyIDExLjk4MjIgMTcuNzA4MiAxMC4wMDAzQzE3LjcwODIgOC4wMTg0NyAxNy43MDY4IDYuNTk0OTYgMTcuNTYxMiA1LjUxMTY0QzE3LjQxOCA0LjQ0NjMgMTcuMTQ1NiAzLjgwNDA0IDE2LjY3MDggMy4zMjkzMkMxNi4xOTYxIDIuODU0NjEgMTUuNTUzOSAyLjU4MjIgMTQuNDg4NSAyLjQzODk3QzEzLjQwNTIgMi4yOTMzMiAxMS45ODE3IDIuMjkxOTkgOS45OTk4NCAyLjI5MTk5QzguMDE3OTggMi4yOTE5OSA2LjU5NDQ3IDIuMjkzMzIgNS41MTExNSAyLjQzODk3Wk04LjMwNzkgNy4wNTgzOEM4LjU1MTk3IDYuODE0MzEgOC45NDc3IDYuODE0MzEgOS4xOTE3OCA3LjA1ODM4TDExLjY5MTggOS41NTgzOEMxMS45MzU5IDkuODAyNDYgMTEuOTM1OSAxMC4xOTgyIDExLjY5MTggMTAuNDQyM0w5LjE5MTc4IDEyLjk0MjNDOC45NDc3IDEzLjE4NjMgOC41NTE5NyAxMy4xODYzIDguMzA3OSAxMi45NDIzQzguMDYzODIgMTIuNjk4MiA4LjA2MzgyIDEyLjMwMjUgOC4zMDc5IDEyLjA1ODRMMTAuMzY2IDEwLjAwMDNMOC4zMDc5IDcuOTQyMjdDOC4wNjM4MiA3LjY5ODE5IDguMDYzODIgNy4zMDI0NiA4LjMwNzkgNy4wNTgzOFoiIGZpbGw9IiMyRDM3NDgiLz4KPC9zdmc+Cg==" alt=""/></button>
-          </div>
+          <div id="goalNavWrap"></div>
         </div>
         <div class="dash-card__body" id="bodyGoal"></div>
       </div>
@@ -1022,49 +1013,42 @@
   let goalsList = [];
   let goalIndex = 0;
 
-  const btnPrev = document.getElementById('goalPrev');
-  const btnNext = document.getElementById('goalNext');
-
-  function updateGoalNavBtns() {
-    const multi = goalsList.length > 1;
-    if (btnPrev) {
-      btnPrev.disabled = !multi || goalIndex === 0;
-      btnPrev.classList.toggle('is-active', multi && goalIndex > 0);
-    }
-    if (btnNext) {
-      btnNext.disabled = !multi || goalIndex === goalsList.length - 1;
-      btnNext.classList.toggle('is-active', multi && goalIndex < goalsList.length - 1);
-    }
-  }
-
   function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
   function renderGoalCard(goals, idx) {
     const el = document.getElementById('bodyGoal');
+    const navWrap = document.getElementById('goalNavWrap');
 
     if (!goals || goals.length === 0) {
-      updateGoalNavBtns();
+      if (navWrap) navWrap.innerHTML = '';
       el.innerHTML =
         '<div class="card-empty">' +
           '<img class="card-empty__bot" src="' + BOT_SAD_DARK + '" alt=""/>' +
           '<span class="card-empty__text">Упс, цель еще не установлена</span>' +
-          '<button class="card-empty__btn" style="background:#1E2A38;" onclick="openBotWidget(\'goals\')">+ Добавить цель</button>' +
+          '<button class="card-empty__btn" style="background:#1E2A38;" onclick="openBotWidget('goals')">+ Добавить цель</button>' +
         '</div>';
       return;
+    }
+
+    if (navWrap) {
+      navWrap.innerHTML = goals.length > 1
+        ? '<button class="goal-next-btn" onclick="goalGoNext()">Следующая цель' +
+          '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M7.5 5l5 5-5 5" stroke="#6B7280" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '</button>'
+        : '';
     }
 
     const goal   = goals[idx];
     const saved  = goal.saved  || 0;
     const target = goal.target || 1;
     const pct    = Math.min((saved / target) * 100, 100);
-    updateGoalNavBtns();
 
     el.innerHTML =
       '<div style="display:flex;flex-direction:column;gap:12px;flex:1;">' +
         '<div class="goal-name">' + escHtml(goal.name) + '</div>' +
-        '<div class="goal-progress-wrap">' +
+        '<div style="display:flex;flex-direction:column;">' +
           '<span class="goal-progress-label">Твой прогресс:</span>' +
           '<div class="goal-progress-bar">' +
             '<div class="goal-progress-fill" style="width:' + pct.toFixed(1) + '%;"></div>' +
@@ -1074,12 +1058,11 @@
       '</div>';
   }
 
-  if (btnPrev) btnPrev.addEventListener('click', function() {
-    if (goalIndex > 0) { goalIndex--; renderGoalCard(goalsList, goalIndex); }
-  });
-  if (btnNext) btnNext.addEventListener('click', function() {
-    if (goalIndex < goalsList.length - 1) { goalIndex++; renderGoalCard(goalsList, goalIndex); }
-  });
+  function goalGoNext() {
+    goalIndex = (goalIndex + 1) % goalsList.length;
+    renderGoalCard(goalsList, goalIndex);
+  }
+  window.goalGoNext = goalGoNext;
 
   async function loadGoalCard() { /* handled by loadDashboard */ }
 
