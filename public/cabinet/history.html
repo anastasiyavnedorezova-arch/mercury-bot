@@ -446,21 +446,26 @@
     .modal-body { display:flex; flex-direction:column; gap:16px; }
     .modal-field { display:flex; flex-direction:column; gap:6px; }
     .modal-label { font-size:13px; font-weight:600; color:#4B5563; }
-    .modal-input,.modal-select { height:44px; padding:0 14px; border-radius:10px; border:1px solid #E2E8F0; font-family:'Manrope',sans-serif; font-size:14px; color:#2D3748; background:#fff; outline:none; transition:border-color 150ms; width:100%; }
-    .modal-input:focus,.modal-select:focus { border-color:#4C9AFF; }
+    .modal-input { height:44px; padding:0 14px; border-radius:10px; border:1px solid #E2E8F0; font-family:'Manrope',sans-serif; font-size:14px; color:#2D3748; background:#fff; outline:none; transition:border-color 150ms; width:100%; }
+    .modal-input:focus { border-color:#4C9AFF; }
+    .modal-select { padding:10px 40px 10px 14px; border-radius:12px; border:1px solid #CBD5E1; font-family:'Manrope',sans-serif; font-size:16px; color:#2D3748; background:#fff url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%231E2A38' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center; background-size:16px; -webkit-appearance:none; appearance:none; outline:none; width:100%; cursor:pointer; transition:border-color 150ms; }
+    .modal-select:focus { border-color:#4C9AFF; }
     .modal-footer { display:flex; gap:12px; }
+    .modal-footer--del { justify-content:flex-end; }
     .btn-modal-cancel { flex:1; height:48px; border-radius:12px; background:#fff; color:#2D3748; border:1px solid #E2E8F0; font-family:'Manrope',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:background 150ms; }
     .btn-modal-cancel:hover { background:#F8FAFC; }
     .btn-modal-save { flex:1; height:48px; border-radius:12px; background:#4C9AFF; color:#fff; border:none; font-family:'Manrope',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:background 150ms; }
     .btn-modal-save:hover { background:#3B82F6; }
     .btn-modal-delete { flex:1; height:48px; border-radius:12px; background:#E5484D; color:#fff; border:none; font-family:'Manrope',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:background 150ms; }
     .btn-modal-delete:hover { background:#C93B40; }
-    .delete-detail { font-size:14px; color:#4B5563; line-height:24px; background:#F8FAFC; border-radius:10px; padding:14px 16px; }
-    .delete-irrev { font-size:13px; color:#9B2C2C; font-weight:500; }
-    @media (max-width:900px) {
+    .delete-detail { font-size:15px; color:#4B5563; line-height:22px; }
+    @media (max-width:768px) {
       .modal-box { border-radius:20px; padding:20px; }
-      .modal-footer--save { flex-direction:column-reverse; }
-      .modal-footer--del { flex-direction:column; }
+      .modal-footer--save,.modal-footer--del { flex-direction:column-reverse; gap:8px; justify-content:flex-start; }
+      .modal-footer--save .btn-modal-cancel,
+      .modal-footer--save .btn-modal-save,
+      .modal-footer--del .btn-modal-cancel,
+      .modal-footer--del .btn-modal-delete { width:100%; flex:none; }
     }
 
     /* ══════ HISTORY MOBILE CARDS ══════ */
@@ -1017,11 +1022,16 @@
     if (!r) return;
     _deleteId = id;
     var isInc = r.type === 'income';
+    var amt = Math.abs(parseFloat(r.amount)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('deleteDetail').innerHTML =
-      '📅 ' + escH(fmtDateRow(r.transaction_date)) + '<br>' +
-      (isInc ? '📈 Доход' : '📉 Расход') + '<br>' +
-      '📂 ' + escH(r.category||'Другое') + '<br>' +
-      '💰 ' + escH(fmtMoney(r.amount, r.type));
+      '<p style="font-weight:400;margin-bottom:12px;">Вы уверены, что хотите удалить эту запись?</p>'+
+      '<p style="font-weight:700;">'+
+        '📅 Дата: ' + escH(fmtDateRow(r.transaction_date)) + '<br>' +
+        '📌 Тип: ' + (isInc ? 'Доход' : 'Расход') + '<br>' +
+        '📂 Категория: ' + escH(r.category||'Другое') + '<br>' +
+        '💸 Сумма: ' + amt + ' ₽<br><br>' +
+        'Удаление безвозвратно' +
+      '</p>';
     document.getElementById('deleteModal').classList.add('is-open');
     document.body.style.overflow = 'hidden';
   }
@@ -1201,7 +1211,6 @@
     </div>
     <div class="modal-body">
       <div class="delete-detail" id="deleteDetail"></div>
-      <div class="delete-irrev">⚠️ Удаление безвозвратно</div>
     </div>
     <div class="modal-footer modal-footer--del">
       <button class="btn-modal-cancel" id="deleteModalCancel">Отменить</button>
