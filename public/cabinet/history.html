@@ -433,7 +433,9 @@
     .hist-action-btn:hover { background:#FFF0F0; }
 
     /* ══════ HISTORY MOBILE CARDS ══════ */
-    .hist-cards-wrap { display: none; }  /* hidden on desktop */
+    @media (min-width: 901px) {
+      .hist-cards-wrap { display: none; }
+    }
 
     .hist-card {
       padding: 14px 0;
