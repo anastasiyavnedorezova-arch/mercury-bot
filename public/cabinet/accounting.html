@@ -581,6 +581,25 @@
   overlay.addEventListener('click', function(e){ if(e.target===overlay) closeDrawer(); });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeDrawer(); });
 
+  // ── Nav item clicks ─────────────────────────────────────
+  document.querySelectorAll('.lk-sidebar .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if (!href || href === '#') {
+        e.preventDefault();
+        document.querySelectorAll('.lk-sidebar .nav-item').forEach(function(i) { i.classList.remove('is-active'); });
+        this.classList.add('is-active');
+      }
+    });
+  });
+  document.querySelectorAll('.lk-drawer .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if (!href || href === '#') e.preventDefault();
+      setTimeout(closeDrawer, 150);
+    });
+  });
+
   // ── Header ────────────────────────────────────────────
   function fmtDateHdr(iso) { var d=new Date(iso); return [String(d.getDate()).padStart(2,'0'),String(d.getMonth()+1).padStart(2,'0'),d.getFullYear()].join('-'); }
   function daysLeftHdr(iso) { return Math.max(0,Math.ceil((new Date(iso)-new Date())/86400000)); }

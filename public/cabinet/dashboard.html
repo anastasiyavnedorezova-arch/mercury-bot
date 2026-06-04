@@ -691,10 +691,13 @@
 
   // Active nav
   document.querySelectorAll('.lk-sidebar .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();
-      document.querySelectorAll('.lk-sidebar .nav-item').forEach(i => i.classList.remove('is-active'));
-      el.classList.add('is-active');
+    el.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if (!href || href === '#') {
+        e.preventDefault();
+        document.querySelectorAll('.lk-sidebar .nav-item').forEach(i => i.classList.remove('is-active'));
+        this.classList.add('is-active');
+      }
     });
   });
 
@@ -710,7 +713,11 @@
   if (overlay) overlay.addEventListener('click', closeDrawer);
   document.addEventListener('keydown', e => { if(e.key==='Escape') closeDrawer(); });
   document.querySelectorAll('.lk-drawer .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(el => {
-    el.addEventListener('click', e => { e.preventDefault(); setTimeout(closeDrawer,150); });
+    el.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if (!href || href === '#') e.preventDefault();
+      setTimeout(closeDrawer, 150);
+    });
   });
 
   // Header data
