@@ -122,7 +122,7 @@ router.get('/api/transactions', requireAuth, async (req, res) => {
     let query = supabase
       .from('transactions')
       .select(
-        'id, type, amount, description, transaction_date, categories(name, category_groups(name))',
+        'id, type, amount, comment, transaction_date, categories(name, category_groups(name))',
         { count: 'exact' }
       )
       .eq('user_id', req.userId)
@@ -217,7 +217,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
         .limit(1)
         .maybeSingle(),
       supabase.from('transactions')
-        .select('id, type, amount, description, transaction_date, categories(name)')
+        .select('id, type, amount, comment, transaction_date, categories(name)')
         .eq('user_id', req.userId)
         .gte('transaction_date', monthStart)
         .order('transaction_date', { ascending: false }),
@@ -265,7 +265,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
       id: t.id,
       type: t.type,
       amount: t.amount,
-      comment: t.description,
+      comment: t.comment,
       date: t.transaction_date,
       category: t.categories?.name || 'Другое',
     }));
