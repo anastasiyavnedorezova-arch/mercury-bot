@@ -171,6 +171,23 @@
     .lk-drawer__btns .btn-hdr { width: 100%; border-radius: 16px; height: 48px; font-size: 16px; justify-content: center; }
     .lk-drawer__logout { font-size: 14px; font-weight: 500; color: #9CA3AF; text-align: center; display: block; padding: 8px 0; cursor: pointer; background: none; border: none; width: 100%; transition: color 150ms; }
     .lk-drawer__logout:hover { color: #EF4444; }
+    /* ── SIDEBAR LOGOUT BUTTON ── */
+    .nav-logout-btn { display: block; width: 100%; text-align: left; padding: 8px 20px; font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 500; color: #EF4444; background: none; border: none; cursor: pointer; transition: color 150ms; white-space: nowrap; overflow: hidden; }
+    .nav-logout-btn:hover { color: #DC2626; }
+    .lk-sidebar.is-collapsed .nav-logout-btn { display: none; }
+    /* ── LOGOUT MODAL ── */
+    .logout-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,0.5); backdrop-filter: blur(2px); align-items: center; justify-content: center; }
+    .logout-overlay.is-open { display: flex; }
+    .logout-modal { background: #fff; border-radius: 24px; padding: 32px 28px 28px; width: 100%; max-width: 400px; margin: 16px; position: relative; box-shadow: 0 8px 40px rgba(0,0,0,.16); }
+    .logout-modal__close { position: absolute; top: 16px; right: 16px; background: none; border: none; cursor: pointer; padding: 4px; display: flex; border-radius: 8px; transition: background 150ms; }
+    .logout-modal__close:hover { background: #F3F4F6; }
+    .logout-modal__title { font-size: 20px; font-weight: 700; color: #1E2A38; margin: 0 0 12px; }
+    .logout-modal__text { font-size: 14px; color: #6B7280; line-height: 1.5; margin: 0 0 24px; }
+    .logout-modal__actions { display: flex; flex-direction: column; gap: 10px; }
+    .logout-modal__btn { height: 48px; border-radius: 14px; border: none; font-family: 'Manrope', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 150ms; }
+    .logout-modal__btn:hover { opacity: .88; }
+    .logout-modal__btn--dark { background: #1E2A38; color: #fff; }
+    .logout-modal__btn--sec { background: #F3F4F6; color: #2D3748; }
 
     /* ══════ BALANCE CARD CONTENT ══════ */
 
@@ -588,6 +605,8 @@
         <a href="#" class="nav-text-link">Вопросы и ответы</a>
         <a href="#" class="nav-text-link">Обратная связь</a>
       </div>
+      <div class="nav-divider"></div>
+      <button class="nav-logout-btn" onclick="openLogoutModal()">Выйти из аккаунта</button>
     </nav>
     <div class="lk-sidebar__toggle">
       <button class="sidebar-toggle-btn" id="sidebarToggle" aria-label="Свернуть меню">
@@ -790,6 +809,7 @@
 
       // Header
       window._dashSubStatus = d.user.subscription_status;
+      window._dashExpenses = d.balance.expenses || 0;
       renderHeader({
         username: d.user.name,
         subscription: d.user.subscription_status
@@ -811,6 +831,7 @@
 
       // Balance
       renderBalanceCard(d.balance.income, d.balance.expenses);
+      loadBudgetCard();
 
       // Goals
       goalsList = d.goals;
@@ -968,11 +989,30 @@
   }
 
   async function loadBudgetCard() {
-    const hasSub = window._dashSubStatus === 'trial' || window._dashSubStatus === 'active';
-    renderBudgetCard(hasSub ? 'no-data' : 'locked', null);
+    const status = window._dashSubStatus;
+    if (!status || status === 'free') { renderBudgetCard('locked', null); return; }
+    const token = localStorage.getItem('mercury_token');
+    try {
+      const now = new Date();
+      const month = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      const res = await fetch('/api/budget?month=' + month, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) { renderBudgetCard('no-data', null); return; }
+      const { data } = await res.json();
+      if (!data || !data.length) { renderBudgetCard('no-data', null); return; }
+      const totalBudget = data.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+      if (!totalBudget) { renderBudgetCard('no-data', null); return; }
+      const spent = window._dashExpenses || 0;
+      const daysTotal = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const daysPassed = now.getDate();
+      const projected = daysPassed > 0 ? (spent / daysPassed) * daysTotal : 0;
+      const overBy = Math.max(0, projected - totalBudget);
+      renderBudgetCard(projected <= totalBudget ? 'good' : 'risk', { budget: totalBudget, spent, overBy });
+    } catch (e) {
+      renderBudgetCard('no-data', null);
+    }
   }
-
-  loadBudgetCard();
 
   // ══════════════════════════════════
   // GOAL CARD
@@ -1247,8 +1287,40 @@
   }
 
   async function loadTop5Card() { /* handled by loadDashboard */ }
+  // ── LOGOUT MODAL ────────────────────────────────────────────────────
+  function openLogoutModal() {
+    document.getElementById('logoutOverlay').classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLogoutModal() {
+    document.getElementById('logoutOverlay').classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  function doLogout() {
+    localStorage.removeItem('mercury_token');
+    window.location.replace('/cabinet/login.html');
+  }
+  window.openLogoutModal = openLogoutModal;
+  document.getElementById('logoutOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeLogoutModal();
+  });
 
 </script>
 </script>
+
+<!-- LOGOUT MODAL -->
+<div class="logout-overlay" id="logoutOverlay">
+  <div class="logout-modal">
+    <button class="logout-modal__close" onclick="closeLogoutModal()" aria-label="Закрыть">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5L15 15" stroke="#9CA3AF" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <h2 class="logout-modal__title">Выход из аккаунта</h2>
+    <p class="logout-modal__text">Вы уверены, что хотите выйти из аккаунта на этом устройстве?</p>
+    <div class="logout-modal__actions">
+      <button class="logout-modal__btn logout-modal__btn--dark" onclick="doLogout()">Выйти</button>
+      <button class="logout-modal__btn logout-modal__btn--sec" onclick="closeLogoutModal()">Отменить</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
