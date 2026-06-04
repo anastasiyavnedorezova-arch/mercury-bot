@@ -321,6 +321,47 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// GET /api/history?offset=0
+// ──────────────────────────────────────────
+router.get('/api/history', requireAuth, async (req, res) => {
+  try {
+    const limit = 50;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const { data, error, count } = await supabase
+      .from('transactions')
+      .select(
+        'id, transaction_date, type, amount, comment, categories(name, emoji)',
+        { count: 'exact' }
+      )
+      .eq('user_id', req.userId)
+      .order('transaction_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    res.json({
+      data: (data || []).map(t => ({
+        id: t.id,
+        transaction_date: t.transaction_date,
+        type: t.type,
+        amount: t.amount,
+        comment: t.comment,
+        category: t.categories?.name || 'Другое',
+        category_emoji: t.categories?.emoji ?? null,
+      })),
+      total: count,
+      limit,
+      offset,
+    });
+  } catch (err) {
+    console.error('[cabinet] /api/history error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
 // GET /api/accounting
 // ──────────────────────────────────────────
 router.get('/api/accounting', requireAuth, async (req, res) => {
