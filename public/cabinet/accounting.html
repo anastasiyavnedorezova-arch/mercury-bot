@@ -474,28 +474,7 @@
             </div>
           </div>
         </div>
-        <div class="date-dropdown-wrap">
-          <button class="filter-chip" id="chipDates">ДАТЫ <span class="filter-chip__arrow"></span></button>
-          <div class="date-dropdown" id="dateDropdown">
-            <div class="dp-header">
-              <span class="dp-month-label" id="dpMonthLabel"></span>
-              <div class="dp-arrows">
-                <button class="dp-arrow is-active" id="dpPrev">&#8249;</button>
-                <button class="dp-arrow" id="dpNext">&#8250;</button>
-              </div>
-            </div>
-            <div class="dp-dow-row">
-              <div class="dp-dow-cell">ПН</div><div class="dp-dow-cell">ВТ</div>
-              <div class="dp-dow-cell">СР</div><div class="dp-dow-cell">ЧТ</div>
-              <div class="dp-dow-cell">ПТ</div><div class="dp-dow-cell">СБ</div>
-              <div class="dp-dow-cell">ВС</div>
-            </div>
-            <div class="dp-grid" id="dpGrid"></div>
-            <div class="dp-footer">
-              <button class="btn-dp-confirm" id="btnDpConfirm">Подтвердить</button>
-            </div>
-          </div>
-        </div>
+
       </div>
       <div class="toggle-row toggle-row--desktop">
         <span class="toggle-label">Показывать только те категории, в которых есть записи</span>
@@ -569,10 +548,7 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-  // CONFIG
-  const SUPABASE_URL      = 'https://ijvkcskzvwluntrsbcsj.supabase.co';
-  const SUPABASE_ANON_KEY = 'ВСТАВЬТЕ_ANON_KEY_СЮДА';
-  const USER_ID           = '146d9c64-951e-454e-be5c-e03bf5202338';
+  // CONFIG removed — using /api/* endpoints
   const BOT_SAD           = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI1LjAwMDUgMTAuMTY0MUMzNC41MjMgMTAuMTY0MyA0Mi4yNDI2IDE2LjgwNjYgNDIuMjQyNyAyNUM0Mi4yNDI3IDMzLjE5MzUgMzQuNTIzMSAzOS44MzU3IDI1LjAwMDUgMzkuODM1OUMyMS42OTU1IDM5LjgzNTkgMTguNjA3MiAzOS4wMzU3IDE1Ljk4MzkgMzcuNjQ4NEMxNC44MzU5IDM4LjY1MDcgMTMuMzQyOSAzOS4yNTg0IDExLjgxODggMzkuMzE5M0MxMi42MDUgMzguMjk2OSAxMy4wNTQxIDM3LjAyMTUgMTMuMDk2MiAzNS43MzM0QzkuODA2ODMgMzMuMDMxOCA3Ljc1NzMyIDI5LjIyMTggNy43NTczMiAyNUM3Ljc1NzM2IDE2LjgwNjUgMTUuNDc3OCAxMC4xNjQxIDI1LjAwMDUgMTAuMTY0MVpNOC4yNDk1MSAxOS4xMjdDNy4zNzgzNyAyMC45OTI0IDYuOTM3MDIgMjIuOTY2OCA2LjkzNzAxIDI1QzYuOTM3MDEgMjcuMDM1IDcuMzc4MTUgMjkuMDA4NSA4LjI0OTUxIDMwLjg3M0M1LjkyMTU4IDMwLjEwNzYgNC4yMjcwNSAyOC41OTIzIDQuMjI3MDUgMjVDNC4yMjcwOCAyMS41OTI2IDUuOTIxNCAxOS44OTI0IDguMjQ5NTEgMTkuMTI3Wk00MS43NTA1IDE5LjEyN0M0NC4wNzg0IDE5Ljg5MjUgNDUuNzcyOSAyMS41OTI3IDQ1Ljc3MjkgMjVDNDUuNzcyOSAyOC41OTIzIDQ0LjA3ODUgMzAuMTA3NiA0MS43NTA1IDMwLjg3M0M0Mi42MjE5IDI5LjAwODUgNDMuMDYzIDI3LjAzNSA0My4wNjMgMjVDNDMuMDYzIDIyLjk2NjkgNDIuNjIxNiAyMC45OTI0IDQxLjc1MDUgMTkuMTI3Wk0zNS43MTYzIDIwLjU3MDNDMzUuMDc1MiAxOS44NjAxIDM0LjE4NjkgMjAuNTcwMyAzMy4yMyAyMC41NzAzSDE2Ljc3QzE1LjgyNDQgMjAuNTcwMyAxNC45MTkyIDE5Ljg3IDE0LjI4MzcgMjAuNTcwM0MxMi40ODQzIDIyLjU1MzEgMTEuNDExNiAyMi4yODkyIDExLjQxMTYgMjVDMTEuNDExNiAyNy43MTA5IDEyLjQ4NDQgMjcuNzY5MSAxNC4yODM3IDI5Ljc1MkMxNC45MTkyIDMwLjQ1MjEgMTYuMDc3NSAzMC4zMjkxIDE3LjAyMjkgMzAuMzI5MUgzMy41MzY2QzM0LjQ4MiAzMC4zMjkxIDM1LjA4MDkgMzEuMDI5MSAzNS43MTYzIDMwLjMyOTFDMzcuNTE1NiAyOC4zNDYyIDM4LjU4ODQgMjcuNzEwOSAzOC41ODg0IDI1QzM4LjU4ODQgMjIuMzAwNCAzNy41MDI0IDIyLjU0OTIgMzUuNzE2MyAyMC41NzAzWiIgZmlsbD0iIzJGQkY3MSIvPgo8cGF0aCBkPSJNMzUuMTIzOSAzMS4xOTA5SDE0LjkxNTFDMTIuMDc2OCAzMS4xOTA5IDkuNzc1ODggMjguODkgOS43NzU4OCAyNi4wNTE3VjI0LjQ1MzdDOS43NzU4OCAyMS42MTU0IDEyLjA3NjggMTkuMzE0NSAxNC45MTUxIDE5LjMxNDVIMzUuMTIzOUMzNy45NjIyIDE5LjMxNDUgNDAuMjYzMSAyMS42MTU0IDQwLjI2MzEgMjQuNDUzN1YyNi4wNTE3QzQwLjI2MzEgMjguODkgMzcuOTYyMiAzMS4xOTA5IDM1LjEyMzkgMzEuMTkwOVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yNi42NDE4IDI4LjY3ODlDMjYuOTYzNCAyOC42Nzg5IDI3LjE5OTUgMjguMzcxMyAyNy4xMDg5IDI4LjA2MzFDMjYuODQyOCAyNy4xNTY2IDI2LjAwNTIgMjYuNDk0NiAyNS4wMTIzIDI2LjQ5NDZDMjQuMDIgMjYuNDk0NiAyMy4xODIzIDI3LjE1NjYgMjIuOTE2MiAyOC4wNjMxQzIyLjgyNTcgMjguMzcxMyAyMy4wNjIyIDI4LjY3ODkgMjMuMzgzMyAyOC42Nzg5SDI2LjY0MThaIiBmaWxsPSIjMUUyQTM4Ii8+CjxwYXRoIGQ9Ik0xOC4yODU5IDI1LjQwMjFDMTguMjg1OSAyNi42MDg1IDE3LjMwNzggMjcuNTg2NCAxNi4xMDE3IDI3LjU4NjRDMTQuODk1IDI3LjU4NjQgMTMuOTE3IDI2LjYwODUgMTMuOTE3IDI1LjQwMjFDMTMuOTE3IDI0LjE5NTcgMTQuODk1IDIzLjIxNzcgMTYuMTAxNyAyMy4yMTc3QzE3LjMwNzggMjMuMjE3NyAxOC4yODU5IDI0LjE5NTcgMTguMjg1OSAyNS40MDIxWiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMTUuNzU1OSAyNS43Njc2QzE1LjYyMTUgMjUuNzY3NiAxNS41MTI4IDI1Ljg3NjYgMTUuNTEyNyAyNi4wMTA3QzE1LjUxMjcgMjYuMTQ1IDE1LjYyMTQgMjYuMjUzOSAxNS43NTU5IDI2LjI1MzlDMTUuODkwMSAyNi4yNTM3IDE1Ljk5OCAyNi4xNDQ4IDE1Ljk5OCAyNi4wMTA3QzE1Ljk5OCAyNS44NzY3IDE1Ljg5IDI1Ljc2NzggMTUuNzU1OSAyNS43Njc2Wk0xNi44NzYgMjQuMTYxMUMxNi40ODU0IDI0LjE2MTIgMTYuMTY4OSAyNC40Nzc3IDE2LjE2ODkgMjQuODY4MkMxNi4xNjkgMjUuMjU4NSAxNi40ODU1IDI1LjU3NTIgMTYuODc2IDI1LjU3NTJDMTcuMjY2NSAyNS41NzUyIDE3LjU4MyAyNS4yNTg1IDE3LjU4MyAyNC44NjgyQzE3LjU4MyAyNC40Nzc3IDE3LjI2NjYgMjQuMTYxMSAxNi44NzYgMjQuMTYxMVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xMy45Mjk2IDIzLjEwNzhDMTMuODA2OCAyMy4xNDA4IDEzLjcwNTEgMjMuMjM3MSAxMy42NzExIDIzLjM2ODlDMTMuNjIwNyAyMy41NjM2IDEzLjczODYgMjMuNzYyNSAxMy45MzM0IDIzLjgxMjhDMTMuOTY0MiAyMy44MjA5IDE0LjcwMDUgMjQuMDA1NSAxNS42NjE5IDIzLjc0NzlDMTYuNjIyOCAyMy40OTA0IDE3LjE2ODIgMjIuOTYyMyAxNy4xOTEyIDIyLjkzOTlDMTcuMzM0MyAyMi43OTkgMTcuMzM2MyAyMi41Njg1IDE3LjE5NTcgMjIuNDI0OUMxNy4wNTQ4IDIyLjI4MiAxNi44MjU0IDIyLjI3OTQgMTYuNjgxNiAyMi40MTk0QzE2LjY3MjYgMjIuNDI3OSAxNi4yMzUzIDIyLjg0MDIgMTUuNDczNCAyMy4wNDQzQzE0LjcwNyAyMy4yNDk3IDE0LjEyMDEgMjMuMTA4NyAxNC4xMTQxIDIzLjEwNzJDMTQuMDUxMSAyMy4wOTEgMTMuOTg3OCAyMy4wOTIzIDEzLjkyOTYgMjMuMTA3OFoiIGZpbGw9IiMxRTJBMzgiLz4KPHBhdGggZD0iTTM2LjEwODQgMjUuNDAyMUMzNi4xMDg0IDI2LjYwODQgMzUuMTMwMyAyNy41ODY0IDMzLjkyMzkgMjcuNTg2NEMzMi43MTc1IDI3LjU4NjQgMzEuNzM5NSAyNi42MDg0IDMxLjczOTUgMjUuNDAyMUMzMS43Mzk1IDI0LjE5NTcgMzIuNzE3NSAyMy4yMTc3IDMzLjkyMzkgMjMuMjE3N0MzNS4xMzAzIDIzLjIxNzcgMzYuMTA4NCAyNC4xOTU3IDM2LjEwODQgMjUuNDAyMVoiIGZpbGw9IiMxRTJBMzgiLz4KPHBhdGggZD0iTTMzLjY0NDUgMjUuNzY3NkMzMy41MTEgMjUuNzY3NiAzMy40MDE1IDI1Ljg3NjYgMzMuNDAxNCAyNi4wMTA3QzMzLjQwMTQgMjYuMTQ1IDMzLjUxMDkgMjYuMjUzOSAzMy42NDQ1IDI2LjI1MzlDMzMuNzc5IDI2LjI1MzcgMzMuODg3NyAyNi4xNDQ4IDMzLjg4NzcgMjYuMDEwN0MzMy44ODc2IDI1Ljg3NjggMzMuNzc4OSAyNS43Njc4IDMzLjY0NDUgMjUuNzY3NlpNMzQuNzY0NiAyNC4xNjExQzM0LjM3NDcgMjQuMTYxMyAzNC4wNTc2IDI0LjQ3NzggMzQuMDU3NiAyNC44NjgyQzM0LjA1NzcgMjUuMjU4NCAzNC4zNzQ3IDI1LjU3NSAzNC43NjQ2IDI1LjU3NTJDMzUuMTU1MiAyNS41NzUyIDM1LjQ3MTYgMjUuMjU4NSAzNS40NzE3IDI0Ljg2ODJDMzUuNDcxNyAyNC40Nzc3IDM1LjE1NTMgMjQuMTYxMSAzNC43NjQ2IDI0LjE2MTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMzMuMTEyNCAyMi4zMjc1QzMyLjk5IDIyLjI5NDggMzIuODUzOCAyMi4zMjczIDMyLjc1ODQgMjIuNDI0NUMzMi42MTc2IDIyLjU2OCAzMi42MjAyIDIyLjc5OTEgMzIuNzYzNyAyMi45NDAyQzMyLjc4NjUgMjIuOTYyNSAzMy4zMzE4IDIzLjQ5MDYgMzQuMjkyNSAyMy43NDhDMzUuMjU0MiAyNC4wMDU3IDM1Ljk5MDQgMjMuODIxIDM2LjAyMDkgMjMuODEyOUMzNi4yMTYyIDIzLjc2MjcgMzYuMzMyOSAyMy41NjQgMzYuMjgyNyAyMy4zNjkzQzM2LjIzMjMgMjMuMTc1IDM2LjAzNDQgMjMuMDU4MSAzNS44NDA0IDIzLjEwNzRDMzUuODI4NCAyMy4xMTAzIDM1LjI0MzcgMjMuMjQ4OCAzNC40ODEgMjMuMDQ0NEMzMy43MTQ4IDIyLjgzOTIgMzMuMjc3IDIyLjQyMzUgMzMuMjcyOCAyMi40MTk0QzMzLjIyNjggMjIuMzczOSAzMy4xNzExIDIyLjM0MzMgMzMuMTEyNCAyMi4zMjc1WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMjUuMzEzMyAxMy4zNTg3QzI1LjM1ODYgMTQuMjk1MiAyNi4wNjg5IDE1LjA1ODkgMjcuMTA1MSAxNS4zMjQ1QzI1Ljk5NDcgMTUuNTcxMSAyNS4wNjUxIDE2LjMyMDMgMjQuNzQ4OCAxNy4yNTM1QzI0LjcwMzUgMTYuMzE3IDIzLjk5MzIgMTUuNTUzNCAyMi45NTcgMTUuMjg3OEMyNC4wNjc0IDE1LjA0MTIgMjQuOTk3MSAxNC4yOTIgMjUuMzEzMyAxMy4zNTg3WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==';
 
   // ── Sidebar toggle ─────────────────────────────────────
@@ -606,16 +582,13 @@
   function pluralHdr(n) { return n%10===1&&n%100!==11?'день':[2,3,4].includes(n%10)&&![12,13,14].includes(n%100)?'дня':'дней'; }
 
   async function loadHeader() {
-    if (SUPABASE_ANON_KEY==='ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      renderHeader({ username:'user_name', subscription:{status:'active',ends_at:'2026-11-01'} });
-      return;
-    }
-    var h = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
+    var token = localStorage.getItem('mercury_token');
+    if (!token) return;
     try {
-      var uR = await fetch(SUPABASE_URL+'/rest/v1/users?id=eq.'+USER_ID+'&select=username',{headers:h});
-      var sR = await fetch(SUPABASE_URL+'/rest/v1/subscriptions?user_id=eq.'+USER_ID+'&status=in.(trial,active)&ends_at=gt.'+new Date().toISOString()+'&order=ends_at.desc&limit=1&select=status,ends_at',{headers:h});
-      var uD = await uR.json(); var sD = await sR.json();
-      renderHeader({ username:uD[0]&&uD[0].username||'', subscription:sD[0]||null });
+      var r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+      if (!r.ok) return;
+      var d = await r.json();
+      renderHeader({ username: d.external_id || '', subscription: d.subscription || null });
     } catch(e) { document.getElementById('lkUserInfo').textContent='Ошибка'; }
   }
   function renderHeader(d) {
@@ -663,12 +636,17 @@
 
   function isMobile() { return window.innerWidth <= 900; }
 
-  function getMonths(n) {
-    var result = []; var now = new Date();
+  function getMonths(createdAt) {
+    var result = [];
     var names = ['\u042f\u043d\u0432\u0430\u0440\u044c','\u0424\u0435\u0432\u0440\u0430\u043b\u044c','\u041c\u0430\u0440\u0442','\u0410\u043f\u0440\u0435\u043b\u044c','\u041c\u0430\u0439','\u0418\u044e\u043d\u044c','\u0418\u044e\u043b\u044c','\u0410\u0432\u0433\u0443\u0441\u0442','\u0421\u0435\u043d\u0442\u044f\u0431\u0440\u044c','\u041e\u043a\u0442\u044f\u0431\u0440\u044c','\u041d\u043e\u044f\u0431\u0440\u044c','\u0414\u0435\u043a\u0430\u0431\u0440\u044c'];
-    for (var i=n-1;i>=0;i--) {
-      var d = new Date(now.getFullYear(),now.getMonth()-i,1);
-      result.push({label:names[d.getMonth()]+' '+d.getFullYear(),year:d.getFullYear(),month:d.getMonth()});
+    var start = new Date(createdAt);
+    start = new Date(start.getFullYear(), start.getMonth(), 1);
+    var now = new Date();
+    var end = new Date(now.getFullYear(), now.getMonth() + 9, 1);
+    var cur = new Date(start);
+    while (cur <= end) {
+      result.push({label:names[cur.getMonth()]+' '+cur.getFullYear(),year:cur.getFullYear(),month:cur.getMonth()});
+      cur.setMonth(cur.getMonth() + 1);
     }
     return result;
   }
@@ -771,36 +749,27 @@
   }
 
   async function loadAccountingTable() {
-    accountingMonths = getMonths(6);
-    renderEmptyState(accountingMonths);
+    var token = localStorage.getItem('mercury_token');
+    if (!token) { window.location.replace('/cabinet/login'); return; }
 
-    if (SUPABASE_ANON_KEY==='ВСТАВЬТЕ_ANON_KEY_СЮДА') {
-      var testData = [];
-      for (var mi=0;mi<accountingMonths.length;mi++) {
-        var m = accountingMonths[mi];
-        var d1 = m.year+'-'+String(m.month+1).padStart(2,'0')+'-01';
-        var d2 = m.year+'-'+String(m.month+1).padStart(2,'0')+'-10';
-        var sal = 10000+mi*5000; var exp = 8000+mi*3000;
-        testData.push({date:d1,type:'income', category:'\u0417\u0430\u0440\u043f\u043b\u0430\u0442\u0430',amount:sal});
-        testData.push({date:d1,type:'income', category:'\u041a\u044d\u0448\u0431\u0435\u043a \u0438 \u0431\u043e\u043d\u0443\u0441\u044b',amount:400+mi*100});
-        testData.push({date:d2,type:'expense',category:'\u041f\u0440\u043e\u0434\u0443\u043a\u0442\u044b',amount:exp});
-        testData.push({date:d2,type:'expense',category:'\u041a\u0430\u0444\u0435 \u0438 \u0440\u0435\u0441\u0442\u043e\u0440\u0430\u043d\u044b',amount:Math.round(exp*0.4)});
-        if (mi>=1) testData.push({date:d1,type:'income',category:'\u0424\u0440\u0438\u043b\u0430\u043d\u0441 \u0438 \u043f\u043e\u0434\u0440\u0430\u0431\u043e\u0442\u043a\u0430',amount:1500*mi});
-      }
-      accountingData = testData;
-      applyFilters();
-      return;
-    }
-
-    var h = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
-    var firstMonth = new Date(accountingMonths[0].year,accountingMonths[0].month,1).toISOString();
     try {
-      var res = await fetch(SUPABASE_URL+'/rest/v1/transactions?user_id=eq.'+USER_ID+'&date=gte.'+firstMonth+'&select=date,type,category,amount&order=date.asc',{headers:h});
+      var res = await fetch('/api/accounting', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
+      if (!res.ok) { accountingMonths = getMonths(new Date().toISOString()); renderEmptyState(accountingMonths); return; }
       var data = await res.json();
-      accountingData = data;
-      if (!data.length) { renderEmptyState(accountingMonths); return; }
+
+      accountingMonths = getMonths(data.user_created_at);
+      renderEmptyState(accountingMonths);
+
+      accountingData = (data.transactions || []).map(function(r) {
+        return { date: r.transaction_date, type: r.type, category: r.category, amount: r.amount };
+      });
+
+      if (!accountingData.length) { renderEmptyState(accountingMonths); return; }
       applyFilters();
-    } catch(e) { console.error('Accounting error:',e); }
+    } catch(e) { console.error('Accounting error:', e); }
   }
 
   // ── Toggle ─────────────────────────────────────────────
@@ -914,7 +883,7 @@
     var months=accountingMonths;
     var rows=[['Тип','Категория'].concat(months.map(function(m){return m.label;}))];
     var pivot={income:{},expense:{}};
-    var _dataFiltered=filterDateRange?accountingData.filter(function(r){var _d=new Date(r.date||r.created_at);return _d>=filterDateRange.start&&_d<=filterDateRange.end;}):accountingData;
+    var _dataFiltered=accountingData;
     _dataFiltered.forEach(function(r){
       var t=r.type==='income'?'income':'expense';
       var cat=r.category||'Другое';
@@ -939,198 +908,7 @@
   });
 
 
-  // ══════════════════════════════════
-  // DATE PICKER
-  // ══════════════════════════════════
 
-  var MONTH_NAMES = [
-    '\u042f\u043d\u0432\u0430\u0440\u044c','\u0424\u0435\u0432\u0440\u0430\u043b\u044c','\u041c\u0430\u0440\u0442',
-    '\u0410\u043f\u0440\u0435\u043b\u044c','\u041c\u0430\u0439','\u0418\u044e\u043d\u044c',
-    '\u0418\u044e\u043b\u044c','\u0410\u0432\u0433\u0443\u0441\u0442','\u0421\u0435\u043d\u0442\u044f\u0431\u0440\u044c',
-    '\u041e\u043a\u0442\u044f\u0431\u0440\u044c','\u041d\u043e\u044f\u0431\u0440\u044c','\u0414\u0435\u043a\u0430\u0431\u0440\u044c'
-  ];
-
-  // State
-  var dpViewYear  = new Date().getFullYear();
-  var dpViewMonth = new Date().getMonth();   // 0-11
-  var dpRangeStart = null;  // Date obj
-  var dpRangeEnd   = null;  // Date obj
-  var dpPending    = { start: null, end: null }; // while picker open
-
-  // filterDateRange applied to table: {start, end} | null
-  var filterDateRange = null;
-
-  function dpToday() {
-    var t = new Date(); t.setHours(0,0,0,0); return t;
-  }
-  function dpSameDay(a, b) {
-    if (!a||!b) return false;
-    return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
-  }
-  function dpInRange(d, s, e) {
-    if (!s||!e) return false;
-    var ds = Math.min(s.getTime(),e.getTime());
-    var de = Math.max(s.getTime(),e.getTime());
-    return d.getTime()>ds && d.getTime()<de;
-  }
-  function dpIsStart(d, s, e) { return dpSameDay(d, s) || (e && dpSameDay(d, e) && s && d.getTime()===Math.min(s.getTime(),e.getTime())); }
-  function dpIsEnd(d, s, e)   { return dpSameDay(d, e) || (s && dpSameDay(d, s) && e && d.getTime()===Math.max(s.getTime(),e.getTime())); }
-
-  function buildDpGrid(gridEl, labelEl, prevBtn, nextBtn, confirmBtn) {
-    // Label
-    labelEl.textContent = MONTH_NAMES[dpViewMonth] + ' ' + dpViewYear;
-
-    // Prev / Next arrows: disable if at first available month
-    var firstMonth = accountingMonths.length > 0 ? accountingMonths[0] : null;
-    var canGoPrev = !firstMonth || (dpViewYear > firstMonth.year || (dpViewYear===firstMonth.year && dpViewMonth>firstMonth.month));
-    var canGoNext = dpViewYear < new Date().getFullYear() || (dpViewYear===new Date().getFullYear() && dpViewMonth<new Date().getMonth());
-    prevBtn.classList.toggle('is-active', canGoPrev);
-    nextBtn.classList.toggle('is-active', canGoNext);
-
-    // First day of month (Monday-first: 0=Mon…6=Sun)
-    var first = new Date(dpViewYear, dpViewMonth, 1);
-    var startOffset = (first.getDay() + 6) % 7; // Mon=0
-    var daysInMonth = new Date(dpViewYear, dpViewMonth+1, 0).getDate();
-    var today = dpToday();
-    var nowMs = today.getTime();
-
-    var cells = [];
-    // Empty cells before first day
-    for (var i=0; i<startOffset; i++) cells.push(null);
-    for (var d=1; d<=daysInMonth; d++) cells.push(d);
-    // Pad to multiple of 7
-    while (cells.length % 7 !== 0) cells.push(null);
-
-    var s = dpPending.start; var e = dpPending.end;
-    var html2 = '';
-    for (var w=0; w<cells.length; w+=7) {
-      html2 += '<div class="dp-week">';
-      for (var c2=w; c2<w+7; c2++) {
-        var day = cells[c2];
-        if (!day) { html2 += '<div class="dp-day dp-day--empty"></div>'; continue; }
-        var date = new Date(dpViewYear, dpViewMonth, day);
-        var dateMs = date.getTime();
-        var cls = 'dp-day';
-        var isFuture = dateMs > nowMs;
-        if (isFuture) { cls += ' dp-day--disabled'; }
-        else if (dpSameDay(date, today)) { cls += ' dp-day--today'; }
-        // Range highlights
-        var sortS = s&&e ? new Date(Math.min(s.getTime(),e.getTime())) : s;
-        var sortE = s&&e ? new Date(Math.max(s.getTime(),e.getTime())) : e;
-        if (dpSameDay(date, sortS)||dpSameDay(date, sortE)) { cls = cls.replace('dp-day--today',''); cls += ' dp-day--selected'; }
-        else if (dpInRange(date, sortS, sortE)) { cls += ' dp-day--range'; }
-        html2 += '<div class="'+cls+'" data-day="'+day+'">'+day+'</div>';
-      }
-      html2 += '</div>';
-    }
-    gridEl.innerHTML = html2;
-
-    // Update confirm button
-    confirmBtn.classList.toggle('is-ready', !!(s && e));
-
-    // Day click handler
-    gridEl.querySelectorAll('.dp-day:not(.dp-day--disabled):not(.dp-day--empty)').forEach(function(el) {
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var day2 = parseInt(this.getAttribute('data-day'));
-        var clicked = new Date(dpViewYear, dpViewMonth, day2);
-        if (!dpPending.start || (dpPending.start && dpPending.end)) {
-          dpPending.start = clicked; dpPending.end = null;
-        } else {
-          dpPending.end = clicked;
-        }
-        buildDpGrid(gridEl, labelEl, prevBtn, nextBtn, confirmBtn);
-      });
-    });
-  }
-
-  function openDatePicker(isMob) {
-    dpPending = { start: filterDateRange ? filterDateRange.start : null, end: filterDateRange ? filterDateRange.end : null };
-    if (isMob) {
-      buildDpGrid(document.getElementById('dpGridMob'), document.getElementById('dpMonthLabelMob'), document.getElementById('dpPrevMob'), document.getElementById('dpNextMob'), document.getElementById('btnDpConfirmMob'));
-      document.getElementById('dateSheetOverlay').classList.add('is-open');
-      document.body.style.overflow = 'hidden';
-    } else {
-      buildDpGrid(document.getElementById('dpGrid'), document.getElementById('dpMonthLabel'), document.getElementById('dpPrev'), document.getElementById('dpNext'), document.getElementById('btnDpConfirm'));
-      document.getElementById('dateDropdown').classList.add('is-open');
-    }
-  }
-
-  function applyDateConfirm() {
-    if (!dpPending.start || !dpPending.end) return;
-    var s = new Date(Math.min(dpPending.start.getTime(), dpPending.end.getTime()));
-    var e = new Date(Math.max(dpPending.start.getTime(), dpPending.end.getTime()));
-    s.setHours(0,0,0,0); e.setHours(23,59,59,999);
-    filterDateRange = { start: s, end: e };
-    document.getElementById('chipDates').classList.add('is-active');
-    document.getElementById('dateDropdown').classList.remove('is-open');
-    document.getElementById('dateSheetOverlay').classList.remove('is-open');
-    document.getElementById('chipDates').classList.remove('is-open');
-    document.body.style.overflow = '';
-    applyFilters();
-  }
-
-  function setupDpNav(prevId, nextId, gridId, labelId, confirmId) {
-    var prevBtn = document.getElementById(prevId);
-    var nextBtn = document.getElementById(nextId);
-    var gridEl  = document.getElementById(gridId);
-    var labelEl = document.getElementById(labelId);
-    var confirmBtn = document.getElementById(confirmId);
-
-    prevBtn.addEventListener('click', function() {
-      if (!this.classList.contains('is-active')) return;
-      dpViewMonth--; if (dpViewMonth < 0) { dpViewMonth=11; dpViewYear--; }
-      buildDpGrid(gridEl, labelEl, prevBtn, nextBtn, confirmBtn);
-    });
-    nextBtn.addEventListener('click', function() {
-      if (!this.classList.contains('is-active')) return;
-      dpViewMonth++; if (dpViewMonth > 11) { dpViewMonth=0; dpViewYear++; }
-      buildDpGrid(gridEl, labelEl, prevBtn, nextBtn, confirmBtn);
-    });
-    confirmBtn.addEventListener('click', function() {
-      if (this.classList.contains('is-ready')) applyDateConfirm();
-    });
-  }
-
-  setupDpNav('dpPrev','dpNext','dpGrid','dpMonthLabel','btnDpConfirm');
-  setupDpNav('dpPrevMob','dpNextMob','dpGridMob','dpMonthLabelMob','btnDpConfirmMob');
-
-  // Chip click
-  document.getElementById('chipDates').addEventListener('click', function(e) {
-    e.stopPropagation();
-    // Set view to current month
-    dpViewYear = new Date().getFullYear(); dpViewMonth = new Date().getMonth();
-    if (isMobile()) {
-      openDatePicker(true);
-    } else {
-      var dd = document.getElementById('dateDropdown');
-      var opening = !dd.classList.contains('is-open');
-      // Close cat dropdown if open
-      document.getElementById('catDropdown').classList.remove('is-open');
-      document.getElementById('chipCategories').classList.remove('is-open');
-      dd.classList.toggle('is-open', opening);
-      this.classList.toggle('is-open', opening);
-      if (opening) openDatePicker(false);
-    }
-  });
-
-  // Close on outside click
-  document.addEventListener('click', function(e) {
-    var dd = document.getElementById('dateDropdown');
-    var chip = document.getElementById('chipDates');
-    if (!dd.contains(e.target) && e.target!==chip && !chip.contains(e.target)) {
-      dd.classList.remove('is-open'); chip.classList.remove('is-open');
-    }
-  });
-
-  // Prevent clicks inside date dropdown from closing it
-  document.getElementById('dateDropdown').addEventListener('click', function(e) {
-    e.stopPropagation();
-  });
-
-  document.getElementById('dateSheetOverlay').addEventListener('click', function(e) {
-    if (e.target===this) { this.classList.remove('is-open'); document.body.style.overflow=''; }
-  });
 
 
   // ══════════════════════════════════
@@ -1160,16 +938,6 @@
       });
     }
 
-    // Date range chip
-    if (filterDateRange) {
-      hasAny = true;
-      var label = fmtChipDate(filterDateRange.start) + '\u2013' + fmtChipDate(filterDateRange.end);
-      html2 +=
-        '<span class="active-chip" id="chipDateRange">' +
-          label +
-          '<button class="active-chip__x" id="removeDateRange" title="\u0423\u0434\u0430\u043b\u0438\u0442\u044c">&#x2715;</button>' +
-        '</span>';
-    }
 
     // Clear all button
     if (hasAny) {
@@ -1193,26 +961,13 @@
       });
     });
 
-    var removeDateBtn = document.getElementById('removeDateRange');
-    if (removeDateBtn) {
-      removeDateBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        filterDateRange = null;
-        dpPending = { start: null, end: null };
-        document.getElementById('chipDates').classList.remove('is-active');
-        applyFilters();
-        renderActiveChips();
-      });
-    }
+
 
     var clearBtn = document.getElementById('clearAllFilters');
     if (clearBtn) {
       clearBtn.addEventListener('click', function() {
         filterCats = [];
-        filterDateRange = null;
-        dpPending = { start: null, end: null };
         document.getElementById('chipCategories').classList.remove('is-active');
-        document.getElementById('chipDates').classList.remove('is-active');
         applyFilters();
         renderActiveChips();
       });
@@ -1224,29 +979,6 @@
 
   });
 </script>
-
-<!-- MOBILE DATE SHEET -->
-<div class="date-sheet-overlay" id="dateSheetOverlay">
-  <div class="date-sheet" id="dateSheet">
-    <div class="dp-header">
-      <span class="dp-month-label" id="dpMonthLabelMob"></span>
-      <div class="dp-arrows">
-        <button class="dp-arrow is-active" id="dpPrevMob">&#8249;</button>
-        <button class="dp-arrow" id="dpNextMob">&#8250;</button>
-      </div>
-    </div>
-    <div class="dp-dow-row">
-      <div class="dp-dow-cell">ПН</div><div class="dp-dow-cell">ВТ</div>
-      <div class="dp-dow-cell">СР</div><div class="dp-dow-cell">ЧТ</div>
-      <div class="dp-dow-cell">ПТ</div><div class="dp-dow-cell">СБ</div>
-      <div class="dp-dow-cell">ВС</div>
-    </div>
-    <div class="dp-grid" id="dpGridMob"></div>
-    <div class="dp-footer">
-      <button class="btn-dp-confirm" id="btnDpConfirmMob">Подтвердить</button>
-    </div>
-  </div>
-</div>
 
 <!-- MOBILE CATEGORY SHEET -->
 <div class="cat-sheet-overlay" id="catSheetOverlay">

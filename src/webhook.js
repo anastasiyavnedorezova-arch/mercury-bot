@@ -34,11 +34,13 @@ export function startWebhookServer(bot) {
   // .html → clean
   app.get('/cabinet/login.html',     (req, res) => res.redirect(301, '/cabinet/login'));
   app.get('/cabinet/dashboard.html', (req, res) => res.redirect(301, '/cabinet/dashboard'));
-  app.get('/cabinet/register.html',  (req, res) => res.redirect(301, '/cabinet/register'));
+  app.get('/cabinet/register.html',    (req, res) => res.redirect(301, '/cabinet/register'));
+  app.get('/cabinet/accounting.html',  (req, res) => res.redirect(301, '/cabinet/accounting'));
   // clean → file
-  app.get('/cabinet/login',     (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/login.html')));
-  app.get('/cabinet/dashboard', (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/dashboard.html')));
-  app.get('/cabinet/register',  (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/register.html')));
+  app.get('/cabinet/login',       (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/login.html')));
+  app.get('/cabinet/dashboard',   (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/dashboard.html')));
+  app.get('/cabinet/register',    (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/register.html')));
+  app.get('/cabinet/accounting',  (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/accounting.html')));
   app.get('/cabinet',           (req, res) => res.redirect(301, '/cabinet/dashboard'));
 
   app.use(express.static(path.join(__dirname, '../public')));

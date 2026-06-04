@@ -320,4 +320,40 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────
+// GET /api/accounting
+// ──────────────────────────────────────────
+router.get('/api/accounting', requireAuth, async (req, res) => {
+  try {
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('created_at')
+      .eq('id', req.userId)
+      .single();
+
+    if (userError || !user) return res.status(404).json({ error: 'User not found' });
+
+    const { data: transactions, error: txError } = await supabase
+      .from('transactions')
+      .select('transaction_date, type, amount, categories(name)')
+      .eq('user_id', req.userId)
+      .order('transaction_date', { ascending: true });
+
+    if (txError) throw txError;
+
+    res.json({
+      user_created_at: user.created_at,
+      transactions: (transactions || []).map(t => ({
+        transaction_date: t.transaction_date,
+        type: t.type,
+        amount: t.amount,
+        category: t.categories?.name || 'Другое',
+      })),
+    });
+  } catch (err) {
+    console.error('[cabinet] /api/accounting error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
