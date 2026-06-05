@@ -453,4 +453,132 @@ router.get('/api/accounting', requireAuth, async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────
+// GET /api/categories
+// Returns system categories + user's own categories
+// ──────────────────────────────────────────
+router.get('/api/categories', requireAuth, async (req, res) => {
+  try {
+    const [sysRes, userRes] = await Promise.all([
+      supabase
+        .from('categories')
+        .select('id, name, icon, type, user_id, is_active, category_groups(name)')
+        .is('user_id', null)
+        .eq('is_active', true)
+        .order('id'),
+      supabase
+        .from('categories')
+        .select('id, name, icon, type, user_id, is_active, category_groups(name)')
+        .eq('user_id', req.userId)
+        .eq('is_active', true)
+        .order('created_at'),
+    ]);
+
+    if (sysRes.error) throw sysRes.error;
+    if (userRes.error) throw userRes.error;
+
+    const map = (c) => ({
+      id: c.id,
+      name: c.name,
+      icon: c.icon ?? null,
+      type: c.type,
+      user_id: c.user_id,
+      group_name: c.category_groups?.name ?? null,
+    });
+
+    const data = [...(userRes.data || []).map(map), ...(sysRes.data || []).map(map)];
+    res.json({ data });
+  } catch (err) {
+    console.error('[cabinet] GET /api/categories error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/categories
+// Create a new user category
+// ──────────────────────────────────────────
+router.post('/api/categories', requireAuth, async (req, res) => {
+  try {
+    const { name, type, icon, hint } = req.body;
+    if (!name || !type) return res.status(400).json({ error: 'Missing required fields' });
+    if (!['income', 'expense'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
+
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        name: name.trim(),
+        type,
+        icon: icon?.trim() || null,
+        hint: hint?.trim() || null,
+        user_id: req.userId,
+        is_active: true,
+      })
+      .select('id, name, icon, type, user_id')
+      .single();
+
+    if (error) throw error;
+    res.status(201).json({ data });
+  } catch (err) {
+    console.error('[cabinet] POST /api/categories error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// PUT /api/categories/:id
+// Update user's own category (name/icon only)
+// ──────────────────────────────────────────
+router.put('/api/categories/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, icon, hint } = req.body;
+    if (!name) return res.status(400).json({ error: 'Missing name' });
+
+    const { error } = await supabase
+      .from('categories')
+      .update({ name: name.trim(), icon: icon?.trim() || null, hint: hint?.trim() || null })
+      .eq('id', id)
+      .eq('user_id', req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] PUT /api/categories/:id error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// DELETE /api/categories/:id
+// Soft-delete user's own category (is_active = false)
+// ──────────────────────────────────────────
+router.delete('/api/categories/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verify it's the user's own category (not system)
+    const { data: cat } = await supabase
+      .from('categories')
+      .select('id, user_id')
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .single();
+
+    if (!cat) return res.status(404).json({ error: 'Category not found or not owned by user' });
+
+    const { error } = await supabase
+      .from('categories')
+      .update({ is_active: false })
+      .eq('id', id)
+      .eq('user_id', req.userId);
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] DELETE /api/categories/:id error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
