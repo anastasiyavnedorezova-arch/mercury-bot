@@ -462,13 +462,13 @@ router.get('/api/categories', requireAuth, async (req, res) => {
     const [sysRes, userRes] = await Promise.all([
       supabase
         .from('categories')
-        .select('id, name, icon, type, user_id, is_active, category_groups(name)')
+        .select('id, name, type, user_id, is_active, category_groups(name)')
         .is('user_id', null)
         .eq('is_active', true)
         .order('id'),
       supabase
         .from('categories')
-        .select('id, name, icon, type, user_id, is_active, category_groups(name)')
+        .select('id, name, type, user_id, is_active, category_groups(name)')
         .eq('user_id', req.userId)
         .eq('is_active', true)
         .order('created_at'),
@@ -480,7 +480,6 @@ router.get('/api/categories', requireAuth, async (req, res) => {
     const map = (c) => ({
       id: c.id,
       name: c.name,
-      icon: c.icon ?? null,
       type: c.type,
       user_id: c.user_id,
       group_name: c.category_groups?.name ?? null,
