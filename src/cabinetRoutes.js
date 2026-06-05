@@ -465,13 +465,15 @@ router.get('/api/categories', requireAuth, async (req, res) => {
         .select('id, name, type, user_id, is_active, category_groups(name)')
         .is('user_id', null)
         .eq('is_active', true)
-        .order('id'),
+        .order('user_id', { nullsFirst: true })
+        .order('name', { ascending: true }),
       supabase
         .from('categories')
         .select('id, name, type, user_id, is_active, category_groups(name)')
         .eq('user_id', req.userId)
         .eq('is_active', true)
-        .order('created_at'),
+        .order('user_id', { nullsFirst: true })
+        .order('name', { ascending: true }),
     ]);
 
     if (sysRes.error) throw sysRes.error;
