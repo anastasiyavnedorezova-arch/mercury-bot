@@ -459,7 +459,8 @@ router.get('/api/accounting', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.get('/api/categories', requireAuth, async (req, res) => {
   try {
-    const [sysRes, userRes] = await Promise.all([
+    const now = new Date().toISOString();
+    const [sysRes, userRes, subRes] = await Promise.all([
       supabase
         .from('categories')
         .select('id, name, type, user_id, is_active, category_groups(name)')
@@ -474,6 +475,15 @@ router.get('/api/categories', requireAuth, async (req, res) => {
         .eq('is_active', true)
         .order('user_id', { nullsFirst: true })
         .order('name', { ascending: true }),
+      supabase
+        .from('subscriptions')
+        .select('status')
+        .eq('user_id', req.userId)
+        .in('status', ['trial', 'active'])
+        .gt('ends_at', now)
+        .order('ends_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     if (sysRes.error) throw sysRes.error;
@@ -488,7 +498,7 @@ router.get('/api/categories', requireAuth, async (req, res) => {
     });
 
     const data = [...(userRes.data || []).map(map), ...(sysRes.data || []).map(map)];
-    res.json({ data });
+    res.json({ data, subscription_status: subRes.data?.status ?? null });
   } catch (err) {
     console.error('[cabinet] GET /api/categories error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -533,12 +543,15 @@ router.post('/api/categories', requireAuth, async (req, res) => {
 router.put('/api/categories/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, icon, hint } = req.body;
+    const { name, type } = req.body;
     if (!name) return res.status(400).json({ error: 'Missing name' });
+
+    const update = { name: name.trim() };
+    if (type && ['income', 'expense'].includes(type)) update.type = type;
 
     const { error } = await supabase
       .from('categories')
-      .update({ name: name.trim(), icon: icon?.trim() || null, hint: hint?.trim() || null })
+      .update(update)
       .eq('id', id)
       .eq('user_id', req.userId);
 

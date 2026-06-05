@@ -409,14 +409,34 @@
     .btn-add-cat:disabled{background:#EEF2F6;color:#9CA3AF;cursor:not-allowed;}
     .catt-table{width:100%;border-collapse:collapse;}
     .catt-th{padding:10px 16px;font-size:12px;font-weight:700;color:#6B7280;line-height:16px;text-align:left;background:#EEF2F6;border-bottom:1px solid #E2E8F0;white-space:nowrap;}
-    .catt-th--type{width:90px;}.catt-th--name{width:auto;}.catt-th--group{width:220px;}.catt-th--actions{width:100px;text-align:center;}
+    .catt-th--name{width:auto;}.catt-th--actions{width:80px;text-align:center;}
     .catt-row{background:#fff;}.catt-row:hover{background:#F8FAFC;}
     .catt-td{padding:10px 16px;border-bottom:1px solid #E2E8F0;font-size:14px;color:#2D3748;vertical-align:middle;}
     .catt-td--actions{text-align:center;}
     .catt-row--user{background:#FAFFFE;}.catt-row--user:hover{background:#F0FBF7;}
-    .cat-action-btn{background:none;border:none;cursor:pointer;padding:5px;border-radius:6px;transition:background 150ms;display:inline-flex;color:#9CA3AF;}
-    .cat-action-btn:hover{background:#EEF2F6;color:#2D3748;}
-    .cat-action-btn--del:hover{background:#FFF0F0;color:#E5484D;}
+    .cat-action-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;transition:background 150ms;display:inline-flex;align-items:center;justify-content:center;color:#9CA3AF;}
+    .cat-action-btn--edit:hover{background:#EEF2F6;color:#2D3748;}
+    /* Group header rows */
+    .catt-group-hdr-row{background:#F8FAFC;}
+    .catt-group-hdr-td{padding:8px 16px;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;gap:8px;}
+    .catt-group-name{font-size:12px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.05em;}
+    /* Icon cell */
+    .catt-icon-cell{display:flex;align-items:center;gap:12px;}
+    .catt-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    .catt-icon--income{background:#E6F7EF;}
+    .catt-icon--expense{background:#EAF2FF;}
+    /* Mobile cards */
+    .cat-cards{display:none;flex-direction:column;gap:0;background:#fff;border-radius:12px;border:1px solid #E2E8F0;overflow:hidden;}
+    .cat-card-group-hdr{display:flex;align-items:center;gap:8px;padding:8px 16px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;}
+    .cat-card{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #F1F5F9;}
+    .cat-card:last-child{border-bottom:none;}
+    .cat-card__info{flex:1;min-width:0;}
+    .cat-card__name{font-size:14px;color:#2D3748;display:block;}
+    .cat-card__edit{margin-left:auto;flex-shrink:0;}
+    @media (max-width:768px){
+      .table-outer{display:none;}
+      .cat-cards{display:flex;}
+    }
     .modal-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.4);align-items:center;justify-content:center;padding:20px;}
     .modal-overlay.is-open{display:flex;}
     .modal-box{background:#fff;border-radius:24px;outline:1px solid #E2E8F0;outline-offset:-1px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:32px;width:500px;max-width:100%;display:flex;flex-direction:column;gap:24px;position:relative;}
@@ -506,14 +526,13 @@
     <div class="table-outer">
       <table class="catt-table" id="catTable">
         <thead><tr>
-          <th class="catt-th catt-th--type">Тип</th>
           <th class="catt-th catt-th--name">Категория</th>
-          <th class="catt-th catt-th--group">Группа</th>
           <th class="catt-th catt-th--actions">Действия</th>
         </tr></thead>
         <tbody id="catTbody"></tbody>
       </table>
     </div>
+    <div id="catCards" class="cat-cards"></div>
   </main>
 
   <!-- DELETE MODAL -->
@@ -693,12 +712,6 @@
     if (ui) ui.innerHTML = '<div class="lk-header__username">Кабинет: <strong>' + name + '</strong></div>' + subHtml;
     var du = document.getElementById('drawerUserInfo');
     if (du) du.innerHTML = '<div class="lk-drawer__name">Кабинет: <strong>' + name + '</strong></div>';
-    if (hasActiveSub) {
-      var ab = document.getElementById('btnAddCat');
-      if (ab) ab.disabled = false;
-      var cm = document.getElementById('chipMine');
-      if (cm) { cm.disabled = false; cm.style.opacity = '1'; cm.style.cursor = 'pointer'; }
-    }
   }
 
   // ── Categories ───────────────────────────────────────────
@@ -714,6 +727,22 @@
       if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
       var json = await res.json();
       allCats = json.data || [];
+
+      // ПРАВКА 4: кнопка добавить — только при trial/active подписке
+      var sub = json.subscription_status;
+      var canAdd = sub === 'trial' || sub === 'active';
+      var btnAdd = document.getElementById('btnAddCat');
+      if (btnAdd) btnAdd.disabled = !canAdd;
+
+      // ПРАВКА 5: чип "Мои категории" — только если есть хоть одна пользовательская категория
+      var hasUserCats = allCats.some(function(c) { return c.user_id !== null; });
+      var cm = document.getElementById('chipMine');
+      if (cm) {
+        cm.disabled = !hasUserCats;
+        cm.style.opacity = hasUserCats ? '1' : '0.4';
+        cm.style.cursor = hasUserCats ? 'pointer' : 'not-allowed';
+      }
+
       renderTable();
     } catch(e) { console.error('Categories error:', e); }
   }
@@ -726,64 +755,115 @@
     return cats;
   }
 
+  var EDIT_SVG =  + EDIT_SVG + r;
+
   function renderTable() {
     var cats = getFilteredCats();
+
+    // ПРАВКА 2: сортировка — сначала income, потом expense; внутри: group_name, name
+    cats = cats.slice().sort(function(a, b) {
+      if (a.type !== b.type) return a.type === 'income' ? -1 : 1;
+      var g = (a.group_name || '').localeCompare(b.group_name || '', 'ru');
+      if (g !== 0) return g;
+      return (a.name || '').localeCompare(b.name || '', 'ru');
+    });
+
+    var tbody = document.getElementById('catTbody');
+    var cardsEl = document.getElementById('catCards');
+
     if (!cats.length) {
-      document.getElementById('catTbody').innerHTML =
-        '<tr><td colspan="4" style="padding:32px;text-align:center;color:#6B7280;">Нет категорий</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="2" style="padding:32px;text-align:center;color:#6B7280;">Нет категорий</td></tr>';
+      if (cardsEl) cardsEl.innerHTML = '<div style="padding:32px;text-align:center;color:#6B7280;">Нет категорий</div>';
       return;
     }
-    var rows = '';
+
+    // Группируем по type + group_name (последовательно)
+    var groups = [];
     cats.forEach(function(cat) {
-      var isInc = cat.type === 'income';
-      var badge = '<span class="type-badge type-badge--' + (isInc ? 'income' : 'expense') + '"><span class="type-badge__dot"></span>' + (isInc ? 'Доход' : 'Расход') + '</span>';
-      var iconBg = isInc ? 'acc-cat-icon--income' : 'acc-cat-icon--expense';
-      var displayIcon = cat.icon || (isInc ? '💼' : '💰');
-      var actions = '';
-      if (cat.user_id !== null) {
-        actions =
-          '<button class="cat-action-btn" title="Редактировать" data-action="edit" data-id="' + escH(String(cat.id)) + '" data-name="' + escH(cat.name) + '" data-icon="' + escH(cat.icon || '') + '" data-type="' + cat.type + '">✏️</button>' +
-          ' <button class="cat-action-btn cat-action-btn--del" title="Удалить" data-action="del" data-id="' + escH(String(cat.id)) + '" data-name="' + escH(cat.name) + '" data-type="' + cat.type + '">🗑️</button>';
+      var key = cat.type + '::' + (cat.group_name || '');
+      var last = groups[groups.length - 1];
+      if (!last || last.key !== key) {
+        groups.push({ key: key, type: cat.type, group_name: cat.group_name || '', cats: [cat] });
+      } else {
+        last.cats.push(cat);
       }
-      rows +=
-        '<tr class="catt-row' + (cat.user_id !== null ? ' catt-row--user' : '') + '">' +
-        '<td class="catt-td">' + badge + '</td>' +
-        '<td class="catt-td"><div style="display:flex;align-items:center;gap:10px;"><span class="acc-cat-icon ' + iconBg + '">' + displayIcon + '</span>' +
-          '<span style="font-weight:' + (cat.user_id !== null ? '700' : '400') + ';">' + escH(cat.name) + '</span></div></td>' +
-        '<td class="catt-td" style="color:#6B7280;font-size:13px;">' + escH(cat.group_name || '') + '</td>' +
-        '<td class="catt-td catt-td--actions"><div style="display:flex;gap:6px;">' + actions + '</div></td>' +
-        '</tr>';
     });
-    document.getElementById('catTbody').innerHTML = rows;
+
+    var rows = '', cardsHtml = '';
+
+    groups.forEach(function(grp) {
+      var isInc = grp.type === 'income';
+      var badge = '<span class="type-badge type-badge--' + (isInc ? 'income' : 'expense') + '">' +
+        '<span class="type-badge__dot"></span>' + (isInc ? 'Доход' : 'Расход') + '</span>';
+
+      // Заголовок группы — десктоп
+      rows += '<tr class="catt-group-hdr-row"><td colspan="2" class="catt-group-hdr-td">' +
+        '<span class="catt-group-name">' + escH(grp.group_name) + '</span>' + badge + '</td></tr>';
+
+      // Заголовок группы — мобайл
+      cardsHtml += '<div class="cat-card-group-hdr">' +
+        '<span class="catt-group-name">' + escH(grp.group_name) + '</span>' + badge + '</div>';
+
+      grp.cats.forEach(function(cat) {
+        var isUser = cat.user_id !== null;
+        var iconBgClass = isInc ? 'catt-icon--income' : 'catt-icon--expense';
+        var displayIcon = cat.icon || (isInc ? '💼' : '💰');
+        var fontWeight = isUser ? '700' : '400';
+
+        // ПРАВКА 3+6: кнопка редактирования с SVG; для системных — скрытая
+        var editBtn = '<button class="cat-action-btn cat-action-btn--edit" title="Редактировать" data-action="edit" data-id="' + escH(String(cat.id)) + '">' + EDIT_SVG + '</button>';
+        var actionHtml = isUser ? editBtn : '<span style="display:inline-block;width:28px;height:28px;"></span>';
+
+        // Строка таблицы — десктоп
+        rows += '<tr class="catt-row' + (isUser ? ' catt-row--user' : '') + '">' +
+          '<td class="catt-td">' +
+            '<div class="catt-icon-cell">' +
+              '<span class="catt-icon ' + iconBgClass + '">' + displayIcon + '</span>' +
+              '<span style="font-size:14px;font-weight:' + fontWeight + ';color:#2D3748;">' + escH(cat.name) + '</span>' +
+            '</div>' +
+          '</td>' +
+          '<td class="catt-td catt-td--actions">' + actionHtml + '</td>' +
+          '</tr>';
+
+        // Карточка — мобайл
+        cardsHtml += '<div class="cat-card">' +
+          '<span class="catt-icon ' + iconBgClass + '">' + displayIcon + '</span>' +
+          '<div class="cat-card__info">' +
+            '<span class="cat-card__name" style="font-weight:' + fontWeight + ';">' + escH(cat.name) + '</span>' +
+          '</div>' +
+          (isUser ? '<button class="cat-action-btn cat-action-btn--edit cat-card__edit" data-action="edit" data-id="' + escH(String(cat.id)) + '">' + EDIT_SVG + '</button>' : '') +
+          '</div>';
+      });
+    });
+
+    if (tbody) tbody.innerHTML = rows;
+    if (cardsEl) cardsEl.innerHTML = cardsHtml;
   }
 
-  // ── Table action delegation ───────────────────────────────
-  document.getElementById('catTbody').addEventListener('click', function(e) {
-    var btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    var action = btn.getAttribute('data-action');
-    var id = btn.getAttribute('data-id');
+  // ── Table & cards action delegation ──────────────────────
+  function openEditModal(id) {
     var cat = allCats.find(function(c) { return String(c.id) === id; });
     if (!cat) return;
-    if (action === 'edit') {
-      editingCat = cat;
-      document.getElementById('addEditTitle').textContent = 'Редактировать категорию';
-      document.getElementById('formCatName').value = cat.name;
-      var emojiEl = document.getElementById('formCatEmoji');
-      if (emojiEl) { emojiEl.value = cat.icon || ''; document.getElementById('emojiPreview').textContent = cat.icon || '💰'; }
-      document.getElementById('formCatType').value = cat.type;
-      var hintEl = document.getElementById('formCatHint');
-      if (hintEl) hintEl.value = cat.hint || '';
-      document.getElementById('btnAddEditSave').disabled = false;
-      document.getElementById('modalAddEdit').classList.add('is-open');
-    } else if (action === 'del') {
-      deletingCat = cat;
-      var tl = cat.type === 'income' ? 'доход' : 'расход';
-      document.getElementById('deleteModalBody').innerHTML =
-        'Вы уверены, что хотите удалить эту категорию?<br><br>' +
-        '<strong>📌 Тип: ' + tl + '<br>📂 Категория: ' + escH(cat.name) + '<br><br>Удаление безвозвратно</strong>';
-      document.getElementById('modalDelete').classList.add('is-open');
-    }
+    editingCat = cat;
+    document.getElementById('addEditTitle').textContent = 'Редактировать категорию';
+    document.getElementById('formCatName').value = cat.name;
+    var emojiEl = document.getElementById('formCatEmoji');
+    if (emojiEl) { emojiEl.value = cat.icon || ''; document.getElementById('emojiPreview').textContent = cat.icon || '💰'; }
+    document.getElementById('formCatType').value = cat.type;
+    var hintEl = document.getElementById('formCatHint');
+    if (hintEl) hintEl.value = cat.hint || '';
+    document.getElementById('btnAddEditSave').disabled = false;
+    document.getElementById('modalAddEdit').classList.add('is-open');
+  }
+
+  document.getElementById('catTbody').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action="edit"]');
+    if (btn) openEditModal(btn.getAttribute('data-id'));
+  });
+  var cardsWrap = document.getElementById('catCards');
+  if (cardsWrap) cardsWrap.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-action="edit"]');
+    if (btn) openEditModal(btn.getAttribute('data-id'));
   });
 
   // ── Filter chips ─────────────────────────────────────────
@@ -866,7 +946,7 @@
     } catch(e) { alert('Ошибка при удалении'); }
   });
 
-  // ── Close modals ─────────────────────────────────────────
+    // ── Close modals ─────────────────────────────────────────
   function closeAllModals() {
     document.getElementById('modalDelete').classList.remove('is-open');
     document.getElementById('modalAddEdit').classList.remove('is-open');
