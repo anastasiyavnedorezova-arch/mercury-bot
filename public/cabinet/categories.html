@@ -439,8 +439,11 @@
     @media (max-width:768px){
       .table-outer{display:none;}
       .cat-cards{display:flex;}
+      .modal-box{padding:20px;border-radius:20px;}
+      .modal-title{font-size:20px;}
       .modal-footer{flex-direction:column-reverse;justify-content:flex-start;gap:8px;align-items:flex-end;}
       .btn-modal-cancel,.btn-modal-save,.btn-modal-delete{width:100%;}
+      .modal-ae-name-field{min-width:100%;}
     }
     .modal-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.4);align-items:center;justify-content:center;padding:20px;}
     .modal-overlay.is-open{display:flex;}
@@ -464,6 +467,14 @@
     .btn-modal-save{height:40px;padding:10px 20px;background:#4C9AFF;border:none;border-radius:10px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;color:#fff;cursor:pointer;letter-spacing:0.14px;transition:background 150ms;}.btn-modal-save:hover{background:#2563EB;}.btn-modal-save:disabled{background:#CBD5E1;cursor:default;}
     .btn-modal-save:hover{background:#3A8AEF;}
     .btn-modal-save:disabled{background:#EEF2F6;color:#9CA3AF;cursor:not-allowed;}
+    .modal-footer--edit{gap:8px;}
+    .modal-ae-fields{display:flex;flex-direction:column;gap:12px;}
+    .modal-ae-name-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
+    .modal-ae-name-field{flex:1;min-width:200px;}
+    .modal-ae-emoji-field{flex-shrink:0;}
+    .modal-ae-emoji-input{width:64px!important;text-align:center;}
+    .modal-ae-note{font-size:12px;font-weight:500;color:#2D3748;line-height:18px;}
+    .modal-ae-note strong{font-weight:700;}
 
   </style>
 <body>
@@ -559,36 +570,34 @@
     <div class="modal-box">
       <button class="modal-close" id="btnAddEditClose">&#x2715;</button>
       <div class="modal-title" id="addEditTitle">Добавить категорию</div>
-      <div style="display:flex;flex-direction:column;gap:16px;width:100%;">
+      <div class="modal-ae-fields">
         <div class="form-field">
-          <label class="form-label">Тип операции*</label>
+          <label class="form-label">Выберите тип операции*</label>
           <select class="form-select" id="formCatType">
             <option value="income">Доход</option>
             <option value="expense">Расход</option>
           </select>
         </div>
-        <div style="display:flex;gap:12px;align-items:flex-end;">
-          <div class="form-field">
-            <label class="form-label">Название категории*</label>
+        <div class="modal-ae-name-row">
+          <div class="form-field modal-ae-name-field">
+            <label class="form-label">Назовите свою категорию*</label>
             <input class="form-input" id="formCatName" type="text" maxlength="40" placeholder="Например: Дача"/>
           </div>
-          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-            <label class="form-label">Иконка</label>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input class="form-input" id="formCatEmoji" type="text" maxlength="4" placeholder="💰" style="width:56px;text-align:center;font-size:20px;padding:6px;"/>
-              <div class="form-emoji-preview" id="emojiPreview">💰</div>
-            </div>
+          <div class="form-field modal-ae-emoji-field">
+            <label class="form-label">Иконка (эмодзи)</label>
+            <input class="form-input modal-ae-emoji-input" id="formCatEmoji" type="text" maxlength="4" placeholder="💰"/>
+            <div id="emojiPreview" style="display:none;">💰</div>
           </div>
         </div>
         <div class="form-field">
-          <label class="form-label">Слова-подсказки для бота (необязательно)</label>
-          <input class="form-input" id="formCatHint" type="text" maxlength="120" placeholder="Например: дача, огород, теплица"/>
+          <label class="form-label">Напишите слова подсказки для Бота</label>
+          <input class="form-input" id="formCatHint" type="text" maxlength="120" placeholder="Например, дача, огород, теплица..."/>
         </div>
       </div>
-      <div style="font-size:14px;color:#2D3748;line-height:20px;font-family:inherit;">
+      <div class="modal-ae-note">
         Функция Пользовательских категорий <strong>доступна только по подписке</strong>. Мы сохраним вашу категорию, но записи в нее можно будет сделать только при наличии активной подписки.
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer modal-footer--edit">
         <button class="btn-modal-cancel" id="btnAddEditCancel">Отменить</button>
         <button class="btn-modal-save" id="btnAddEditSave">Сохранить изменения</button>
       </div>
