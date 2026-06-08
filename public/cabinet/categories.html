@@ -439,11 +439,6 @@
     @media (max-width:768px){
       .table-outer{display:none;}
       .cat-cards{display:flex;}
-      .modal-box{padding:20px;border-radius:20px;}
-      .modal-title{font-size:20px;}
-      .modal-footer{flex-direction:column-reverse;justify-content:flex-start;gap:8px;align-items:flex-end;}
-      .btn-modal-cancel,.btn-modal-save,.btn-modal-delete{width:100%;}
-      .modal-ae-name-field{min-width:100%;}
     }
     .modal-overlay{display:none;position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.4);align-items:center;justify-content:center;padding:20px;}
     .modal-overlay.is-open{display:flex;}
@@ -468,6 +463,14 @@
     .btn-modal-save:hover{background:#3A8AEF;}
     .btn-modal-save:disabled{background:#EEF2F6;color:#9CA3AF;cursor:not-allowed;}
     .modal-footer--edit{gap:8px;}
+    @media (max-width:768px){
+      .modal-box{padding:20px;border-radius:20px;}
+      .modal-title{font-size:20px;}
+      .modal-ae-name-field{min-width:100%;}
+      .modal-footer{flex-direction:column-reverse;gap:8px;align-items:stretch;}
+      .modal-footer--edit{flex-direction:column;}
+      .btn-modal-cancel,.btn-modal-save,.btn-modal-delete{width:100%;justify-content:center;}
+    }
     .modal-ae-fields{display:flex;flex-direction:column;gap:12px;}
     .modal-ae-name-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;}
     .modal-ae-name-field{flex:1;min-width:200px;}
@@ -598,8 +601,8 @@
         Функция Пользовательских категорий <strong>доступна только по подписке</strong>. Мы сохраним вашу категорию, но записи в нее можно будет сделать только при наличии активной подписки.
       </div>
       <div class="modal-footer modal-footer--edit">
-        <button class="btn-modal-cancel" id="btnAddEditCancel">Отменить</button>
         <button class="btn-modal-save" id="btnAddEditSave">Сохранить изменения</button>
+        <button class="btn-modal-cancel" id="btnAddEditCancel">Отменить</button>
       </div>
     </div>
   </div>
