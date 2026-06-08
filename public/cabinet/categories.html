@@ -872,11 +872,10 @@
       document.getElementById(c).classList.toggle('is-active', c === id);
     });
     if (id) document.getElementById('chipMine').classList.remove('is-active');
-    filterMine = false;
   }
-  document.getElementById('chipAll').addEventListener('click', function() { filterType = 'all'; setActiveChip('chipAll'); renderTable(); });
-  document.getElementById('chipIncome').addEventListener('click', function() { filterType = 'income'; setActiveChip('chipIncome'); renderTable(); });
-  document.getElementById('chipExpense').addEventListener('click', function() { filterType = 'expense'; setActiveChip('chipExpense'); renderTable(); });
+  document.getElementById('chipAll').addEventListener('click', function() { filterType = 'all'; filterMine = false; setActiveChip('chipAll'); renderTable(); });
+  document.getElementById('chipIncome').addEventListener('click', function() { filterType = 'income'; filterMine = false; setActiveChip('chipIncome'); renderTable(); });
+  document.getElementById('chipExpense').addEventListener('click', function() { filterType = 'expense'; filterMine = false; setActiveChip('chipExpense'); renderTable(); });
   document.getElementById('chipMine').addEventListener('click', function() {
     if (this.disabled) return;
     filterMine = !filterMine; filterType = 'all';

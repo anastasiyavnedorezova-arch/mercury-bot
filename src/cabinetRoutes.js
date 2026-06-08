@@ -511,7 +511,7 @@ router.get('/api/categories', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.post('/api/categories', requireAuth, async (req, res) => {
   try {
-    const { name, type, icon, hint } = req.body;
+    const { name, type } = req.body;
     if (!name || !type) return res.status(400).json({ error: 'Missing required fields' });
     if (!['income', 'expense'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
 
@@ -520,12 +520,10 @@ router.post('/api/categories', requireAuth, async (req, res) => {
       .insert({
         name: name.trim(),
         type,
-        icon: icon?.trim() || null,
-        hint: hint?.trim() || null,
         user_id: req.userId,
         is_active: true,
       })
-      .select('id, name, icon, type, user_id')
+      .select('id, name, type, user_id')
       .single();
 
     if (error) throw error;
