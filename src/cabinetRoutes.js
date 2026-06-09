@@ -95,14 +95,20 @@ router.get('/api/me', requireAuth, async (req, res) => {
 
     if (error || !user) return res.status(404).json({ error: 'User not found' });
 
-    const { data: sub } = await supabase
+    const { data: subRows, error: subError } = await supabase
       .from('subscriptions')
       .select('status, starts_at, ends_at, period_months')
       .eq('user_id', req.userId)
-      .eq('status', 'active')
+      .in('status', ['trial', 'active'])
+      .gt('ends_at', new Date().toISOString())
       .order('ends_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+
+    const sub = subRows?.[0] ?? null;
+
+    console.log('[api/me] userId:', req.userId);
+    console.log('[api/me] sub data:', JSON.stringify(sub));
+    console.log('[api/me] sub error:', subError?.message);
 
     res.json({ ...user, subscription: sub ?? null });
   } catch (err) {
