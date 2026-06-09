@@ -231,13 +231,23 @@
     .nav-logout-btn:hover { color: #EF4444; }
 
     /* ══════ RESPONSIVE GOALS ══════ */
-    @media (max-width: 768px) {
-      .goals-grid { gap: 12px; }
-      .goal-card, .bot-goal-card { width: 100%; }
-      .expired-banner { flex-direction: column; gap: 10px; }
-    }
     @media (max-width: 900px) {
       .page-content { padding: 28px 20px 120px; }
+    }
+    @media (max-width: 768px) {
+      .main-content { padding: 20px 16px 80px; }
+      .page-title { font-size: 22px; margin-bottom: 16px; }
+      .goals-grid { gap: 12px; }
+      .goal-card, .bot-goal-card { width: 100%; }
+      .expired-banner { flex-direction: column; gap: 0; }
+      .expired-block { padding: 12px 0; align-items: center; text-align: center; }
+      .expired-block .btn { align-self: stretch; justify-content: center; }
+      .lk-header-actions .btn-secondary { display: none; }
+      .card-actions { flex-direction: row; justify-content: flex-end; }
+      .modal { padding: 20px; border-radius: 20px; max-width: 100%; }
+      .modal-title { font-size: 20px; }
+      .modal-actions-choose { flex-direction: column; gap: 8px; }
+      .modal-actions-choose button { width: 100%; justify-content: center; }
     }
 
   </style>
@@ -586,51 +596,58 @@
     }
   }
 
+  function expiredBanner() {
+    return '<div class="expired-banner">' +
+      '<div class="expired-text"><strong>У вас закончилась подписка.</strong> Для доступа ко всем целям оплатите подписку.</div>' +
+      '<a href="https://t.me/mercury_finbot" class="btn btn-accent btn-sm" target="_blank" rel="noopener">Оплатить подписку</a>' +
+    '</div>';
+  }
+
   function renderGoals(container) {
     var isActive = subStatus === 'active' || subStatus === 'trial';
-    var hasGoals = allGoals.length > 0;
 
-    // Сценарий 1: нет целей
-    if (!hasGoals) {
+    // Сценарий 1: нет целей — бот-карточка
+    if (allGoals.length === 0) {
       container.innerHTML = '<div class="goals-grid">' + renderBotCard() + '</div>';
       return;
     }
 
-    // Сценарий 3: подписка истекла
-    if (!isActive) {
-      var stored = localStorage.getItem('mercury_chosen_goal');
-      // Если целей > 1 и не выбрана — показать модалку
-      if (allGoals.length > 1 && !stored) {
-        buildChooseModal();
-        openModal('modalChooseGoal');
-      }
-      // Определить какую цель показывать
-      var goalToShow = null;
-      if (allGoals.length === 1) {
-        goalToShow = allGoals[0];
-      } else if (stored) {
-        goalToShow = allGoals.find(function(g) { return String(g.id) === stored; }) || allGoals[0];
-      }
-      var banner = '<div class="expired-banner">' +
-        '<div class="expired-text"><strong>У вас закончилась подписка.</strong> Для доступа ко всем целям оплатите подписку.</div>' +
-        '<a href="https://t.me/mercury_finbot" class="btn btn-accent btn-sm" target="_blank" rel="noopener">Оплатить подписку</a>' +
-      '</div>';
+    // Сценарий 2: активная подписка — все цели без ограничений
+    if (isActive) {
       var gridHtml = '<div class="goals-grid">';
-      allGoals.forEach(function(g) {
-        var isFaded = goalToShow ? (g.id !== goalToShow.id) : true;
-        gridHtml += renderGoalCard(g, isFaded);
-      });
+      allGoals.forEach(function(g) { gridHtml += renderGoalCard(g, false); });
+      gridHtml += renderBotCard();
       gridHtml += '</div>';
-      container.innerHTML = banner + gridHtml;
+      container.innerHTML = gridHtml;
       return;
     }
 
-    // Сценарий 2: активная подписка, есть цели
+    // Сценарий 3: подписка истекла
+    var stored = localStorage.getItem('mercury_chosen_goal');
+
+    if (allGoals.length > 1 && !stored) {
+      // Несколько целей, выбор ещё не сделан — показать модалку
+      // Рендерим все карточки faded как фон под модалкой
+      var gridHtml = '<div class="goals-grid">';
+      allGoals.forEach(function(g) { gridHtml += renderGoalCard(g, true); });
+      gridHtml += '</div>';
+      container.innerHTML = expiredBanner() + gridHtml;
+      buildChooseModal();
+      openModal('modalChooseGoal');
+      return;
+    }
+
+    // Одна цель или выбор уже сделан
+    var goalToShow = allGoals.length === 1
+      ? allGoals[0]
+      : (allGoals.find(function(g) { return String(g.id) === stored; }) || allGoals[0]);
+
     var gridHtml = '<div class="goals-grid">';
-    allGoals.forEach(function(g) { gridHtml += renderGoalCard(g, false); });
-    gridHtml += renderBotCard();
+    allGoals.forEach(function(g) {
+      gridHtml += renderGoalCard(g, g.id !== goalToShow.id);
+    });
     gridHtml += '</div>';
-    container.innerHTML = gridHtml;
+    container.innerHTML = expiredBanner() + gridHtml;
   }
 
   function buildChooseModal() {
@@ -662,6 +679,13 @@
     var container = document.getElementById('goalsContainer');
     renderGoals(container);
   }
+
+  // Expose modal functions globally (called from HTML onclick attributes)
+  window.openModal        = function(id) { document.getElementById(id).style.display = 'flex'; };
+  window.closeModal       = function(id) { document.getElementById(id).style.display = 'none'; };
+  window.closeAllModals   = closeAllModals;
+  window.openDeleteModal  = openDeleteModal;
+  window.confirmChooseGoal = confirmChooseGoal;
 
   // Close modals on overlay click
   ['modalAddGoal','modalDeleteGoal','modalChooseGoal'].forEach(function(id) {
