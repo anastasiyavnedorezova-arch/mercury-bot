@@ -241,17 +241,28 @@
       .main-content { padding: 20px 16px 80px; }
       .page-title { font-size: 22px; margin-bottom: 16px; }
       .lk-header { padding: 0 12px; gap: 10px; }
+      .lk-logo-text { font-size: 14px; }
+      .lk-subscription { font-size: 11px; }
       .lk-header-actions .btn-secondary { display: none; }
       .goals-grid { gap: 12px; }
-      .goal-card, .bot-goal-card { width: 100%; }
+      .goal-card, .bot-goal-card { width: 100%; box-sizing: border-box; }
       .expired-banner { flex-direction: column; gap: 0; }
       .expired-block { padding: 12px 0; align-items: center; text-align: center; }
-      .expired-block .btn { align-self: stretch; justify-content: center; }
-      .modal { padding: 20px; border-radius: 20px; }
-      .modal-title { font-size: 20px; }
+      .expired-block .btn { align-self: stretch; justify-content: center; width: 100%; }
+      .card-actions { flex-direction: row; justify-content: flex-end; }
+      .modal { padding: 20px; border-radius: 20px; max-width: calc(100vw - 32px); }
+      .modal-choose { padding: 20px; border-radius: 20px; gap: 20px; }
+      .modal-title { font-size: 20px; line-height: 28px; }
+      .modal-radio-item { padding: 8px 12px; }
+      .modal-actions-choose { flex-direction: column; gap: 8px; align-items: stretch; }
+      .modal-actions-choose button { width: 100%; justify-content: center; border-radius: 10px; }
       .modal-footer-delete { flex-direction: column !important; gap: 8px !important; }
       .modal-footer-delete button { width: 100% !important; justify-content: center; }
-      .modal-footer-delete .btn-delete-primary { order: -1; }
+      .bot-message-area { gap: 10px; }
+      .bot-bubble { font-size: 13px; }
+      .goal-name { font-size: 16px; }
+      .goal-monthly-value { font-size: 18px; }
+      .goal-progress-amount { font-size: 17px; }
     }
 
   </style>
