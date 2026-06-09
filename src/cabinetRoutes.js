@@ -166,6 +166,25 @@ router.get('/api/goals', requireAuth, async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// DELETE /api/goals/:id
+// ──────────────────────────────────────────
+router.delete('/api/goals/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', req.userId);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] DELETE /api/goals/:id error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
 // GET /api/budget?month=2026-06
 // ──────────────────────────────────────────
 router.get('/api/budget', requireAuth, async (req, res) => {

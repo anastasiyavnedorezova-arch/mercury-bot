@@ -121,6 +121,8 @@
     .btn-secondary:hover { border-color: var(--color-brand-primary); color: var(--color-brand-primary); }
     .btn-dark { background: var(--color-brand-main); color: #fff; border-color: var(--color-brand-main); border-radius: var(--radius-sm); }
     .btn-dark:hover { opacity: .88; }
+    .btn-mini-dark { background: var(--color-brand-main); color: #fff; border-color: var(--color-brand-main); border-radius: var(--radius-sm); font-size: 13px; padding: 5px 12px; }
+    .btn-mini-dark:hover { opacity: .88; }
     .btn-danger-text { background: #fff; color: var(--color-error-text); border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 13px; padding: 5px 12px; }
     .btn-danger-text:hover { background: var(--color-error-bg); }
     .btn-disabled { background: var(--color-bg-alt) !important; color: var(--color-text-disabled) !important; border-color: var(--color-bg-alt) !important; pointer-events: none; border-radius: var(--radius-sm); }
@@ -235,19 +237,21 @@
       .page-content { padding: 28px 20px 120px; }
     }
     @media (max-width: 768px) {
+      .sidebar { display: none; }
       .main-content { padding: 20px 16px 80px; }
       .page-title { font-size: 22px; margin-bottom: 16px; }
+      .lk-header { padding: 0 12px; gap: 10px; }
+      .lk-header-actions .btn-secondary { display: none; }
       .goals-grid { gap: 12px; }
       .goal-card, .bot-goal-card { width: 100%; }
       .expired-banner { flex-direction: column; gap: 0; }
       .expired-block { padding: 12px 0; align-items: center; text-align: center; }
       .expired-block .btn { align-self: stretch; justify-content: center; }
-      .lk-header-actions .btn-secondary { display: none; }
-      .card-actions { flex-direction: row; justify-content: flex-end; }
-      .modal { padding: 20px; border-radius: 20px; max-width: 100%; }
+      .modal { padding: 20px; border-radius: 20px; }
       .modal-title { font-size: 20px; }
-      .modal-actions-choose { flex-direction: column; gap: 8px; }
-      .modal-actions-choose button { width: 100%; justify-content: center; }
+      .modal-footer-delete { flex-direction: column !important; gap: 8px !important; }
+      .modal-footer-delete button { width: 100% !important; justify-content: center; }
+      .modal-footer-delete .btn-delete-primary { order: -1; }
     }
 
   </style>
@@ -364,16 +368,14 @@
 </div>
 
 <!-- MODAL: Удалить цель -->
-<div class="modal-overlay" id="modalDeleteGoal" style="display:none;">
+<div class="modal-overlay" id="modal-delete-goal" style="display:none;">
   <div class="modal">
-    <button class="modal-close-btn" onclick="closeModal('modalDeleteGoal')">&#10005;</button>
+    <button class="modal-close-btn" onclick="window.closeModal('modal-delete-goal')">&#10005;</button>
     <div class="modal-title">Удалить цель</div>
-    <div class="modal-body" id="modalDeleteBody">
-      Удаление целей доступно через бота в Telegram. Перейди в раздел <strong>«Мои цели»</strong> и выбери удаление там.
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('modalDeleteGoal')">Закрыть</button>
-      <a href="https://t.me/mercury_finbot" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Открыть в Telegram</a>
+    <div class="modal-body" id="modal-delete-goal-body">Вы уверены, что хотите удалить эту цель?</div>
+    <div class="modal-actions modal-footer-delete" style="justify-content:flex-end;">
+      <button class="btn btn-secondary btn-sm" onclick="window.closeModal('modal-delete-goal')">Отмена</button>
+      <button class="btn btn-danger-text btn-sm btn-delete-primary" onclick="window.confirmDeleteGoal()">Удалить</button>
     </div>
   </div>
 </div>
@@ -417,21 +419,21 @@
   // ── Mobile drawer ────────────────────────────────────────
   var burger = document.getElementById('lkBurger');
   var drawer = document.getElementById('lkDrawer');
-  var overlay = document.getElementById('lkOverlay');
+  var drawerOverlay = document.getElementById('lkOverlay');
   var dClose = document.getElementById('lkDrawerClose');
   function openDrawer() {
-    if (overlay) { overlay.classList.add('is-open'); requestAnimationFrame(function() { overlay.classList.add('is-visible'); }); }
+    if (drawerOverlay) { drawerOverlay.classList.add('is-open'); requestAnimationFrame(function() { drawerOverlay.classList.add('is-visible'); }); }
     if (drawer) drawer.classList.add('is-open');
     document.body.style.overflow = 'hidden';
   }
   function closeDrawer() {
-    if (overlay) { overlay.classList.remove('is-visible'); setTimeout(function() { overlay.classList.remove('is-open'); }, 250); }
+    if (drawerOverlay) { drawerOverlay.classList.remove('is-visible'); setTimeout(function() { drawerOverlay.classList.remove('is-open'); }, 250); }
     if (drawer) drawer.classList.remove('is-open');
     document.body.style.overflow = '';
   }
   if (burger) burger.addEventListener('click', openDrawer);
   if (dClose) dClose.addEventListener('click', closeDrawer);
-  if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closeDrawer(); });
+  if (drawerOverlay) drawerOverlay.addEventListener('click', function(e) { if (e.target === drawerOverlay) closeDrawer(); });
   document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeAllModals(); });
   document.querySelectorAll('.lk-drawer .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(function(el) {
     el.addEventListener('click', function(e) {
@@ -441,27 +443,68 @@
     });
   });
 
-  // ── Header ───────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────
   function fmtD(iso) { var d = new Date(iso); return [String(d.getDate()).padStart(2,'0'), String(d.getMonth()+1).padStart(2,'0'), d.getFullYear()].join('-'); }
   function daysLeft(iso) { return Math.max(0, Math.ceil((new Date(iso) - new Date()) / 86400000)); }
   function plural(n) { return n%10===1&&n%100!==11 ? 'день' : [2,3,4].includes(n%10)&&![12,13,14].includes(n%100) ? 'дня' : 'дней'; }
+  function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtNum(n) { return Math.round(n).toLocaleString('ru-RU'); }
 
-  async function loadHeader() {
-    var token = getToken();
-    if (!token) { window.location.replace('/cabinet/login'); return; }
+  var RU_MONTHS_NOM = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+  function fmtGoalDate(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso + (iso.length === 7 ? '-01' : ''));
+    return RU_MONTHS_NOM[d.getMonth()] + ' ' + d.getFullYear();
+  }
+  function monthsUntil(iso) {
+    if (!iso) return 1;
+    var target = new Date(iso + (iso.length === 7 ? '-01' : ''));
+    var now = new Date();
+    return Math.max(1, (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth()));
+  }
+
+  // ── Modals ───────────────────────────────────────────────
+  function openModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'flex'; }
+  function closeModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
+  function closeAllModals() {
+    ['modalAddGoal','modal-delete-goal','modalChooseGoal'].forEach(closeModal);
+  }
+
+  // ── Delete goal modal ────────────────────────────────────
+  var _deleteGoalId = null;
+
+  function openDeleteGoalModal(goalId, goalName) {
+    _deleteGoalId = goalId;
+    var body = document.getElementById('modal-delete-goal-body');
+    if (body) body.innerHTML = 'Вы уверены, что хотите удалить цель <strong>«' + escH(goalName) + '»</strong>? Это действие нельзя отменить.';
+    openModal('modal-delete-goal');
+  }
+
+  async function confirmDeleteGoal() {
+    if (!_deleteGoalId) return;
+    var btn = document.querySelector('#modal-delete-goal .btn-delete-primary');
+    if (btn) { btn.disabled = true; btn.textContent = 'Удаление...'; }
     try {
-      var res = await fetch('/api/me', { headers: authHeaders() });
+      var res = await fetch('/api/goals/' + _deleteGoalId, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
       if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
-      var d = await res.json();
-      renderHeader({ username: d.username || d.external_id || 'Пользователь', subscription: d.subscription });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      closeModal('modal-delete-goal');
+      _deleteGoalId = null;
+      await loadPage();
     } catch(e) {
-      var el = document.getElementById('lkUserInfo');
-      if (el) el.textContent = 'Ошибка загрузки';
+      console.error('[goals] delete error:', e);
+      if (btn) { btn.disabled = false; btn.textContent = 'Удалить'; }
+      alert('Ошибка при удалении. Попробуйте ещё раз.');
     }
   }
 
-  function renderHeader(d) {
-    var name = d.username || 'Пользователь'; var sub = d.subscription; var subHtml = '';
+  // ── Header ───────────────────────────────────────────────
+  function updateHeader(d) {
+    var name = (d.username || d.external_id || 'Пользователь');
+    var sub = d.subscription; var subHtml = '';
     if (sub) {
       var dt = fmtD(sub.ends_at); var dl = daysLeft(sub.ends_at);
       var chip = dl <= 30 ? '<span class="lk-badge">' + dl + ' ' + plural(dl) + '</span>' : '';
@@ -469,52 +512,47 @@
       subHtml = '<div class="lk-header__sub"><span class="lk-header__sub-text">' + lbl + '</span>' + chip + '</div>';
     }
     var ui = document.getElementById('lkUserInfo');
-    if (ui) ui.innerHTML = '<div class="lk-header__username">Кабинет: <strong>' + name + '</strong></div>' + subHtml;
+    if (ui) ui.innerHTML = '<div class="lk-header__username">Кабинет: <strong>' + escH(name) + '</strong></div>' + subHtml;
     var du = document.getElementById('drawerUserInfo');
-    if (du) du.innerHTML = '<div class="lk-drawer__name">Кабинет: <strong>' + name + '</strong></div>';
+    if (du) du.innerHTML = '<div class="lk-drawer__name">Кабинет: <strong>' + escH(name) + '</strong></div>';
   }
 
-
-  // ── Goals ───────────────────────────────────────────────
-  var allGoals = [];
-  var chosenGoalId = null;
-  var subStatus = null;
-
-  var RU_MONTHS = ['январе','феврале','марте','апреле','мае','июне','июле','августе','сентябре','октябре','ноябре','декабре'];
-  var RU_MONTHS_NOM = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
-
-  function fmtGoalDate(iso) {
-    if (!iso) return '—';
-    var d = new Date(iso + (iso.length === 7 ? '-01' : ''));
-    return RU_MONTHS_NOM[d.getMonth()] + ' ' + d.getFullYear();
+  // ── Render functions ─────────────────────────────────────
+  function renderNoGoals(container) {
+    container.innerHTML = '<div class="goals-grid">' + renderBotCard() + '</div>';
   }
 
-  function monthsUntil(iso) {
-    if (!iso) return 1;
-    var target = new Date(iso + (iso.length === 7 ? '-01' : ''));
-    var now = new Date();
-    var months = (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth());
-    return Math.max(1, months);
+  function renderActiveGoals(container, goals) {
+    var html = '<div class="goals-grid">';
+    goals.forEach(function(g) { html += renderGoalCard(g, false); });
+    html += renderBotCard();
+    html += '</div>';
+    container.innerHTML = html;
   }
 
-  function fmtNum(n) {
-    n = Math.round(n);
-    return n.toLocaleString('ru-RU');
+  function renderExpiredSingle(container, goals, goalToShow) {
+    var html = expiredBanner() + '<div class="goals-grid">';
+    goals.forEach(function(g) { html += renderGoalCard(g, g.id !== goalToShow.id); });
+    html += '</div>';
+    container.innerHTML = html;
   }
 
-  function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-  function closeAllModals() {
-    ['modalAddGoal','modalDeleteGoal','modalChooseGoal'].forEach(closeModal);
+  function renderExpiredMultiple(container, goals) {
+    var html = expiredBanner() + '<div class="goals-grid">';
+    goals.forEach(function(g) { html += renderGoalCard(g, true); });
+    html += '</div>';
+    container.innerHTML = html;
+    buildChooseModal();
+    openModal('modalChooseGoal');
   }
 
-  function openDeleteModal(goalName) {
-    var body = document.getElementById('modalDeleteBody');
-    body.innerHTML = 'Хочешь удалить цель <strong>«' + escH(goalName) + '»</strong>?<br><br>Удаление целей доступно только через бота в Telegram. Перейди в раздел <strong>«Мои цели»</strong>.';
-    openModal('modalDeleteGoal');
+  // ── Card helpers ─────────────────────────────────────────
+  function expiredBanner() {
+    return '<div class="expired-banner">' +
+      '<div class="expired-text"><strong>У вас закончилась подписка.</strong> Для доступа ко всем целям оплатите подписку.</div>' +
+      '<a href="https://t.me/mercury_finbot" class="btn btn-accent btn-sm" target="_blank" rel="noopener">Оплатить подписку</a>' +
+    '</div>';
   }
-
-  function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function renderGoalCard(g, faded) {
     var target = parseFloat(g.future_value) || parseFloat(g.target_amount) || 0;
@@ -524,10 +562,11 @@
     var monthly = g.monthly_payment ? parseFloat(g.monthly_payment) : Math.max(0, (target - saved) / months);
     var hasInflation = parseFloat(g.inflation_rate) > 0;
     var hasYield = parseFloat(g.yield_rate) > 0;
-    var showBadges = hasInflation || hasYield;
     var badges = '';
     if (hasInflation) badges += '<span class="badge badge-info">+ инфляция</span>';
     if (hasYield) badges += '<span class="badge badge-success">+ доходность</span>';
+    var gId = String(g.id).replace(/'/g,"&#39;");
+    var gName = escH(g.name).replace(/'/g,"&#39;");
 
     return '<div class="goal-card' + (faded ? ' faded' : '') + '">' +
       '<div class="goal-name">' + escH(g.name) + '</div>' +
@@ -539,7 +578,7 @@
         '<div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>' +
         '<div class="goal-sum-row">' +
           '<div class="goal-sum-value">' + fmtNum(target) + ' ₽</div>' +
-          (showBadges ? '<div class="badges-row">' + badges + '</div>' : '') +
+          (badges ? '<div class="badges-row">' + badges + '</div>' : '') +
         '</div>' +
       '</div>' +
       '<div class="goal-monthly-section">' +
@@ -552,8 +591,8 @@
         '<div class="goal-progress-amount">' + fmtNum(saved) + ' ₽ (' + pct + '%)</div>' +
       '</div>' +
       '<div class="card-actions">' +
-        '<button class="btn btn-danger-text btn-sm" onclick="openDeleteModal(\'' + escH(g.name).replace(/'/g,"&#39;") + '\')">Удалить</button>' +
-        '<button class="btn btn-disabled btn-sm" title="Редактирование только через бота">Редактировать</button>' +
+        '<button class="btn btn-danger-text btn-sm" onclick="window.openDeleteGoalModal(\'' + gId + '\',\'' + gName + '\')">Удалить</button>' +
+        '<button class="btn btn-mini-dark btn-sm" onclick="window.open(\'https://t.me/mercury_finbot?start=goals\',\'_blank\')">Редактировать</button>' +
       '</div>' +
     '</div>';
   }
@@ -568,87 +607,13 @@
         '<div class="bot-bubble">Упс! Похоже, у тебя ещё нет установленных финансовых целей. Давай сделаем? 🤗</div>' +
       '</div>' +
       '<div class="bot-card-action">' +
-        '<button class="btn btn-dark btn-sm" onclick="openModal(\'modalAddGoal\')">+ Добавить цель</button>' +
+        '<button class="btn btn-dark btn-sm" onclick="window.openModal(\'modalAddGoal\')">+ Добавить цель</button>' +
       '</div>' +
     '</div>';
   }
 
-  async function loadGoals() {
-    var container = document.getElementById('goalsContainer');
-    container.innerHTML = '<div style="color:#9CA3AF;font-size:14px;">Загрузка...</div>';
-    try {
-      var [meRes, goalsRes] = await Promise.all([
-        fetch('/api/me', { headers: authHeaders() }),
-        fetch('/api/goals', { headers: authHeaders() })
-      ]);
-      if (meRes.status === 401 || goalsRes.status === 401) {
-        window.location.replace('/cabinet/login'); return;
-      }
-      var meData = await meRes.json();
-      var goalsData = await goalsRes.json();
-      var sub = meData.subscription;
-      subStatus = sub ? sub.status : null;
-      allGoals = (goalsData.data || []).filter(function(g) { return g.status === 'active'; });
-      renderGoals(container);
-    } catch(e) {
-      container.innerHTML = '<div style="color:#EF4444;font-size:14px;">Ошибка загрузки данных.</div>';
-      console.error('[goals] load error:', e);
-    }
-  }
-
-  function expiredBanner() {
-    return '<div class="expired-banner">' +
-      '<div class="expired-text"><strong>У вас закончилась подписка.</strong> Для доступа ко всем целям оплатите подписку.</div>' +
-      '<a href="https://t.me/mercury_finbot" class="btn btn-accent btn-sm" target="_blank" rel="noopener">Оплатить подписку</a>' +
-    '</div>';
-  }
-
-  function renderGoals(container) {
-    var isActive = subStatus === 'active' || subStatus === 'trial';
-
-    // Сценарий 1: нет целей — бот-карточка
-    if (allGoals.length === 0) {
-      container.innerHTML = '<div class="goals-grid">' + renderBotCard() + '</div>';
-      return;
-    }
-
-    // Сценарий 2: активная подписка — все цели без ограничений
-    if (isActive) {
-      var gridHtml = '<div class="goals-grid">';
-      allGoals.forEach(function(g) { gridHtml += renderGoalCard(g, false); });
-      gridHtml += renderBotCard();
-      gridHtml += '</div>';
-      container.innerHTML = gridHtml;
-      return;
-    }
-
-    // Сценарий 3: подписка истекла
-    var stored = localStorage.getItem('mercury_chosen_goal');
-
-    if (allGoals.length > 1 && !stored) {
-      // Несколько целей, выбор ещё не сделан — показать модалку
-      // Рендерим все карточки faded как фон под модалкой
-      var gridHtml = '<div class="goals-grid">';
-      allGoals.forEach(function(g) { gridHtml += renderGoalCard(g, true); });
-      gridHtml += '</div>';
-      container.innerHTML = expiredBanner() + gridHtml;
-      buildChooseModal();
-      openModal('modalChooseGoal');
-      return;
-    }
-
-    // Одна цель или выбор уже сделан
-    var goalToShow = allGoals.length === 1
-      ? allGoals[0]
-      : (allGoals.find(function(g) { return String(g.id) === stored; }) || allGoals[0]);
-
-    var gridHtml = '<div class="goals-grid">';
-    allGoals.forEach(function(g) {
-      gridHtml += renderGoalCard(g, g.id !== goalToShow.id);
-    });
-    gridHtml += '</div>';
-    container.innerHTML = expiredBanner() + gridHtml;
-  }
+  // ── Choose goal modal ────────────────────────────────────
+  var chosenGoalId = null;
 
   function buildChooseModal() {
     var list = document.getElementById('chooseGoalList');
@@ -676,28 +641,83 @@
     if (!chosenGoalId) return;
     localStorage.setItem('mercury_chosen_goal', String(chosenGoalId));
     closeModal('modalChooseGoal');
-    var container = document.getElementById('goalsContainer');
-    renderGoals(container);
+    var cont = document.getElementById('goalsContainer');
+    renderPage(cont, allGoals, subStatus);
   }
 
-  // Expose modal functions globally (called from HTML onclick attributes)
-  window.openModal        = function(id) { document.getElementById(id).style.display = 'flex'; };
-  window.closeModal       = function(id) { document.getElementById(id).style.display = 'none'; };
-  window.closeAllModals   = closeAllModals;
-  window.openDeleteModal  = openDeleteModal;
-  window.confirmChooseGoal = confirmChooseGoal;
+  // ── Main load function ───────────────────────────────────
+  var allGoals = [];
+  var subStatus = null;
+  var container = null;
+
+  function renderPage(cont, goals, status) {
+    var isActive = status === 'active' || status === 'trial';
+
+    if (goals.length === 0) {
+      renderNoGoals(cont);
+      return;
+    }
+
+    if (isActive) {
+      renderActiveGoals(cont, goals);
+      return;
+    }
+
+    // Expired
+    var stored = localStorage.getItem('mercury_chosen_goal');
+    if (goals.length > 1 && !stored) {
+      renderExpiredMultiple(cont, goals);
+      return;
+    }
+
+    var goalToShow = goals.length === 1
+      ? goals[0]
+      : (goals.find(function(g) { return String(g.id) === stored; }) || goals[0]);
+    renderExpiredSingle(cont, goals, goalToShow);
+  }
+
+  async function loadPage() {
+    container = document.getElementById('goalsContainer');
+    container.innerHTML = '<div style="color:#9CA3AF;font-size:14px;">Загрузка...</div>';
+    try {
+      var token = getToken();
+      if (!token) { window.location.replace('/cabinet/login'); return; }
+      var [meRes, goalsRes] = await Promise.all([
+        fetch('/api/me', { headers: authHeaders() }),
+        fetch('/api/goals', { headers: authHeaders() })
+      ]);
+      if (meRes.status === 401 || goalsRes.status === 401) {
+        window.location.replace('/cabinet/login'); return;
+      }
+      var meData = await meRes.json();
+      var goalsData = await goalsRes.json();
+      subStatus = meData.subscription ? meData.subscription.status : null;
+      allGoals = (goalsData.data || []).filter(function(g) { return g.status === 'active'; });
+      updateHeader(meData);
+      renderPage(container, allGoals, subStatus);
+    } catch(e) {
+      if (container) container.innerHTML = '<div style="color:#EF4444;font-size:14px;">Ошибка загрузки данных.</div>';
+      console.error('[goals] load error:', e);
+    }
+  }
+
+  // ── Expose globals ───────────────────────────────────────
+  window.openModal           = openModal;
+  window.closeModal          = closeModal;
+  window.closeAllModals      = closeAllModals;
+  window.openDeleteGoalModal = openDeleteGoalModal;
+  window.confirmDeleteGoal   = confirmDeleteGoal;
+  window.confirmChooseGoal   = confirmChooseGoal;
 
   // Close modals on overlay click
-  ['modalAddGoal','modalDeleteGoal','modalChooseGoal'].forEach(function(id) {
+  ['modalAddGoal','modal-delete-goal','modalChooseGoal'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) closeModal(id);
     });
   });
 
-  loadHeader();
-  loadGoals();
-
+  loadPage();
 
   }); // DOMContentLoaded
 </script>
