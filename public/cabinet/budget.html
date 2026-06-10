@@ -209,6 +209,31 @@
       .page-content { padding: 28px 20px 120px; }
     }
     @media (max-width: 768px) {
+      html, body {
+        width: 100%;
+        overflow-x: hidden;
+      }
+      .shell {
+        width: 100%;
+        min-width: 0;
+      }
+      .page-body {
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+      }
+      .page-layout {
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+      }
+      .page-content {
+        width: 100%;
+        min-width: 0;
+        padding: 20px 20px 80px;
+        box-sizing: border-box;
+        overflow: visible;
+      }
       .lk-sidebar { display: none !important; }
       .main-content {
         padding: 28px 20px 120px;
@@ -301,8 +326,6 @@
 
 
 <!-- PAGE -->
-<div class="page-layout">
-
 <div class="page-layout">
 
   <!-- SIDEBAR -->
