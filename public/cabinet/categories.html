@@ -751,120 +751,11 @@
 </div>
 
 
-<script>
+<script type="module">
+  import { initLayout, loadUser, getToken, authHeaders } from './layout.js';
   document.addEventListener('DOMContentLoaded', function() {
-
-  // ── Auth ────────────────────────────────────────────────
-  function getToken() {
-    var raw = localStorage.getItem('mercury_token');
-    if (!raw) return null;
-    try { return raw.startsWith('{') ? JSON.parse(raw).access_token : raw; } catch(e) { return raw; }
-  }
-  function authHeaders() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }; }
-  (function() { if (!getToken()) window.location.replace('/cabinet/login'); })();
-
-  // ── Sidebar toggle ───────────────────────────────────────
-  var sidebar = document.getElementById('lkSidebar');
-  var sbToggle = document.getElementById('sbToggle');
-  var sbIcon = document.getElementById('sbToggleIcon');
-  var IC = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTcuNzUgMTlDMTcuNzUgMTkuMzEzOSAxNy41NTQ2IDE5LjU5NDYgMTcuMjYwMiAxOS43MDM1QzE2Ljk2NTggMTkuODEyMyAxNi42MzQ4IDE5LjcyNjQgMTYuNDMwNiAxOS40ODgxTDEwLjQzMDYgMTIuNDg4MUMxMC4xODk4IDEyLjIwNzMgMTAuMTg5OCAxMS43OTI4IDEwLjQzMDYgMTEuNTExOUwxNi40MzA2IDQuNTExOTRDMTYuNjM0OCA0LjI3MzY0IDE2Ljk2NTggNC4xODc3MyAxNy4yNjAyIDQuMjk2NjJDMTcuNTU0NiA0LjQwNTUxIDE3Ljc1IDQuNjg2MTggMTcuNzUgNS4wMDAwNEwxNy43NSAxOVoiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy40ODgxIDE5LjU2OTVDMTMuODAyNiAxOS4yOTk5IDEzLjgzOSAxOC44MjY0IDEzLjU2OTQgMTguNTExOUw3Ljk4NzgxIDEyTDEzLjU2OTQgNS40ODgxMUMxMy44MzkgNS4xNzM2MSAxMy44MDI2IDQuNzAwMTQgMTMuNDg4MSA0LjQzMDU3QzEzLjE3MzYgNC4xNjEgMTIuNzAwMSA0LjE5NzQzIDEyLjQzMDYgNC41MTE5Mkw2LjQzMDU2IDExLjUxMTlDNi4xODk4MSAxMS43OTI4IDYuMTg5ODEgMTIuMjA3MiA2LjQzMDU2IDEyLjQ4ODFMMTIuNDMwNiAxOS40ODgxQzEyLjcwMDEgMTkuODAyNiAxMy4xNzM2IDE5LjgzOSAxMy40ODgxIDE5LjU2OTVaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=';
-  var IO = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNNi4yNSAxOUM2LjI1IDE5LjMxMzkgNi40NDU0MyAxOS41OTQ2IDYuNzM5NzkgMTkuNzAzNUM3LjAzNDE1IDE5LjgxMjMgNy4zNjUxOSAxOS43MjY0IDcuNTY5NDQgMTkuNDg4MUwxMy41Njk0IDEyLjQ4ODFDMTMuODEwMiAxMi4yMDczIDEzLjgxMDIgMTEuNzkyOCAxMy41Njk0IDExLjUxMTlMNy41Njk0NCA0LjUxMTk0QzcuMzY1MTkgNC4yNzM2NCA3LjAzNDE1IDQuMTg3NzMgNi43Mzk3OSA0LjI5NjYyQzYuNDQ1NDMgNC40MDU1MSA2LjI1IDQuNjg2MTggNi4yNSA1LjAwMDA0TDYuMjUgMTlaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTAuNTExOSAxOS41Njk1QzEwLjE5NzQgMTkuMjk5OSAxMC4xNjEgMTguODI2NCAxMC40MzA2IDE4LjUxMTlMMTYuMDEyMiAxMkwxMC40MzA2IDUuNDg4MTFDMTAuMTYxIDUuMTczNjEgMTAuMTk3NCA0LjcwMDE0IDEwLjUxMTkgNC40MzA1N0MxMC44MjY0IDQuMTYxIDExLjI5OTkgNC4xOTc0MyAxMS41Njk1IDQuNTExOTJMMTcuNTY5NSAxMS41MTE5QzE3LjgxMDIgMTEuNzkyOCAxNy44MTAyIDEyLjIwNzIgMTcuNTY5NSAxMi40ODgxTDExLjU2OTUgMTkuNDg4MUMxMS4yOTk5IDE5LjgwMjYgMTAuODI2NCAxOS44MzkgMTAuNTExOSAxOS41Njk1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K';
-  var collapsed = false;
-  if (sbToggle) sbToggle.addEventListener('click', function() {
-    collapsed = !collapsed;
-    if (sidebar) sidebar.classList.toggle('is-collapsed', collapsed);
-    if (sbIcon) sbIcon.src = collapsed ? IO : IC;
-    if (sbToggle) sbToggle.setAttribute('aria-label', collapsed ? 'Развернуть меню' : 'Свернуть меню');
-  });
-
-  // ── Nav item clicks ─────────────────────────────────────
-  document.querySelectorAll('.lk-sidebar .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(function(el) {
-    el.addEventListener('click', function(e) {
-      var href = this.getAttribute('href');
-      if (!href || href === '#') {
-        e.preventDefault();
-        document.querySelectorAll('.lk-sidebar .nav-item').forEach(function(i) { i.classList.remove('is-active'); });
-        this.classList.add('is-active');
-      }
-    });
-  });
-
-  // ── Mobile drawer ────────────────────────────────────────
-  var burger = document.getElementById('lkBurger');
-  var drawer = document.getElementById('lkDrawer');
-  var drawerOverlay = document.getElementById('lkOverlay');
-  var dClose = document.getElementById('lkDrawerClose');
-  function openDrawer() {
-    if (drawerOverlay) { drawerOverlay.classList.add('is-open'); requestAnimationFrame(function() { drawerOverlay.classList.add('is-visible'); }); }
-    if (drawer) drawer.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-    if (burger) burger.setAttribute('aria-expanded', 'true');
-  }
-  function closeDrawer() {
-    if (drawerOverlay) { drawerOverlay.classList.remove('is-visible'); setTimeout(function() { drawerOverlay.classList.remove('is-open'); }, 250); }
-    if (drawer) drawer.classList.remove('is-open');
-    document.body.style.overflow = '';
-    if (burger) burger.setAttribute('aria-expanded', 'false');
-  }
-  if (burger) burger.addEventListener('click', openDrawer);
-  if (dClose) dClose.addEventListener('click', closeDrawer);
-  if (drawerOverlay) drawerOverlay.addEventListener('click', function(e) { if (e.target === drawerOverlay) closeDrawer(); });
-  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
-  document.querySelectorAll('.lk-drawer .nav-item:not(.is-dis-sub):not(.is-dis-soon)').forEach(function(el) {
-    el.addEventListener('click', function(e) {
-      var href = this.getAttribute('href');
-      if (!href || href === '#') e.preventDefault();
-      setTimeout(closeDrawer, 150);
-    });
-  });
-
-// ── Header ───────────────────────────────────────────────
-  function fmtD(iso) { var d = new Date(iso); return [String(d.getDate()).padStart(2,'0'), String(d.getMonth()+1).padStart(2,'0'), d.getFullYear()].join('-'); }
-  function daysLeft(iso) { return Math.max(0, Math.ceil((new Date(iso) - new Date()) / 86400000)); }
-  function plural(n) { return n%10===1&&n%100!==11 ? 'день' : [2,3,4].includes(n%10)&&![12,13,14].includes(n%100) ? 'дня' : 'дней'; }
-  var hasActiveSub = false;
-
-  async function loadHeader() {
-    var token = getToken();
-    if (!token) { window.location.replace('/cabinet/login'); return; }
-    try {
-      var res = await fetch('/api/me', { headers: authHeaders() });
-      if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
-      var d = await res.json();
-      renderHeader({ username: d.username || d.external_id || 'Пользователь', subscription: d.subscription });
-    } catch(e) {
-      var el = document.getElementById('lkUserInfo');
-      if (el) el.textContent = 'Ошибка загрузки';
-    }
-  }
-
-    function renderHeader({username,subscription}) {
-    const name = username||'Пользователь';
-    let subHtml = '';
-    if (subscription) {
-      const d = fmtDate(subscription.ends_at);
-      const dl = daysLeft(subscription.ends_at);
-      const chip = dl<=30 ? `<span class="lk-badge">${dl} ${plural(dl)}</span>` : '';
-      const lbl = subscription.status==='trial'?`Пробный период до ${d}`:`Подписка до ${d}`;
-      subHtml = `<div class="lk-header__sub"><span class="lk-header__sub-text">${lbl}</span>${chip}</div>`;
-    }
-    const _lkUserInfo = document.getElementById('lkUserInfo');
-    if (_lkUserInfo) _lkUserInfo.innerHTML =
-      `<div class="lk-header__username">Кабинет: <strong>${name}</strong></div>${subHtml}`;
-
-    let drawerSub = '';
-    if (subscription) {
-      const d = fmtDate(subscription.ends_at);
-      const dl = daysLeft(subscription.ends_at);
-      const chip = dl<=30 ? `<span class="lk-badge">${dl} ${plural(dl)}</span>` : '';
-      const lbl = subscription.status==='trial'?`Пробный период до ${d}`:`Подписка до ${d}`;
-      drawerSub = `<div class="lk-drawer__sub"><span class="lk-drawer__sub-text">${lbl}</span>${chip}</div>`;
-    }
-    const _drawerUserInfo = document.getElementById('drawerUserInfo');
-    if (_drawerUserInfo) _drawerUserInfo.innerHTML =
-      `<div class="lk-drawer__name">Кабинет: <strong>${name}</strong></div>${drawerSub}`;
-  }
-
+    initLayout('categories');
+    loadUser();
   // ── Categories ───────────────────────────────────────────
   var allCats = [];
   var filterType = 'all', filterMine = false;
@@ -1127,7 +1018,7 @@
   });
 
   // ── Init ─────────────────────────────────────────────────
-  async function init() { await loadHeader(); await loadCategories(); }
+  async function init() { await loadCategories(); }
   init();
 
   });
