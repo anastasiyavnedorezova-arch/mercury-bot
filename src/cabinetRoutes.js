@@ -191,6 +191,25 @@ router.delete('/api/goals/:id', requireAuth, async (req, res) => {
 });
 
 // ──────────────────────────────────────────
+// GET /api/budget/all — все бюджеты пользователя
+// ──────────────────────────────────────────
+router.get('/api/budget/all', requireAuth, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('budget')
+      .select('month, amount')
+      .eq('user_id', req.userId)
+      .order('month', { ascending: false });
+
+    if (error) throw error;
+    res.json({ data });
+  } catch (err) {
+    console.error('[cabinet] /api/budget/all error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
 // GET /api/budget?month=2026-06
 // ──────────────────────────────────────────
 router.get('/api/budget', requireAuth, async (req, res) => {
