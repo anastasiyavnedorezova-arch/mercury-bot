@@ -118,7 +118,7 @@
       transition: all 200ms ease; padding: 8px 18px; line-height: 20px;
     }
     .btn-sm { padding: 5px 14px; font-size: 13px; }
-    .btn-dark { background: var(--color-brand-main); color: #fff; border-color: var(--color-brand-main); border-radius: var(--radius-sm); }
+    .btn-dark { background: var(--color-brand-main); color: #fff; border-color: var(--color-brand-main); border-radius: 10px; height: 40px; padding: 10px 20px; font-size: 14px; font-weight: 600; }
     .btn-dark:hover { opacity: .88; }
 
     /* ══════ STATUS CHIP ══════ */
@@ -210,17 +210,76 @@
     }
     @media (max-width: 768px) {
       .lk-sidebar { display: none !important; }
-      .lk-logo--desktop { display: none; }
-      .lk-logo--mobile { display: block; }
-      .lk-burger { display: block; }
-      .page-content { padding: 20px 16px 80px; }
-      .page-title { font-size: 24px; line-height: 32px; }
+      .sidebar { display: none !important; }
+      .main-content {
+        padding: 28px 20px 120px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .page-title {
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 32px;
+        text-align: center;
+        margin-bottom: 0;
+        padding-bottom: 12px;
+      }
+      .section-subtitle {
+        font-size: 18px;
+        text-align: center;
+        padding-bottom: 12px;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
       .lk-header { padding: 0 12px; gap: 10px; }
-      .lk-header__actions .btn-hdr--sec { display: none; }
-      .budget-card { width: 100%; }
-      .budget-amount { font-size: 22px; }
-      .budget-table th, .budget-table td { padding: 8px 10px; font-size: 13px; }
-      .section-subtitle { font-size: 16px; }
+      .lk-logo-text { font-size: 14px; }
+      .lk-subscription { font-size: 11px; }
+      .lk-header-actions .btn-secondary { display: none; }
+      .hamburger-btn { display: flex; }
+
+      /* Карточка бюджета */
+      .budget-card {
+        width: 100%;
+        padding: 20px;
+        border-radius: 20px;
+        gap: 12px;
+      }
+      .budget-card-empty-body {
+        padding: 0 24px;
+        align-items: center;
+        gap: 12px;
+      }
+      .budget-card-empty-text {
+        font-size: 16px;
+        text-align: center;
+      }
+      .budget-amount {
+        font-size: 24px;
+      }
+
+      /* Таблица истории — скролл по горизонтали */
+      .budget-table-wrap {
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .budget-table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .budget-table {
+        min-width: 560px;
+      }
+      .budget-table th,
+      .budget-table td {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      .td-month { min-width: 120px; }
+      .td-amount { min-width: 110px; }
+
+      /* Прогресс-бар */
+      .progress-track { height: 16px; }
     }
   </style>
 </head>
@@ -482,7 +541,7 @@
       '<div class="budget-card-header"><span class="budget-card-title">Бюджет</span>' + chip('chip-info', 'Прогноз: —') + '</div>' +
       '<div class="budget-card-empty-body">' + MERCURY_SVG +
       '<p class="budget-card-empty-text">Бюджет на этот месяц<br>ещё не установлен</p>' +
-      '<button class="btn btn-dark btn-sm" onclick="window.openBudgetTg()">Установить бюджет</button>' +
+      '<button class="btn btn-dark" onclick="window.openBudgetTg()">Установить бюджет</button>' +
       '</div></div>';
   }
 
@@ -510,7 +569,7 @@
       '</div>' +
       '<div class="bot-inline"><p class="bot-inline-text">' + botText + '</p></div>' +
       '<div class="budget-card-actions">' +
-        '<button class="btn btn-dark btn-sm" onclick="window.openBudgetTg()">Изменить бюджет</button>' +
+        '<button class="btn btn-dark" onclick="window.openBudgetTg()">Изменить бюджет</button>' +
       '</div>' +
     '</div>';
   }
