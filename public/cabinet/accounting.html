@@ -732,7 +732,7 @@
       var r = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
       if (!r.ok) return;
       var d = await r.json();
-      renderHeader({ username: d.external_id || '', subscription: d.subscription || null });
+      renderHeader({ username: d.username || d.external_id || 'Пользователь', subscription: d.subscription || null });
     } catch(e) { document.getElementById('lkUserInfo').textContent='Ошибка'; }
   }
   function renderHeader(d) {
