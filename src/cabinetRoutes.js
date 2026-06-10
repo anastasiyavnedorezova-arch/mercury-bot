@@ -637,4 +637,23 @@ router.delete('/api/categories/:id', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/api/feedback', requireAuth, async (req, res) => {
+  try {
+    const { email, subject, message } = req.body;
+    if (!email || !message) {
+      return res.status(400).json({ error: 'Email and message are required' });
+    }
+    const fullMessage = `От: ${email}\nТема: ${subject || '—'}\n\n${message}`;
+    const { error } = await supabase.from('feedback').insert({
+      user_id: req.userId,
+      message: fullMessage,
+    });
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] POST /api/feedback error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
