@@ -482,7 +482,7 @@
       '<div class="budget-card-header"><span class="budget-card-title">Бюджет</span>' + chip('chip-info', 'Прогноз: —') + '</div>' +
       '<div class="budget-card-empty-body">' + MERCURY_SVG +
       '<p class="budget-card-empty-text">Бюджет на этот месяц<br>ещё не установлен</p>' +
-      '<button class="btn btn-dark btn-sm" onclick="window.open('https://t.me/mercury_finbot?start=budget','_blank')">Установить бюджет</button>' +
+      '<button class="btn btn-dark btn-sm" onclick="window.openBudgetTg()">Установить бюджет</button>' +
       '</div></div>';
   }
 
@@ -510,7 +510,7 @@
       '</div>' +
       '<div class="bot-inline"><p class="bot-inline-text">' + botText + '</p></div>' +
       '<div class="budget-card-actions">' +
-        '<button class="btn btn-dark btn-sm" onclick="window.open('https://t.me/mercury_finbot?start=budget','_blank')">Изменить бюджет</button>' +
+        '<button class="btn btn-dark btn-sm" onclick="window.openBudgetTg()">Изменить бюджет</button>' +
       '</div>' +
     '</div>';
   }
@@ -604,6 +604,10 @@
       console.error('[budget] load error:', e);
     }
   }
+
+  window.openBudgetTg = function() {
+    window.open('https://t.me/mercury_finbot?start=budget', '_blank');
+  };
 
   loadPage();
 
