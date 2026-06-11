@@ -43,7 +43,7 @@
         @keyframes sh { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     
         /* ══════ LAYOUT ══════ */
-        .page-layout { display: flex; min-height: calc(100vh - 75px); }
+        .page-layout { display: flex; min-height: calc(100vh - 75px); width: 100%; overflow: hidden; }
     
         /* ══════ SIDEBAR ══════ */
         .lk-sidebar {
@@ -283,15 +283,22 @@
         @media (max-width: 768px) {
           .lk-sidebar { display: none !important; }
           .lk-burger { display: flex !important; }
+          .lk-header__actions { display: none !important; }
           .lk-logo--desktop { display: none !important; }
           .lk-logo--mobile { display: block !important; }
-          .lk-header__actions { display: none !important; }
-          .lk-header { padding: 0 12px; gap: 10px; }
-          .page-content, .main-content { padding: 20px 20px 80px !important; }
-          .page-title { font-size: 24px; line-height: 32px; }
-          .feedback-card { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; padding: 20px; border-radius: var(--radius-card); }
-          .submit-btn { width: 100%; }
-          .form-actions { justify-content: stretch; }
+          .page-layout { width: 100%; }
+          .page-content {
+            width: 100% !important;
+            padding: 20px 20px 80px !important;
+            box-sizing: border-box !important;
+          }
+          .feedback-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 20px !important;
+            border-radius: 20px !important;
+          }
         }
   </style>
 </head>
