@@ -113,15 +113,6 @@
     
         /* ══════ CONTENT ══════ */
         .page-content { flex: 1; min-width: 0; padding: 28px 40px 120px; display: flex; flex-direction: column; gap: 20px; }
-        @media (max-width: 768px) {
-          .lk-sidebar { display: none !important; }
-          .lk-burger { display: flex !important; }
-          .page-content { padding: 20px 20px 80px !important; }
-          .feedback-card { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
-          .lk-logo--desktop { display: none !important; }
-          .lk-logo--mobile { display: block !important; }
-          .lk-header__actions { display: none !important; }
-        }
         .page-title { font-size: 32px; font-weight: 600; color: #2D3748; line-height: 40px; padding-bottom: 12px; }
     
         /* ══════ CARD GRID ══════ */
@@ -231,7 +222,7 @@
     
         /* ══════ FEEDBACK FORM ══════ */
         @media (min-width: 769px) {
-          .feedback-card { width: 500px; }
+          .feedback-card { width: 500px; max-width: 100%; }
         }
         .feedback-card {
           background: var(--color-white);
@@ -291,14 +282,14 @@
         }
         @media (max-width: 768px) {
           .lk-sidebar { display: none !important; }
-          .lk-logo--desktop { display: none; }
-          .lk-logo--mobile { display: block; }
           .lk-burger { display: flex !important; }
+          .lk-logo--desktop { display: none !important; }
+          .lk-logo--mobile { display: block !important; }
           .lk-header__actions { display: none !important; }
+          .lk-header { padding: 0 12px; gap: 10px; }
           .page-content, .main-content { padding: 20px 20px 80px !important; }
           .page-title { font-size: 24px; line-height: 32px; }
-          .lk-header { padding: 0 12px; gap: 10px; }
-          .feedback-card { width: 100% !important; box-sizing: border-box !important; padding: 20px; border-radius: var(--radius-card); }
+          .feedback-card { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; padding: 20px; border-radius: var(--radius-card); }
           .submit-btn { width: 100%; }
           .form-actions { justify-content: stretch; }
         }
