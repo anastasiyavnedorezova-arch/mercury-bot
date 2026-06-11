@@ -53,6 +53,15 @@ export function renderHeader({username, subscription}) {
     `<div class="lk-drawer__name">Кабинет: <strong>${name}</strong></div>${drawerSub}`;
 }
 
+// Inject shared responsive logo CSS once
+(function() {
+  if (document.getElementById('lk-layout-css')) return;
+  const s = document.createElement('style');
+  s.id = 'lk-layout-css';
+  s.textContent = '@media (max-width: 768px) { .lk-logo--desktop { display: none !important; } .lk-logo--mobile { display: block !important; } }';
+  document.head.appendChild(s);
+})();
+
 export function initLayout(activeNavItem) {
   if (!getToken()) { window.location.replace('/cabinet/login'); return; }
 
