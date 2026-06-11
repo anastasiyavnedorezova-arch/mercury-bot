@@ -363,7 +363,7 @@
           gap: 8px;
           align-items: center;
         }
-        .active-chips-row.has-chips { display: flex; }
+        .active-chips-row.has-chips { display: flex; margin-bottom: 20px; }
     
         .active-chip {
           display: inline-flex; align-items: center; gap: 2px;
@@ -929,6 +929,9 @@
     if (filterDateRange) { data=data.filter(function(r){var d=new Date(r.transaction_date);return d>=filterDateRange.start&&d<=filterDateRange.end;}); }
     if (filterType!=='all') { data=data.filter(function(r){return r.type===filterType;}); }
     if (filterCats.length>0) { data=data.filter(function(r){return filterCats.indexOf(r.category)>=0;}); }
+    var _hasFilters = filterType !== 'all' || filterCats.length > 0 || filterDateRange !== null;
+    var _lmWrap = document.getElementById('loadMoreWrap');
+    if (_lmWrap) _lmWrap.style.display = _hasFilters ? 'none' : '';
     if (!data.length) { renderHistEmpty(); renderActiveChips(); return; }
     var rows='';
     data.forEach(function(r) {
