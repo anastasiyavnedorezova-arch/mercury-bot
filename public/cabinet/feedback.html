@@ -113,6 +113,15 @@
     
         /* ══════ CONTENT ══════ */
         .page-content { flex: 1; min-width: 0; padding: 28px 40px 120px; display: flex; flex-direction: column; gap: 20px; }
+        @media (max-width: 768px) {
+          .lk-sidebar { display: none !important; }
+          .lk-burger { display: flex !important; }
+          .page-content { padding: 20px 20px 80px !important; }
+          .feedback-card { width: 100% !important; max-width: 100% !important; box-sizing: border-box !important; }
+          .lk-logo--desktop { display: none !important; }
+          .lk-logo--mobile { display: block !important; }
+          .lk-header__actions { display: none !important; }
+        }
         .page-title { font-size: 32px; font-weight: 600; color: #2D3748; line-height: 40px; padding-bottom: 12px; }
     
         /* ══════ CARD GRID ══════ */
