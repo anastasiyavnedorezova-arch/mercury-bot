@@ -221,8 +221,10 @@
         }
     
         /* ══════ FEEDBACK FORM ══════ */
+        @media (min-width: 769px) {
+          .feedback-card { width: 500px; }
+        }
         .feedback-card {
-          width: 500px;
           background: var(--color-white);
           border: 1px solid var(--color-border);
           border-radius: 24px;
@@ -284,11 +286,10 @@
           .lk-logo--mobile { display: block; }
           .lk-burger { display: flex !important; }
           .lk-header__actions { display: none !important; }
-          .page-content { padding: 20px 16px 80px; }
+          .page-content, .main-content { padding: 20px 20px 80px !important; }
           .page-title { font-size: 24px; line-height: 32px; }
           .lk-header { padding: 0 12px; gap: 10px; }
-          .main-content { padding: 20px 20px 80px; }
-          .feedback-card { width: 100%; padding: 20px; border-radius: var(--radius-card); }
+          .feedback-card { width: 100% !important; box-sizing: border-box !important; padding: 20px; border-radius: var(--radius-card); }
           .submit-btn { width: 100%; }
           .form-actions { justify-content: stretch; }
         }
