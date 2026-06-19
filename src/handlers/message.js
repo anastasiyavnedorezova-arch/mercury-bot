@@ -398,16 +398,16 @@ export async function handleMessage(bot, msg) {
   // Жёсткая блокировка: без согласия не обрабатываем ничего
   if (await requireTerms(bot, telegramId, chatId)) return;
 
-  // Обновляем username и активность при каждом сообщении
+  // Обновляем tg_username и активность при каждом сообщении
   const telegramUsername = msg.from?.username || msg.from?.first_name || null;
   if (telegramUsername) {
     supabase
       .from('users')
-      .update({ username: telegramUsername, last_active_at: new Date().toISOString() })
+      .update({ tg_username: telegramUsername, last_active_at: new Date().toISOString() })
       .eq('external_id', String(telegramId))
       .eq('channel', 'telegram')
       .then(() => {})
-      .catch(err => console.error('[username update]', err.message));
+      .catch(err => console.error('[tg_username update]', err.message));
   }
 
   // Сброс зависшего state (старше 30 минут)

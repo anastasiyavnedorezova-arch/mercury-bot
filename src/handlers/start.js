@@ -22,16 +22,16 @@ export async function handleStart(bot, msg) {
     await supabase.from('users').insert({
       external_id: telegramId,
       channel: 'telegram',
-      username,
+      tg_username: username,
     });
     await showConsentScreen(bot, chatId);
     return;
   }
 
-  // Обновляем username и last_active_at при каждом /start
+  // Обновляем tg_username и last_active_at при каждом /start
   await supabase
     .from('users')
-    .update({ username, last_active_at: new Date().toISOString() })
+    .update({ tg_username: username, last_active_at: new Date().toISOString() })
     .eq('external_id', telegramId)
     .eq('channel', 'telegram');
 

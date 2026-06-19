@@ -89,7 +89,7 @@ router.get('/api/me', requireAuth, async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, external_id, channel, created_at, username')
+      .select('id, external_id, channel, created_at, tg_username, web_username, email')
       .eq('id', req.userId)
       .single();
 
@@ -110,7 +110,8 @@ router.get('/api/me', requireAuth, async (req, res) => {
     console.log('[api/me] sub data:', JSON.stringify(sub));
     console.log('[api/me] sub error:', subError?.message);
 
-    res.json({ ...user, subscription: sub ?? null });
+    const username = user.web_username || user.tg_username || user.email || null;
+    res.json({ ...user, username, subscription: sub ?? null });
   } catch (err) {
     console.error('[cabinet] /api/me error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -251,7 +252,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 
     const [userRes, subRes, txRes, goalsRes] = await Promise.all([
-      supabase.from('users').select('id, external_id, username').eq('id', req.userId).single(),
+      supabase.from('users').select('id, external_id, tg_username, web_username').eq('id', req.userId).single(),
       supabase.from('subscriptions')
         .select('status, ends_at')
         .eq('user_id', req.userId)
@@ -349,7 +350,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
 
     res.json({
       user: {
-        name: user.username || user.external_id || 'Пользователь',
+        name: user.web_username || user.tg_username || user.external_id || 'Пользователь',
         subscription_status: sub?.status ?? null,
         subscription_end: sub?.ends_at ?? null,
       },
