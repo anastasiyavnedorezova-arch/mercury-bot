@@ -657,4 +657,143 @@ router.post('/api/feedback', requireAuth, async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────
+// GET /api/profile
+// ──────────────────────────────────────────
+router.get('/api/profile', requireAuth, async (req, res) => {
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, external_id, channel, created_at, tg_username, web_username, email, status')
+      .eq('id', req.userId)
+      .single();
+    if (error || !user) return res.status(404).json({ error: 'User not found' });
+
+    const { data: subs } = await supabase
+      .from('subscriptions')
+      .select('status, starts_at, ends_at, period_months')
+      .eq('user_id', req.userId)
+      .order('ends_at', { ascending: false });
+
+    const now = new Date();
+    const activeSub = (subs || []).find(s =>
+      (s.status === 'trial' || s.status === 'active') && new Date(s.ends_at) > now
+    );
+    const hadTrialBefore = (subs || []).some(s => s.status === 'trial');
+    const lastExpiredSub = !activeSub ? (subs || [])[0] : null;
+
+    res.json({
+      id: user.id,
+      external_id: user.external_id,
+      channel: user.channel,
+      created_at: user.created_at,
+      tg_username: user.tg_username,
+      web_username: user.web_username,
+      email: user.email,
+      username: user.web_username || user.tg_username || user.email || null,
+      subscription: activeSub || null,
+      last_subscription: lastExpiredSub,
+      had_trial_before: hadTrialBefore,
+    });
+  } catch (err) {
+    console.error('[cabinet] /api/profile error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// PUT /api/profile
+// ──────────────────────────────────────────
+router.put('/api/profile', requireAuth, async (req, res) => {
+  try {
+    const { web_username, email } = req.body;
+    const update = {};
+    if (web_username !== undefined) update.web_username = web_username?.trim() || null;
+    if (email !== undefined) {
+      const trimmedEmail = email?.trim() || null;
+      if (trimmedEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedEmail)) {
+          return res.status(400).json({ error: 'Invalid email format' });
+        }
+      }
+      update.email = trimmedEmail;
+    }
+    const { error } = await supabase
+      .from('users')
+      .update(update)
+      .eq('id', req.userId);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] PUT /api/profile error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/profile/activate-trial
+// ──────────────────────────────────────────
+router.post('/api/profile/activate-trial', requireAuth, async (req, res) => {
+  try {
+    const { data: existing } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('user_id', req.userId)
+      .eq('status', 'trial')
+      .limit(1);
+    if (existing?.length) {
+      return res.status(400).json({ error: 'Trial already used' });
+    }
+    const startsAt = new Date();
+    const endsAt = new Date();
+    endsAt.setDate(endsAt.getDate() + 30);
+    const { error } = await supabase.from('subscriptions').insert({
+      user_id: req.userId,
+      status: 'trial',
+      starts_at: startsAt.toISOString(),
+      ends_at: endsAt.toISOString(),
+    });
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] activate-trial error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/profile/disconnect-telegram
+// ──────────────────────────────────────────
+router.post('/api/profile/disconnect-telegram', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ external_id: null, channel: null, tg_username: null })
+      .eq('id', req.userId);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] disconnect-telegram error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// DELETE /api/profile
+// ──────────────────────────────────────────
+router.delete('/api/profile', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({ status: 'deleted', deleted_at: new Date().toISOString() })
+      .eq('id', req.userId);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] DELETE /api/profile error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
