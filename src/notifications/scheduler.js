@@ -7,6 +7,7 @@ import {
   checkSubscriptionEnding,
 } from './index.js';
 import { sendMonthlyAnalytics } from '../handlers/analytics.js';
+import { supabase } from '../db.js';
 
 async function runDailyChecks(bot) {
   console.log('[scheduler] Daily checks started at:',
@@ -49,6 +50,36 @@ export function startScheduler(bot) {
     console.log('[scheduler] Running monthly analytics...');
     runMonthlyAnalytics(bot);
   }, { timezone: 'Europe/Moscow' });
+
+  // Очистка удалённых аккаунтов в 03:00 UTC
+  cron.schedule('0 3 * * *', async () => {
+    console.log('[cleanup] Checking for accounts to purge...');
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const { data: toDelete, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('status', 'deleted')
+        .lt('deleted_at', thirtyDaysAgo.toISOString());
+
+      if (error) throw error;
+      if (!toDelete?.length) {
+        console.log('[cleanup] No accounts to purge.');
+        return;
+      }
+
+      for (const user of toDelete) {
+        await supabase.from('transactions').delete().eq('user_id', user.id);
+        await supabase.from('goals').delete().eq('user_id', user.id);
+        await supabase.from('budget').delete().eq('user_id', user.id);
+        console.log('[cleanup] Purged data for user:', user.id);
+      }
+    } catch (err) {
+      console.error('[cleanup] Error:', err.message);
+    }
+  });
 
   console.log('[scheduler] Started');
 }
