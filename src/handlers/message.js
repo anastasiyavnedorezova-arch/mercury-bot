@@ -38,12 +38,11 @@ const MANUAL_ERROR_KEYBOARD = {
   },
 };
 
-async function getUserId(telegramId) {
+async function getUserId(externalId) {
   const { data } = await supabase
     .from('users')
     .select('id')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
+    .eq('external_id', String(externalId))
     .single();
   return data?.id ?? null;
 }

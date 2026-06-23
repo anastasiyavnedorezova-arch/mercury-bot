@@ -56,12 +56,11 @@ export async function showConsentScreen(bot, chatId) {
   await bot.sendMessage(chatId, CONSENT_TEXT, CONSENT_KEYBOARD);
 }
 
-export async function hasAcceptedTerms(telegramId) {
+export async function hasAcceptedTerms(externalId) {
   const { data } = await supabase
     .from('users')
     .select('terms_accepted_at')
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
+    .eq('external_id', String(externalId))
     .single();
   return !!data?.terms_accepted_at;
 }

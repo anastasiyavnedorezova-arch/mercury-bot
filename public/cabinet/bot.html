@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mercury — Чат с ботом</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Manrope',sans-serif;background:#F5F7FA}
+
+/* ══════ HEADER ══════ */
+.lk-header{position:sticky;top:0;z-index:200;width:100%;background:#fff;border-bottom:1px solid #E2E8F0;padding:12px 20px;display:flex;align-items:center;gap:24px;height:75px}
+.lk-logo{flex-shrink:0;display:block;line-height:0;text-decoration:none}
+.lk-logo--desktop img{height:50px}
+.lk-logo--mobile{display:none}
+.lk-logo--mobile img{height:44px}
+.lk-header__user{flex:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.lk-header__username{font-size:16px;font-weight:400;color:#2D3748;line-height:24px;white-space:nowrap}
+.lk-header__username strong{font-weight:700}
+.lk-header__sub{display:flex;align-items:center;gap:6px}
+.lk-header__sub-text{font-size:12px;font-weight:500;color:#6B7280;white-space:nowrap}
+.lk-badge{display:inline-flex;align-items:center;padding:2px 4px 3px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.06px;white-space:nowrap;background:#EFF6FF;color:#1E40AF}
+.lk-header__actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.btn-hdr{height:40px;padding:10px 20px;border-radius:10px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;line-height:20px;letter-spacing:.14px;cursor:pointer;border:none;white-space:nowrap;display:inline-flex;align-items:center;text-decoration:none;transition:opacity 150ms}
+.btn-hdr:hover{opacity:.88}
+.btn-hdr--sec{background:#fff;color:#2D3748;outline:1px solid #E2E8F0;outline-offset:-1px}
+.btn-hdr--pri{background:#4C9AFF;color:#fff}
+.lk-burger{display:none;background:none;border:none;cursor:pointer;padding:0;flex-shrink:0}
+.lk-skeleton{display:inline-block;height:13px;border-radius:6px;background:linear-gradient(90deg,#E2E8F0 25%,#EEF2F7 50%,#E2E8F0 75%);background-size:200% 100%;animation:sh 1.4s infinite;vertical-align:middle}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ══════ LAYOUT ══════ */
+.page-layout{display:flex;height:calc(100vh - 75px);width:100%;overflow:hidden}
+
+/* ══════ SIDEBAR ══════ */
+.lk-sidebar{width:220px;min-width:220px;background:#fff;border-right:1px solid #E2E8F0;display:flex;flex-direction:column;transition:width 280ms cubic-bezier(.4,0,.2,1),min-width 280ms cubic-bezier(.4,0,.2,1);overflow:hidden;position:sticky;top:75px;height:calc(100vh - 75px);flex-shrink:0}
+.lk-sidebar.is-collapsed{width:56px;min-width:56px}
+.lk-sidebar__nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0}
+.lk-sidebar__nav::-webkit-scrollbar{width:4px}
+.lk-sidebar__nav::-webkit-scrollbar-thumb{background:#E2E8F0;border-radius:4px}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:0 8px;margin:1px 8px;height:40px;border-radius:10px;text-decoration:none;cursor:pointer;border:none;background:none;width:calc(100% - 16px);transition:background 150ms,color 150ms;white-space:nowrap;overflow:hidden}
+.nav-item__icon{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center}
+.nav-item__icon img{width:20px;height:20px;display:block}
+.nav-item__label{font-size:14px;font-weight:500;color:#4B5563;line-height:1.2;flex:1;min-width:0}
+.nav-item__lw{display:flex;flex-direction:column;flex:1;min-width:0}
+.nav-item__name{font-size:14px;font-weight:500;color:#4B5563;line-height:1.3}
+.nav-item__sub{font-size:11px;font-weight:600;color:#EF4444;line-height:1.2;margin-top:1px}
+.nav-item__soon{font-size:11px;font-weight:500;color:#9CA3AF;line-height:1.2;margin-top:1px}
+.nav-item:hover .nav-item__label,.nav-item:hover .nav-item__name{color:#4C9AFF}
+.nav-item:hover .nav-item__icon img{filter:brightness(0) saturate(100%) invert(47%) sepia(98%) saturate(425%) hue-rotate(185deg) brightness(103%) contrast(101%)}
+.nav-item.is-active{background:#EEF4FF}
+.nav-item.is-active .nav-item__label{color:#4C9AFF;font-weight:600}
+.nav-item.is-active .nav-item__icon img{filter:brightness(0) saturate(100%) invert(47%) sepia(98%) saturate(425%) hue-rotate(185deg) brightness(103%) contrast(101%)}
+.nav-item.is-dis-soon{cursor:default;pointer-events:none}
+.nav-item.is-dis-soon .nav-item__name{color:#9CA3AF}
+.nav-divider{height:1px;background:#E2E8F0;margin:6px 16px}
+.nav-text-links{padding:4px 0 8px}
+.nav-text-link{display:block;padding:8px 20px;font-size:13px;font-weight:500;color:#6B7280;text-decoration:none;white-space:nowrap;overflow:hidden;transition:color 150ms}
+.nav-text-link:hover{color:#2D3748}
+.nav-text-link.is-active{color:#4C9AFF;font-weight:600}
+
+.lk-sidebar.is-collapsed .nav-item__label,.lk-sidebar.is-collapsed .nav-item__lw,.lk-sidebar.is-collapsed .nav-item__soon,.lk-sidebar.is-collapsed .nav-item__sub,.lk-sidebar.is-collapsed .nav-text-links{display:none}
+.lk-sidebar.is-collapsed .nav-divider{visibility:hidden;height:0;margin:0}
+.lk-sidebar.is-collapsed .nav-item{margin:2px 0;width:100%;border-radius:0;padding:0;gap:0;justify-content:center}
+.lk-sidebar.is-collapsed .nav-item.is-active{background:#EEF4FF;border-radius:8px;margin:2px 8px;width:calc(100% - 16px)}
+.lk-sidebar__toggle{flex-shrink:0;padding:12px 16px;border-top:1px solid #E2E8F0;display:flex;align-items:center}
+.lk-sidebar.is-collapsed .lk-sidebar__toggle{justify-content:center;padding:12px 0}
+.sidebar-toggle-btn{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;border-radius:6px;transition:background 150ms}
+.sidebar-toggle-btn:hover{background:#EEF4FF}
+.sidebar-toggle-btn img{width:24px;height:24px;display:block}
+
+/* ══════ MOBILE OVERLAY + DRAWER ══════ */
+.lk-overlay{display:none;position:fixed;inset:0;z-index:300;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);opacity:0;transition:opacity 250ms}
+.lk-overlay.is-open{display:block}
+.lk-overlay.is-visible{opacity:1}
+.lk-drawer{position:fixed;top:0;left:0;right:0;bottom:0;z-index:400;background:#fff;display:flex;flex-direction:column;transform:translateY(-100%);transition:transform 300ms cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.lk-drawer.is-open{transform:translateY(0)}
+.lk-drawer__head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #E2E8F0;flex-shrink:0}
+.lk-drawer__info{flex:1;min-width:0}
+.lk-drawer__name{font-size:14px;font-weight:400;color:#2D3748}
+.lk-drawer__name strong{font-weight:700}
+.lk-drawer__sub{display:flex;align-items:center;gap:6px;margin-top:2px}
+.lk-drawer__sub-text{font-size:12px;font-weight:500;color:#6B7280}
+.lk-drawer__close{background:none;border:none;cursor:pointer;padding:4px;display:flex;flex-shrink:0}
+.lk-drawer__nav{flex:1;padding:8px 0}
+.lk-drawer .nav-item{margin:1px 12px;width:calc(100% - 24px);height:44px;padding:0 10px;gap:12px}
+.lk-drawer .nav-item__label,.lk-drawer .nav-item__name{font-size:15px}
+.lk-drawer .nav-divider{margin:6px 20px}
+.lk-drawer .nav-text-link{padding:10px 24px;font-size:14px;display:block}
+.lk-drawer__footer{padding:16px 20px;flex-shrink:0}
+.lk-drawer__btns{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.lk-drawer__btns .btn-hdr{width:100%;border-radius:16px;height:48px;font-size:16px;justify-content:center}
+.lk-drawer__logout{font-size:14px;font-weight:500;color:#9CA3AF;text-align:center;display:block;padding:8px 0;cursor:pointer;background:none;border:none;width:100%;transition:color 150ms;font-family:'Manrope',sans-serif}
+.lk-drawer__logout:hover{color:#EF4444}
+.nav-logout-btn{display:block;width:100%;text-align:left;padding:8px 20px;font-family:'Manrope',sans-serif;font-size:13px;font-weight:500;color:#6B7280;background:none;border:none;cursor:pointer;transition:color 150ms;white-space:nowrap;overflow:hidden}
+.nav-logout-btn:hover{color:#2D3748}
+.lk-sidebar.is-collapsed .nav-logout-btn{display:none}
+
+/* ══════ LOGOUT MODAL ══════ */
+.logout-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(15,23,42,.5);backdrop-filter:blur(2px);align-items:center;justify-content:center}
+.logout-overlay.is-open{display:flex}
+.logout-modal{background:#fff;border-radius:24px;padding:32px 28px 28px;width:100%;max-width:400px;margin:16px;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.16)}
+.logout-modal__close{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;padding:4px;display:flex;border-radius:8px;transition:background 150ms}
+.logout-modal__close:hover{background:#F3F4F6}
+.logout-modal__title{font-size:20px;font-weight:700;color:#1E2A38;margin:0 0 12px}
+.logout-modal__text{font-size:14px;color:#6B7280;line-height:1.5;margin:0 0 24px}
+.logout-modal__actions{display:flex;flex-direction:column;gap:10px}
+.logout-modal__btn{height:48px;border-radius:14px;border:none;font-family:'Manrope',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:opacity 150ms}
+.logout-modal__btn:hover{opacity:.88}
+.logout-modal__btn--dark{background:#1E2A38;color:#fff}
+.logout-modal__btn--sec{background:#F3F4F6;color:#2D3748}
+
+/* ══════ CSS VARS ══════ */
+:root{
+  --color-brand-primary:#4C9AFF;
+  --color-brand-primary-hover:#3B82F6;
+  --color-brand-main:#1E2A38;
+  --color-white:#FFFFFF;
+  --color-bg-main:#F5F7FA;
+  --color-bg-alt:#EEF2F6;
+  --color-border:#E2E8F0;
+  --color-border-hard:#CBD5E1;
+  --color-text-main:#2D3748;
+  --color-text-second:#6B7280;
+  --color-text-disabled:#9CA3AF;
+  --font:'Manrope',sans-serif;
+  --radius-bubble:18px;
+  --radius-cta:10px;
+}
+
+/* ══════ BOT PAGE LAYOUT ══════ */
+.bot-page{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:var(--color-bg-main)}
+.bot-chat-header{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--color-border);background:#fff;flex-shrink:0}
+.bot-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0}
+.bot-name{font-size:16px;font-weight:600;color:var(--color-text-main)}
+.bot-status{font-size:12px;font-weight:500;color:#22C55E}
+
+/* ══════ CHAT AREA ══════ */
+.chat-area{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px;display:flex;flex-direction:column;gap:0;scroll-behavior:smooth;background:var(--color-bg-main)}
+.chat-area::-webkit-scrollbar{width:4px}
+.chat-area::-webkit-scrollbar-thumb{background:var(--color-border);border-radius:4px}
+
+/* ══════ BUBBLES ══════ */
+.bubble-wrap{display:flex;flex-direction:column;margin-bottom:10px}
+.bubble-wrap.from-bot{align-items:flex-start}
+.bubble-wrap.from-user{align-items:flex-end}
+.bubble{position:relative;padding:8px 14px;border-radius:var(--radius-bubble);font-size:14px;font-weight:400;line-height:20px;max-width:85%;word-break:break-word;white-space:pre-wrap}
+.bubble.bot{background:var(--color-bg-alt);color:var(--color-text-main);border-bottom-left-radius:4px}
+.bubble.user{background:var(--color-brand-primary);color:#fff;border-bottom-right-radius:4px}
+.bubble.bot::before{content:'';position:absolute;left:-8px;bottom:6px;width:0;height:0;border-top:10px solid transparent;border-right:10px solid var(--color-bg-alt);border-bottom:0 solid transparent}
+.bubble.user::before{content:'';position:absolute;right:-8px;bottom:6px;width:0;height:0;border-top:10px solid transparent;border-left:10px solid var(--color-brand-primary);border-bottom:0 solid transparent}
+
+/* ══════ CTA BUTTONS ══════ */
+.cta-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;padding-left:0}
+.cta-btn{height:40px;padding:10px 16px;background:var(--color-white);border:1px solid var(--color-border);border-radius:var(--radius-cta);font-family:var(--font);font-size:14px;font-weight:600;line-height:20px;color:var(--color-text-main);cursor:pointer;white-space:nowrap;transition:background 150ms,border-color 150ms}
+.cta-btn:hover{background:var(--color-bg-alt);border-color:var(--color-border-hard)}
+.cta-btn:active{transform:scale(.98)}
+
+/* ══════ INPUT BAR ══════ */
+.input-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;flex-shrink:0;border-top:1px solid var(--color-border);background:#fff}
+.chat-input{flex:1;padding:10px 14px;background:#fff;border:1px solid var(--color-border-hard);border-radius:12px;font-family:var(--font);font-size:16px;font-weight:400;line-height:24px;color:var(--color-text-main);outline:none;transition:border-color 200ms,box-shadow 200ms;resize:none}
+.chat-input::placeholder{color:var(--color-text-disabled)}
+.chat-input:focus{border-color:var(--color-brand-primary);box-shadow:0 0 0 3px rgba(76,154,255,.15)}
+.send-btn{width:44px;height:44px;border-radius:50%;background:var(--color-brand-primary);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;flex-shrink:0;transition:background 150ms}
+.send-btn:hover{background:var(--color-brand-primary-hover)}
+.send-btn:disabled{background:var(--color-bg-alt);cursor:default}
+.send-btn svg{display:block}
+
+/* ══════ TYPING INDICATOR ══════ */
+.typing-wrap{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:10px}
+.typing-indicator{display:flex;align-items:center;gap:4px;padding:10px 14px;background:var(--color-bg-alt);border-radius:18px;border-bottom-left-radius:4px;width:fit-content}
+.typing-dot{width:7px;height:7px;border-radius:50%;background:var(--color-text-second);animation:blink 1.2s ease-in-out infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* ══════ RESPONSIVE ══════ */
+@media (max-width: 768px){
+  .lk-sidebar{display:none !important}
+  .lk-burger{display:flex !important}
+  .lk-header__actions{display:none !important}
+  .lk-logo--desktop{display:none !important}
+  .lk-logo--mobile{display:block !important}
+  .page-layout{width:100%}
+  .bot-page{height:calc(100vh - 75px)}
+  .chat-input{font-size:16px}
+}
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="lk-header" id="lkHeader">
+  <a href="/" class="lk-logo lk-logo--desktop" aria-label="Mercury">
+    <img src="/images/logo-mercury-main.svg" alt="Mercury" height="50"/>
+  </a>
+  <a href="/" class="lk-logo lk-logo--mobile" aria-label="Mercury">
+    <img src="/images/logo-mercury-main.svg" alt="Mercury" height="44"/>
+  </a>
+
+  <div class="lk-header__user" id="lkUserInfo">
+    <div class="lk-header__username">Кабинет: <span class="lk-skeleton" style="width:80px;"></span></div>
+  </div>
+
+  <div class="lk-header__actions">
+    <a href="https://t.me/mercury_finbot" class="btn-hdr btn-hdr--sec" target="_blank" rel="noopener">Открыть в Telegram</a>
+    <a href="https://t.me/mercury_finbot" class="btn-hdr btn-hdr--pri" target="_blank" rel="noopener">Запустить бота</a>
+  </div>
+  <button class="lk-burger" id="lkBurger" aria-label="Открыть меню" aria-expanded="false">
+    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzYiIGhlaWdodD0iMzYiIHZpZXdCb3g9IjAgMCAzNiAzNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTkgMTJIMjdNOSAxOEgyN005IDI0SDI3IiBzdHJva2U9IiMyRDM3NDgiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=" alt="" width="36" height="36"/>
+  </button>
+</header>
+
+<!-- PAGE -->
+<div class="page-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="lk-sidebar" id="lkSidebar">
+    <nav class="lk-sidebar__nav">
+      <a href="/cabinet/bot" class="nav-item"><span class="nav-item__icon"><img src="/images/bot-face.svg" alt=""/></span><span class="nav-item__label">Чат с ботом</span></a>
+      <a href="/cabinet/dashboard" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMS42NjY2MyA1LjE3NTUyQzEuNjY2NjMgMy41MjE0NyAxLjY2NjYzIDIuNjk0NDQgMi4yMTU4IDIuMTgwNkMyLjc2NDk4IDEuNjY2NzUgMy42NDg4NiAxLjY2Njc1IDUuNDE2NjMgMS42NjY3NUM3LjE4NDM5IDEuNjY2NzUgOC4wNjgyOCAxLjY2Njc1IDguNjE3NDUgMi4xODA2QzkuMTY2NjMgMi42OTQ0NCA5LjE2NjYzIDMuNTIxNDcgOS4xNjY2MyA1LjE3NTUyVjE0LjgyNDZDOS4xNjY2MyAxNi40Nzg3IDkuMTY2NjMgMTcuMzA1NyA4LjYxNzQ1IDE3LjgxOTZDOC4wNjgyOCAxOC4zMzM0IDcuMTg0MzkgMTguMzMzNCA1LjQxNjYzIDE4LjMzMzRDMy42NDg4NiAxOC4zMzM0IDIuNzY0OTggMTguMzMzNCAyLjIxNTggMTcuODE5NkMxLjY2NjYzIDE3LjMwNTcgMS42NjY2MyAxNi40Nzg3IDEuNjY2NjMgMTQuODI0NlY1LjE3NTUyWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNMTAuODMzNCAxMi44MzM0QzEwLjgzMzQgMTEuMTA0OSAxMC44MzM0IDEwLjI0MDcgMTEuMzgyNSA5LjcwMzcyQzExLjkzMTcgOS4xNjY3NSAxMi44MTU2IDkuMTY2NzUgMTQuNTgzNCA5LjE2Njc1QzE2LjM1MTEgOS4xNjY3NSAxNy4yMzUgOS4xNjY3NSAxNy43ODQyIDkuNzAzNzJDMTguMzMzNCAxMC4yNDA3IDE4LjMzMzQgMTEuMTA0OSAxOC4zMzM0IDEyLjgzMzRWMTQuNjY2N0MxOC4zMzM0IDE2LjM5NTIgMTguMzMzNCAxNy4yNTk1IDE3Ljc4NDIgMTcuNzk2NEMxNy4yMzUgMTguMzMzNCAxNi4zNTExIDE4LjMzMzQgMTQuNTgzNCAxOC4zMzM0QzEyLjgxNTYgMTguMzMzNCAxMS45MzE3IDE4LjMzMzQgMTEuMzgyNSAxNy43OTY0QzEwLjgzMzQgMTcuMjU5NSAxMC44MzM0IDE2LjM5NTIgMTAuODMzNCAxNC42NjY3VjEyLjgzMzRaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik0xMC44MzM0IDQuNTgzNDFDMTAuODMzNCAzLjY3NzQyIDEwLjgzMzQgMy4yMjQ0MiAxMC45NzYxIDIuODY3MDlDMTEuMTY2NCAyLjM5MDY0IDExLjUzMTQgMi4wMTIxMSAxMS45OTA4IDEuODE0NzZDMTIuMzM1NCAxLjY2Njc1IDEyLjc3MjIgMS42NjY3NSAxMy42NDU5IDEuNjY2NzVIMTUuNTIwOUMxNi4zOTQ1IDEuNjY2NzUgMTYuODMxMyAxLjY2Njc1IDE3LjE3NTkgMS44MTQ3NkMxNy42MzUzIDIuMDEyMTEgMTguMDAwMyAyLjM5MDY0IDE4LjE5MDYgMi44NjcwOUMxOC4zMzM0IDMuMjI0NDIgMTguMzMzNCAzLjY3NzQyIDE4LjMzMzQgNC41ODM0MUMxOC4zMzM0IDUuNDg5NDEgMTguMzMzNCA1Ljk0MjQxIDE4LjE5MDYgNi4yOTk3NEMxOC4wMDAzIDYuNzc2MTkgMTcuNjM1MyA3LjE1NDcyIDE3LjE3NTkgNy4zNTIwN0MxNi44MzEzIDcuNTAwMDggMTYuMzk0NSA3LjUwMDA4IDE1LjUyMDkgNy41MDAwOEgxMy42NDU5QzEyLjc3MjIgNy41MDAwOCAxMi4zMzU0IDcuNTAwMDggMTEuOTkwOCA3LjM1MjA3QzExLjUzMTQgNy4xNTQ3MiAxMS4xNjY0IDYuNzc2MTkgMTAuOTc2MSA2LjI5OTc0QzEwLjgzMzQgNS45NDI0MSAxMC44MzM0IDUuNDg5NDEgMTAuODMzNCA0LjU4MzQxWiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Дашборд</span></a>
+      <a href="/cabinet/accounting" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS42NjY3IDE3LjA4MzRWMy41NDE3NUMxMS42NjY3IDIuOTM0ODIgMTEuNjY1NCAyLjU0MjUgMTEuNjI2NiAyLjI1MzQ0QzExLjU5MDEgMS45ODIzNSAxMS41MzEzIDEuODk3MzggMTEuNDgzNyAxLjg0OTgxQzExLjQzNjEgMS44MDIyMyAxMS4zNTExIDEuNzQzMzkgMTEuMDgwMSAxLjcwNjk0QzEwLjc5MSAxLjY2ODA4IDEwLjM5ODcgMS42NjY3NSA5Ljc5MTc1IDEuNjY2NzVDOS4xODQ4MiAxLjY2Njc1IDguNzkyNSAxLjY2ODA4IDguNTAzNDQgMS43MDY5NEM4LjIzMjM1IDEuNzQzMzkgOC4xNDczOCAxLjgwMjIzIDguMDk5ODEgMS44NDk4MUM4LjA1MjIzIDEuODk3MzggNy45OTMzOSAxLjk4MjM1IDcuOTU2OTQgMi4yNTM0NEM3LjkxODA3IDIuNTQyNSA3LjkxNjc1IDIuOTM0ODIgNy45MTY3NSAzLjU0MTc1VjE3LjA4MzRIMTEuNjY2N1oiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggb3BhY2l0eT0iMC43IiBkPSJNNi42NjY3NSA3LjI5MTc1QzYuNjY2NzUgNi45NDY1NyA2LjM4NjkzIDYuNjY2NzUgNi4wNDE3NSA2LjY2Njc1SDMuNTQxNzVDMy4xOTY1NyA2LjY2Njc1IDIuOTE2NzUgNi45NDY1NyAyLjkxNjc1IDcuMjkxNzVWMTcuMDgzNEg2LjY2Njc1VjcuMjkxNzVaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIG9wYWNpdHk9IjAuNyIgZD0iTTE2LjY2NjcgMTEuNDU4M0MxNi42NjY3IDExLjExMzEgMTYuMzg2OSAxMC44MzMzIDE2LjA0MTcgMTAuODMzM0gxMy41NDE3QzEzLjE5NjYgMTAuODMzMyAxMi45MTY3IDExLjExMzEgMTIuOTE2NyAxMS40NTgzVjE3LjA4MzNIMTYuNjY2N1YxMS40NTgzWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBvcGFjaXR5PSIwLjUiIGQ9Ik0xLjQ1ODI1IDE3LjA4MzNDMS4xMTMwNyAxNy4wODMzIDAuODMzMjUyIDE3LjM2MzEgMC44MzMyNTIgMTcuNzA4M0MwLjgzMzI1MiAxOC4wNTM0IDEuMTEzMDcgMTguMzMzMyAxLjQ1ODI1IDE4LjMzMzNIMTguMTI0OUMxOC40NzAxIDE4LjMzMzMgMTguNzQ5OSAxOC4wNTM0IDE4Ljc0OTkgMTcuNzA4M0MxOC43NDk5IDE3LjM2MzEgMTguNDcwMSAxNy4wODMzIDE4LjEyNDkgMTcuMDgzM0gxNy45MTY2SDE2LjY2NjZIMTIuOTE2NkgxMS42NjY2SDcuOTE2NThINi42NjY1OEgyLjkxNjU5SDEuNjY2NTlIMS40NTgyNVoiIGZpbGw9IiNDQkQ1RTEiLz4KPC9zdmc+Cg==" alt=""/></span><span class="nav-item__label">Учет по месяцам</span></a>
+      <a href="/cabinet/history" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgb3BhY2l0eT0iMC41Ij4KPHBhdGggZD0iTTE4LjMzMyAxMC42ODEyTDE3Ljk5MjYgMTAuMzQwOEMxNy4yNjAzIDkuNjA4NTMgMTYuMDczMiA5LjYwODUzIDE1LjM0MDkgMTAuMzQwOEwxNC42NzMxIDExLjAwODZDMTQuNDA2NiAxMC4yOTc2IDEzLjcyMDggOS43OTE1OSAxMi45MTY3IDkuNzkxNTlDMTEuODgxMiA5Ljc5MTU5IDExLjA0MTcgMTAuNjMxMSAxMS4wNDE3IDExLjY2NjZWMTMuMTM2NUMxMC42MzM1IDEzLjE4MTggMTAuMjM3MyAxMy4zNjEgOS45MjQyNiAxMy42NzQxQzkuMTkyMDIgMTQuNDA2MyA5LjE5MjAyIDE1LjU5MzUgOS45MjQyNiAxNi4zMjU3TDEwLjI2NTEgMTYuNjY2Nkg4LjMzMzQxQzUuMTkwNzIgMTYuNjY2NiAzLjYxOTM3IDE2LjY2NjYgMi42NDMwNiAxNS42OTAzQzEuNjY2NzUgMTQuNzE0IDEuNjY2NzUgMTMuMTQyNiAxLjY2Njc1IDkuOTk5OTJDMS42NjY3NSA5LjYzMTY0IDEuNjY4MzIgOC42NTk5NCAxLjY2OTg5IDguMzMzMjVIMTguMzMzNEMxOC4zMzUgOC42NTk5NCAxOC4zMzM0IDkuNjMxNjQgMTguMzMzNCA5Ljk5OTkyQzE4LjMzMzQgMTAuMjM1NyAxOC4zMzM0IDEwLjQ2MjcgMTguMzMzIDEwLjY4MTJaIiBmaWxsPSIjQ0JENUUxIi8+PC9nPgo8cGF0aCBkPSJNNC4zNzUgMTMuMzMzM0M0LjM3NSAxMi45ODgxIDQuNjU0ODIgMTIuNzA4MyA1IDEyLjcwODNIOC4zMzMzM0M4LjY3ODUxIDEyLjcwODMgOC45NTgzMyAxMi45ODgxIDguOTU4MzMgMTMuMzMzM0M4Ljk1ODMzIDEzLjY3ODQgOC42Nzg1MSAxMy45NTgzIDguMzMzMzMgMTMuOTU4M0g1QzQuNjU0ODIgMTMuOTU4MyA0LjM3NSAxMy42Nzg0IDQuMzc1IDEzLjMzMzNaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik04LjMyOTEyIDMuMzMzMjVIMTEuNjcxQzE0LjgyMTggMy4zMzMyNSAxNi4zOTcyIDMuMzMzMjUgMTcuMzc2MSA0LjI2MzA3QzE4LjA4MDggNC45MzI1NSAxOC4yNzgyIDUuODk1ODEgMTguMzMzNCA3LjQ5OTkyVjguMzMzMjVIMS42NjY3NVY3LjQ5OTkyQzEuNzIyIDUuODk1ODEgMS45MTkzMyA0LjkzMjU1IDIuNjI0MDkgNC4yNjMwN0MzLjYwMjkyIDMuMzMzMjUgNS4xNzgzMiAzLjMzMzI1IDguMzI5MTIgMy4zMzMyNVoiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZD0iTTE2LjIyNDcgMTEuMjI0OEMxNi40Njg4IDEwLjk4MDcgMTYuODY0NSAxMC45ODA3IDE3LjEwODYgMTEuMjI0OEwxOC43NzUzIDEyLjg5MTVDMTkuMDE5NCAxMy4xMzU1IDE5LjAxOTQgMTMuNTMxMyAxOC43NzUzIDEzLjc3NTRDMTguNTMxMiAxNC4wMTk0IDE4LjEzNTUgMTQuMDE5NCAxNy44OTE0IDEzLjc3NTRMMTcuMjkxNyAxMy4xNzU2VjE2LjY2NjdDMTcuMjkxNyAxNy4wMTE5IDE3LjAxMTggMTcuMjkxNyAxNi42NjY3IDE3LjI5MTdDMTYuMzIxNSAxNy4yOTE3IDE2LjA0MTcgMTcuMDExOSAxNi4wNDE3IDE2LjY2NjdWMTMuMTc1NkwxNS40NDE5IDEzLjc3NTRDMTUuMTk3OSAxNC4wMTk0IDE0LjgwMjEgMTQuMDE5NCAxNC41NTgxIDEzLjc3NTRDMTQuMzE0IDEzLjUzMTMgMTQuMzE0IDEzLjEzNTUgMTQuNTU4MSAxMi44OTE1TDE2LjIyNDcgMTEuMjI0OFoiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMi45MTY3IDExLjA0MTdDMTMuMjYxOCAxMS4wNDE3IDEzLjU0MTcgMTEuMzIxNiAxMy41NDE3IDExLjY2NjdWMTUuMTU3OUwxNC4xNDE0IDE0LjU1ODFDMTQuMzg1NSAxNC4zMTQxIDE0Ljc4MTIgMTQuMzE0MSAxNS4wMjUzIDE0LjU1ODFDMTUuMjY5NCAxNC44MDIyIDE1LjI2OTQgMTUuMTk3OSAxNS4wMjUzIDE1LjQ0MkwxMy4zNTg2IDE3LjEwODdDMTMuMTE0NSAxNy4zNTI4IDEyLjcxODggMTcuMzUyOCAxMi40NzQ3IDE3LjEwODdMMTAuODA4MSAxNS40NDJDMTAuNTY0IDE1LjE5NzkgMTAuNTY0IDE0LjgwMjIgMTAuODA4MSAxNC41NTgxQzExLjA1MjEgMTQuMzE0MSAxMS40NDc5IDE0LjMxNDEgMTEuNjkxOSAxNC41NTgxTDEyLjI5MTcgMTUuMTU3OVYxMS42NjY3QzEyLjI5MTcgMTEuMzIxNiAxMi41NzE1IDExLjA0MTcgMTIuOTE2NyAxMS4wNDE3WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">История транзакций</span></a>
+      <a href="/cabinet/categories" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMy40MDI0MSA5LjkxMTgxQzMuNzY4MTcgNy45NjEwOCAzLjk1MTA2IDYuOTg1NzEgNC42NDUzNyA2LjQwOTQ4QzUuMzM5NjggNS44MzMyNSA2LjMzMjA0IDUuODMzMjUgOC4zMTY3NyA1LjgzMzI1SDExLjY4NDJDMTMuNjY4OSA1LjgzMzI1IDE0LjY2MTMgNS44MzMyNSAxNS4zNTU2IDYuNDA5NDhDMTYuMDQ5OSA2Ljk4NTcxIDE2LjIzMjggNy45NjEwNyAxNi41OTg1IDkuOTExODFMMTcuMjIzNSAxMy4yNDUxQzE3LjczNzkgMTUuOTg4MiAxNy45OTUgMTcuMzU5OCAxNy4yNDUzIDE4LjI2MzJDMTYuNDk1NSAxOS4xNjY2IDE1LjEwMDEgMTkuMTY2NiAxMi4zMDkyIDE5LjE2NjZINy42OTE3N0M0LjkwMDg5IDE5LjE2NjYgMy41MDU0NSAxOS4xNjY2IDIuNzU1NjggMTguMjYzMkMyLjAwNTkyIDE3LjM1OTggMi4yNjMwOCAxNS45ODgyIDIuNzc3NDEgMTMuMjQ1MUwzLjQwMjQxIDkuOTExODFaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik04LjEyNSA0Ljk4NzUzQzguMTI1IDMuOTUyIDguOTY0NDcgMy4xMTI1MyAxMCAzLjExMjUzQzExLjAzNTUgMy4xMTI1MyAxMS44NzUgMy45NTIgMTEuODc1IDQuOTg3NTNWNS44MjA4N0MxMi4zNDY3IDUuODIxMDIgMTIuNzU5OSA1LjgyMjMyIDEzLjEyNDkgNS44MzMyN0MxMy4xMjUgNS44MjkxNSAxMy4xMjUgNS44MjUwMSAxMy4xMjUgNS44MjA4N1Y0Ljk4NzUzQzEzLjEyNSAzLjI2MTY1IDExLjcyNTkgMS44NjI1MyAxMCAxLjg2MjUzQzguMjc0MTEgMS44NjI1MyA2Ljg3NSAzLjI2MTY1IDYuODc1IDQuOTg3NTNWNS44MjA4N0M2Ljg3NSA1LjgyNTAyIDYuODc1MDQgNS44MjkxNiA2Ljg3NTEyIDUuODMzMjlDNy4yNDAxMSA1LjgyMjMzIDcuNjUzMzEgNS44MjEwNCA4LjEyNSA1LjgyMDg5VjQuOTg3NTNaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik04LjIzMTc4IDEzLjEyNDlDOC40ODk0NyAxMy44NTQgOS4xODQ4NCAxNC4zNzQ4IDEwLjAwMDIgMTQuMzc0OEMxMC44MTU3IDE0LjM3NDggMTEuNTExIDEzLjg1NCAxMS43Njg3IDEzLjEyNDlDMTEuODgzNyAxMi43OTk1IDEyLjI0MDggMTIuNjI4OSAxMi41NjYzIDEyLjc0MzlDMTIuODkxNyAxMi44NTg5IDEzLjA2MjMgMTMuMjE2IDEyLjk0NzMgMTMuNTQxNUMxMi41MTg2IDE0Ljc1NDQgMTEuMzYxOSAxNS42MjQ4IDEwLjAwMDIgMTUuNjI0OEM4LjYzODYzIDE1LjYyNDggNy40ODE5MyAxNC43NTQ0IDcuMDUzMjMgMTMuNTQxNUM2LjkzODIgMTMuMjE2IDcuMTA4NzggMTIuODU4OSA3LjQzNDIzIDEyLjc0MzlDNy43NTk2NyAxMi42Mjg5IDguMTE2NzUgMTIuNzk5NSA4LjIzMTc4IDEzLjEyNDlaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=" alt=""/></span><span class="nav-item__label">Категории</span></a>
+      <a href="/cabinet/goals" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTYuNDMwNCAxNi45Njg2QzE3LjYxOTIgMTYuMzIwNCAxOC4zMzMzIDE1LjQ4OTMgMTguMzMzMyAxNC41ODMzQzE4LjMzMzMgMTMuNjIyOCAxNy41MzA5IDEyLjc0NjcgMTYuMjExNCAxMi4wODMzQzE0LjY4NTUgMTEuMzE2MSAxMi40NjggMTAuODMzMyA5Ljk5OTk2IDEwLjgzMzNDNy41MzE5IDEwLjgzMzMgNS4zMTQ0NCAxMS4zMTYxIDMuNzg4NTUgMTIuMDgzM0MyLjQ2OSAxMi43NDY3IDEuNjY2NjMgMTMuNjIyOCAxLjY2NjYzIDE0LjU4MzNDMS42NjY2MyAxNS41NDM3IDIuNDY5IDE2LjQxOTggMy43ODg1NSAxNy4wODMzQzUuMzE0NDQgMTcuODUwNCA3LjUzMTkgMTguMzMzMyA5Ljk5OTk2IDE4LjMzMzNDMTIuNTg4OCAxOC4zMzMzIDE0LjkwMTkgMTcuODAyIDE2LjQzMDQgMTYuOTY4NloiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00LjE2NjYzIDcuMDk1NjFDNC4xNjY2MyA0LjA5NzMzIDYuNzc4MyAxLjY2Njc1IDkuOTk5OTYgMS42NjY3NUMxMy4yMjE2IDEuNjY2NzUgMTUuODMzMyA0LjA5NzMzIDE1LjgzMzMgNy4wOTU2MUMxNS44MzMzIDEwLjA3MDQgMTMuOTcxNSAxMy41NDE3IDExLjA2NjcgMTQuNzgzQzEwLjM4OTUgMTUuMDcyNCA5LjYxMDQgMTUuMDcyNCA4LjkzMzI0IDE0Ljc4M0M2LjAyODQyIDEzLjU0MTcgNC4xNjY2MyAxMC4wNzA0IDQuMTY2NjMgNy4wOTU2MVpNOS45OTk5NiA5LjE2Njc1QzEwLjkyMDQgOS4xNjY3NSAxMS42NjY2IDguNDIwNTYgMTEuNjY2NiA3LjUwMDA4QzExLjY2NjYgNi41Nzk2MSAxMC45MjA0IDUuODMzNDEgOS45OTk5NiA1LjgzMzQxQzkuMDc5NDggNS44MzM0MSA4LjMzMzI5IDYuNTc5NjEgOC4zMzMyOSA3LjUwMDA4QzguMzMzMjkgOC40MjA1NiA5LjA3OTQ4IDkuMTY2NzUgOS45OTk5NiA5LjE2Njc1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Мои цели</span></a>
+      <a href="/cabinet/budget" class="nav-item"><span class="nav-item__icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.07642 8.01193C4.07642 7.67661 4.34612 7.40479 4.67883 7.40479H7.89168C8.22438 7.40479 8.49409 7.67661 8.49409 8.01193C8.49409 8.34724 8.22438 8.61907 7.89168 8.61907H4.67883C4.34612 8.61907 4.07642 8.34724 4.07642 8.01193Z" fill="#CBD5E1"/><path fill-rule="evenodd" clip-rule="evenodd" d="M17.6571 8.33639C17.6052 8.33321 17.5487 8.33323 17.4902 8.33326L17.4756 8.33326H15.1792C13.2864 8.33326 11.6667 9.77997 11.6667 11.6666C11.6667 13.5532 13.2864 14.9999 15.1792 14.9999H17.4756L17.4902 14.9999C17.5487 14.9999 17.6052 15 17.6571 14.9968C18.4259 14.9496 19.1059 14.3654 19.1631 13.5494C19.1668 13.4959 19.1668 13.4383 19.1667 13.3848L19.1667 13.3703V9.96289L19.1667 9.94838C19.1668 9.89492 19.1668 9.83724 19.1631 9.78373C19.1059 8.96774 18.4259 8.38353 17.6571 8.33639ZM14.9756 12.5555C15.4629 12.5555 15.8579 12.1575 15.8579 11.6666C15.8579 11.1757 15.4629 10.7777 14.9756 10.7777C14.4883 10.7777 14.0932 11.1757 14.0932 11.6666C14.0932 12.1575 14.4883 12.5555 14.9756 12.5555Z" fill="#CBD5E1"/><path opacity="0.5" d="M17.6163 8.33468C17.6162 7.35084 17.5805 6.29547 16.9516 5.5389C16.8908 5.46586 16.8262 5.39495 16.7574 5.32612C16.1337 4.70248 15.343 4.42572 14.3659 4.29436C13.4166 4.16673 12.2036 4.16674 10.6721 4.16675H8.9114C7.37994 4.16674 6.1669 4.16673 5.21756 4.29436C4.24054 4.42572 3.44975 4.70248 2.82612 5.32612C2.20248 5.94975 1.92572 6.74055 1.79436 7.71756C1.66673 8.66691 1.66674 9.87993 1.66675 11.4114V11.5054C1.66674 13.0369 1.66673 14.2499 1.79436 15.1993C1.92572 16.1763 2.20248 16.9671 2.82612 17.5907C3.44975 18.2143 4.24054 18.4911 5.21756 18.6225C6.1669 18.7501 7.37992 18.7501 8.91137 18.7501H10.6721C12.2035 18.7501 13.4166 18.7501 14.3659 18.6225C15.343 18.4911 16.1337 18.2143 16.7574 17.5907C16.9278 17.4203 17.0725 17.2371 17.1956 17.0406C17.571 16.441 17.6163 15.7062 17.6163 14.9988C17.5761 15.0001 17.5337 15.0001 17.4902 15.0001L15.1792 15.0001C13.2864 15.0001 11.6667 13.5534 11.6667 11.6667C11.6667 9.78014 13.2864 8.33342 15.1792 8.33342L17.4902 8.33342C17.5337 8.3334 17.5761 8.33339 17.6163 8.33468Z" fill="#CBD5E1"/><path d="M8.41778 2.14351L6.66657 3.32719L5.22217 4.29372C6.1708 4.16673 7.38233 4.16674 8.91122 4.16675H10.6719C12.2034 4.16674 13.4164 4.16673 14.3658 4.29436C14.5567 4.32004 14.7406 4.35126 14.9174 4.38955L13.3332 3.33341L11.5728 2.14351C10.6323 1.50783 9.35825 1.50783 8.41778 2.14351Z" fill="#CBD5E1"/></svg></span><span class="nav-item__label">Мой бюджет</span></a>
+      <a href="/cabinet/analytics" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNNS4xODUwMyAzLjgzNDI5QzUuNTU1NSAzLjU4Njc1IDUuOTQ0NDkgMy4zNzIwNSA2LjM0NzU0IDMuMTkxNTVDNy40OTA3NyAyLjY3OTU3IDguMDYyMzkgMi40MjM1OCA4LjgyMjg0IDIuOTE2MjVDOS41ODMzIDMuNDA4OTIgOS41ODMzIDQuMjE3MDkgOS41ODMzIDUuODMzNDJWNy4wODM0MkM5LjU4MzMgOC42NTQ3NyA5LjU4MzMgOS40NDA0NCAxMC4wNzE1IDkuOTI4NkMxMC41NTk2IDEwLjQxNjggMTEuMzQ1MyAxMC40MTY4IDEyLjkxNjYgMTAuNDE2OEgxNC4xNjY2QzE1Ljc4MyAxMC40MTY4IDE2LjU5MTEgMTAuNDE2OCAxNy4wODM4IDExLjE3NzJDMTcuNTc2NSAxMS45Mzc3IDE3LjMyMDUgMTIuNTA5MyAxNi44MDg1IDEzLjY1MjVDMTYuNjI4IDE0LjA1NTYgMTYuNDEzMyAxNC40NDQ1IDE2LjE2NTggMTQuODE1QzE1LjI5NTkgMTYuMTE2OSAxNC4wNTk1IDE3LjEzMTYgMTIuNjEyOSAxNy43MzA4QzExLjE2NjMgMTguMzMgOS41NzQ1MSAxOC40ODY4IDguMDM4ODMgMTguMTgxM0M2LjUwMzE1IDE3Ljg3NTggNS4wOTI1MyAxNy4xMjE4IDMuOTg1MzcgMTYuMDE0N0MyLjg3ODIgMTQuOTA3NSAyLjEyNDIxIDEzLjQ5NjkgMS44MTg3NSAxMS45NjEyQzEuNTEzMjggMTAuNDI1NSAxLjY3MDA2IDguODMzNzYgMi4yNjkyNSA3LjM4NzE4QzIuODY4NDQgNS45NDA1OSAzLjg4MzE0IDQuNzA0MTggNS4xODUwMyAzLjgzNDI5WiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNMTcuODcxNyA1Ljg5MDc2QzE3LjE5NTEgNC4xNzM1MSAxNS44MjY0IDIuODA0NzQgMTQuMTA5MSAyLjEyODI0QzEyLjgyNDUgMS42MjIxNiAxMS42NjY2IDIuNzg1ODkgMTEuNjY2NiA0LjE2NjZWNy40OTk5M0MxMS42NjY2IDcuOTYwMTcgMTIuMDM5NyA4LjMzMzI3IDEyLjUgOC4zMzMyN0gxNS44MzMzQzE3LjIxNCA4LjMzMzI3IDE4LjM3NzcgNy4xNzUzOCAxNy44NzE3IDUuODkwNzZaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=" alt=""/></span><span class="nav-item__label">Аналитика</span></a>
+      <a href="#" class="nav-item is-dis-soon"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik05LjM3NDk2IDEuNjY2NzVDOS4zNzQ5NiAxLjMyMTU3IDkuNjU0NzggMS4wNDE3NSA5Ljk5OTk2IDEuMDQxNzVDMTQuOTQ3NSAxLjA0MTc1IDE4Ljk1ODMgNS4wNTI1MyAxOC45NTgzIDEwLjAwMDFDMTguOTU4MyAxNC45NDc2IDE0Ljk0NzUgMTguOTU4NCA5Ljk5OTk2IDE4Ljk1ODQDNS4wNTI0MSAxOC45NTg0IDEuMDQxNjMgMTQuOTQ3NiAxLjA0MTYzIDEwLjAwMDFDMS4wNDE2MyA5LjY1NDkgMS4zMjE0NSA5LjM3NTA4IDEuNjY2NjMgOS4zNzUwOEMyLjAxMTggOS4zNzUwOCAyLjI5MTYzIDkuNjU0OSAyLjI5MTYzIDEwLjAwMDFDMi4yOTE2MyAxNC4yNTczIDUuNzQyNzYgMTcuNzA4NCA5Ljk5OTk2IDE3LjcwODRDMTQuMjU3MiAxNy43MDg0IDE3LjcwODMgMTQuMjU3MyAxNy43MDgzIDEwLjAwMDFDMTcuNzA4MyA1Ljc0Mjg5IDE0LjI1NzIgMi4yOTE3NSA5Ljk5OTk2IDIuMjkxNzVDOS42NTQ3OCAyLjI5MTc1IDkuMzc0OTYgMi4wMTE5MyA5LjM3NDk2IDEuNjY2NzVaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=" alt=""/></span><span class="nav-item__lw"><span class="nav-item__name">Семейный доступ</span><span class="nav-item__soon">Скоро!</span></span></a>
+      <a href="/cabinet/profile" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTIuOTM1NSAxMEMxMi45MzU1IDExLjM4MDcgMTEuODA3NyAxMi41IDEwLjQxNjUgMTIuNUMxMC40MTY1IDEyLjUgMTAuNDE2NSAxMi41IDEwLjQxNjUgMTIuNUM5LjAyNTI3IDEyLjUgNy44OTc0NiAxMS4zODA3IDcuODk3NDYgMTBDNy44OTc0NiA4LjYxOTI5IDkuMDI1MjcgNy41IDEwLjQxNjUgNy41QzExLjgwNzcgNy41IDEyLjkzNTUgOC42MTkyOSAxMi45MzU1IDEwWiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Мой профиль</span></a>
+      <div class="nav-divider"></div>
+      <a href="/cabinet/how-to" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMS42NjY3NSAxMC4wMDAxQzEuNjY2NzUgNi4wNzE3MSAxLjY2Njc1IDQuMTA3NTIgMi44ODcxNCAyLjg4NzE0QzQuMTA3NTIgMS42NjY3NSA2LjA3MTcxIDEuNjY2NzUgMTAuMDAwMSAxLjY2Njc1QzEzLjkyODUgMS42NjY3NSAxNS44OTI2IDEuNjY2NzUgMTcuMTEzIDIuODg3MTRDMTguMzMzNCA0LjEwNzUyIDE4LjMzMzQgNi4wNzE3MSAxOC4zMzM0IDEwLjAwMDFDMTguMzMzNCAxMy45Mjg1IDE4LjMzMzQgMTUuODkyNiAxNy4xMTMgMTcuMTEzQzE1Ljg5MjYgMTguMzMzNCAxMy45Mjg1IDE4LjMzMzQgMTAuMDAwMSAxOC4zMzM0QzYuMDcxNzEgMTguMzMzNCA0LjEwNzUyIDE4LjMzMzQgMi44ODcxNCAxNy4xMTNDMS42NjY3NSAxNS44OTI2IDEuNjY2NzUgMTMuOTI4NSAxLjY2Njc1IDEwLjAwMDFaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik0xMC42MjUxIDUuODMzMjVDMTAuNjI1MSA1LjQ4ODA3IDEwLjM0NTMgNS4yMDgyNSAxMC4wMDAxIDUuMjA4MjVDOS42NTQ5IDUuMjA4MjUgOS4zNzUwOCA1LjQ4ODA3IDkuMzc1MDggNS44MzMyNUw5LjM3NTA4IDEwLjE1NzdMNy45NDIwMiA4LjcyNDY0QzcuNjk3OTUgOC40ODA1NyA3LjMwMjIyIDguNDgwNTcgNy4wNTgxNCA4LjcyNDY0QzYuODE0MDYgOC45Njg3MiA2LjgxNDA2IDkuMzY0NDUgNy4wNTgxNCA5LjYwODUzTDkuNTU4MTQgMTIuMTA4NUM5LjY3NTM1IDEyLjIyNTcgOS44MzQzMiAxMi4yOTE2IDEwLjAwMDEgMTIuMjkxNkMxMC4xNjU4IDEyLjI5MTYgMTAuMzI0OCAxMi4yMjU3IDEwLjQ0MiAxMi4xMDg1TDEyLjk0MiA5LjYwODUzQzEzLjE4NjEgOS4zNjQ0NSAxMy4xODYxIDguOTY4NzIgMTIuOTQyIDguNzI0NjRDMTIuNjk3OSA4LjQ4MDU3IDEyLjMwMjIgOC40ODA1NyAxMi4wNTgxIDguNzI0NjRMMTAuNjI1MSAxMC4xNTc3VjUuODMzMjVaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik02LjY2Njc1IDEzLjU0MTZDNi4zMjE1NyAxMy41NDE2IDYuMDQxNzUgMTMuODIxNCA2LjA0MTc1IDE0LjE2NjZDNi4wNDE3NSAxNC41MTE4IDYuMzIxNTcgMTQuNzkxNiA2LjY2Njc1IDE0Ljc5MTZIMTMuMzMzNEMxMy42Nzg2IDE0Ljc5MTYgMTMuOTU4NCAxNC41MTE4IDEzLjk1ODQgMTQuMTY2NkMxMy45NTg0IDEzLjgyMTQgMTMuNjc4NiAxMy41NDE2IDEzLjMzMzQgMTMuNTQxNkg2LjY2Njc1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Как установить бота</span></a>
+      <div class="nav-divider"></div>
+      <div class="nav-text-links">
+        <a href="/cabinet/faq" class="nav-text-link">Вопросы и ответы</a>
+        <a href="/cabinet/feedback" class="nav-text-link">Обратная связь</a>
+      </div>
+      <div class="nav-divider"></div>
+      <button class="nav-logout-btn" onclick="window.openLogoutModal&&window.openLogoutModal()">Выйти из аккаунта</button>
+    </nav>
+    <div class="lk-sidebar__toggle">
+      <button class="sidebar-toggle-btn" id="sbToggle" aria-label="Свернуть меню">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTcuNzUgMTlDMTcuNzUgMTkuMzEzOSAxNy41NTQ2IDE5LjU5NDYgMTcuMjYwMiAxOS43MDM1QzE2Ljk2NTggMTkuODEyMyAxNi42MzQ4IDE5LjcyNjQgMTYuNDMwNiAxOS40ODgxTDEwLjQzMDYgMTIuNDg4MUMxMC4xODk4IDEyLjIwNzMgMTAuMTg5OCAxMS43OTI4IDEwLjQzMDYgMTEuNTExOUwxNi40MzA2IDQuNTExOTRDMTYuNjM0OCA0LjI3MzY0IDE2Ljk2NTggNC4xODc3MyAxNy4yNjAyIDQuMjk2NjJDMTcuNTU0NiA0LjQwNTUxIDE3Ljc1IDQuNjg2MTggMTcuNzUgNS4wMDAwNEwxNy43NSAxOVoiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy40ODgxIDE5LjU2OTVDMTMuODAyNiAxOS4yOTk5IDEzLjgzOSAxOC44MjY0IDEzLjU2OTQgMTguNTExOUw3Ljk4NzgxIDEyTDEzLjU2OTQgNS40ODgxMUMxMy44MzkgNS4xNzM2MSAxMy44MDI2IDQuNzAwMTQgMTMuNDg4MSA0LjQzMDU3QzEzLjE3MzYgNC4xNjEgMTIuNzAwMSA0LjE5NzQzIDEyLjQzMDYgNC41MTE5Mkw2LjQzMDU2IDExLjUxMTlDNi4xODk4MSAxMS43OTI4IDYuMTg5ODEgMTIuMjA3MiA2LjQzMDU2IDEyLjQ4ODFMMTIuNDMwNiAxOS40ODgxQzEyLjcwMDEgMTkuODAyNiAxMy4xNzM2IDE5LjgzOSAxMy40ODgxIDE5LjU2OTVaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=" alt="" id="sbToggleIcon"/>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN: CHAT -->
+  <main class="bot-page">
+    <div class="bot-chat-header">
+      <img src="/images/bot-face.svg" class="bot-avatar" alt="Mercury Bot"/>
+      <div>
+        <div class="bot-name">Меркури</div>
+        <div class="bot-status">онлайн</div>
+      </div>
+    </div>
+    <div class="chat-area" id="chatArea"></div>
+    <div class="input-bar">
+      <input class="chat-input" id="chatInput" type="text" placeholder="Написать сообщение..." autocomplete="off"/>
+      <button class="send-btn" id="sendBtn" aria-label="Отправить">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M5 12H19M19 12L13 6M19 12L13 18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </main>
+
+</div>
+<!-- /PAGE -->
+
+<!-- MOBILE OVERLAY + DRAWER -->
+<div class="lk-overlay" id="lkOverlay"></div>
+<div class="lk-drawer" id="lkDrawer" role="dialog" aria-modal="true">
+  <div class="lk-drawer__head">
+    <div class="lk-drawer__info" id="drawerUserInfo">
+      <div class="lk-drawer__name">Кабинет: <span class="lk-skeleton" style="width:70px;"></span></div>
+    </div>
+    <button class="lk-drawer__close" id="lkDrawerClose" aria-label="Закрыть">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6L18 18" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <nav class="lk-drawer__nav">
+    <a href="/cabinet/bot" class="nav-item"><span class="nav-item__icon"><img src="/images/bot-face.svg" alt=""/></span><span class="nav-item__label">Чат с ботом</span></a>
+    <a href="/cabinet/dashboard" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMS42NjY2MyA1LjE3NTUyQzEuNjY2NjMgMy41MjE0NyAxLjY2NjYzIDIuNjk0NDQgMi4yMTU4IDIuMTgwNkMyLjc2NDk4IDEuNjY2NzUgMy42NDg4NiAxLjY2Njc1IDUuNDE2NjMgMS42NjY3NUM3LjE4NDM5IDEuNjY2NzUgOC4wNjgyOCAxLjY2Njc1IDguNjE3NDUgMi4xODA2QzkuMTY2NjMgMi42OTQ0NCA5LjE2NjYzIDMuNTIxNDcgOS4xNjY2MyA1LjE3NTUyVjE0LjgyNDZDOS4xNjY2MyAxNi40Nzg3IDkuMTY2NjMgMTcuMzA1NyA4LjYxNzQ1IDE3LjgxOTZDOC4wNjgyOCAxOC4zMzM0IDcuMTg0MzkgMTguMzMzNCA1LjQxNjYzIDE4LjMzMzRDMy42NDg4NiAxOC4zMzM0IDIuNzY0OTggMTguMzMzNCAyLjIxNTggMTcuODE5NkMxLjY2NjYzIDE3LjMwNTcgMS42NjY2MyAxNi40Nzg3IDEuNjY2NjMgMTQuODI0NlY1LjE3NTUyWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNMTAuODMzNCAxMi44MzM0QzEwLjgzMzQgMTEuMTA0OSAxMC44MzM0IDEwLjI0MDcgMTEuMzgyNSA5LjcwMzcyQzExLjkzMTcgOS4xNjY3NSAxMi44MTU2IDkuMTY2NzUgMTQuNTgzNCA5LjE2Njc1QzE2LjM1MTEgOS4xNjY3NSAxNy4yMzUgOS4xNjY3NSAxNy43ODQyIDkuNzAzNzJDMTguMzMzNCAxMC4yNDA3IDE4LjMzMzQgMTEuMTA0OSAxOC4zMzM0IDEyLjgzMzRWMTQuNjY2N0MxOC4zMzM0IDE2LjM5NTIgMTguMzMzNCAxNy4yNTk1IDE3Ljc4NDIgMTcuNzk2NEMxNy4yMzUgMTguMzMzNCAxNi4zNTExIDE4LjMzMzQgMTQuNTgzNCAxOC4zMzM0QzEyLjgxNTYgMTguMzMzNCAxMS45MzE3IDE4LjMzMzQgMTEuMzgyNSAxNy43OTY0QzEwLjgzMzQgMTcuMjU5NSAxMC44MzM0IDE2LjM5NTIgMTAuODMzNCAxNC42NjY3VjEyLjgzMzRaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik0xMC44MzM0IDQuNTgzNDFDMTAuODMzNCAzLjY3NzQyIDEwLjgzMzQgMy4yMjQ0MiAxMC45NzYxIDIuODY3MDlDMTEuMTY2NCAyLjM5MDY0IDExLjUzMTQgMi4wMTIxMSAxMS45OTA4IDEuODE0NzZDMTIuMzM1NCAxLjY2Njc1IDEyLjc3MjIgMS42NjY3NSAxMy42NDU5IDEuNjY2NzVIMTUuNTIwOUMxNi4zOTQ1IDEuNjY2NzUgMTYuODMxMyAxLjY2Njc1IDE3LjE3NTkgMS44MTQ3NkMxNy42MzUzIDIuMDEyMTEgMTguMDAwMyAyLjM5MDY0IDE4LjE5MDYgMi44NjcwOUMxOC4zMzM0IDMuMjI0NDIgMTguMzMzNCAzLjY3NzQyIDE4LjMzMzQgNC41ODM0MUMxOC4zMzM0IDUuNDg5NDEgMTguMzMzNCA1Ljk0MjQxIDE4LjE5MDYgNi4yOTk3NEMxOC4wMDAzIDYuNzc2MTkgMTcuNjM1MyA3LjE1NDcyIDE3LjE3NTkgNy4zNTIwN0MxNi44MzEzIDcuNTAwMDggMTYuMzk0NSA3LjUwMDA4IDE1LjUyMDkgNy41MDAwOEgxMy42NDU5QzEyLjc3MjIgNy41MDAwOCAxMi4zMzU0IDcuNTAwMDggMTEuOTkwOCA3LjM1MjA3QzExLjUzMTQgNy4xNTQ3MiAxMS4xNjY0IDYuNzc2MTkgMTAuOTc2MSA2LjI5OTc0QzEwLjgzMzQgNS45NDI0MSAxMC44MzM0IDUuNDg5NDEgMTAuODMzNCA0LjU4MzQxWiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Дашборд</span></a>
+    <a href="/cabinet/accounting" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS42NjY3IDE3LjA4MzRWMy41NDE3NUMxMS42NjY3IDIuOTM0ODIgMTEuNjY1NCAyLjU0MjUgMTEuNjI2NiAyLjI1MzQ0QzExLjU5MDEgMS45ODIzNSAxMS41MzEzIDEuODk3MzggMTEuNDgzNyAxLjg0OTgxQzExLjQzNjEgMS44MDIyMyAxMS4zNTExIDEuNzQzMzkgMTEuMDgwMSAxLjcwNjk0QzEwLjc5MSAxLjY2ODA4IDEwLjM5ODcgMS42NjY3NSA5Ljc5MTc1IDEuNjY2NzVDOS4xODQ4MiAxLjY2Njc1IDguNzkyNSAxLjY2ODA4IDguNTAzNDQgMS43MDY5NEM4LjIzMjM1IDEuNzQzMzkgOC4xNDczOCAxLjgwMjIzIDguMDk5ODEgMS44NDk4MUM4LjA1MjIzIDEuODk3MzggNy45OTMzOSAxLjk4MjM1IDcuOTU2OTQgMi4yNTM0NEM3LjkxODA3IDIuNTQyNSA3LjkxNjc1IDIuOTM0ODIgNy45MTY3NSAzLjU0MTc1VjE3LjA4MzRIMTEuNjY2N1oiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggb3BhY2l0eT0iMC43IiBkPSJNNi42NjY3NSA3LjI5MTc1QzYuNjY2NzUgNi45NDY1NyA2LjM4NjkzIDYuNjY2NzUgNi4wNDE3NSA2LjY2Njc1SDMuNTQxNzVDMy4xOTY1NyA2LjY2Njc1IDIuOTE2NzUgNi45NDY1NyAyLjkxNjc1IDcuMjkxNzVWMTcuMDgzNEg2LjY2Njc1VjcuMjkxNzVaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIG9wYWNpdHk9IjAuNyIgZD0iTTE2LjY2NjcgMTEuNDU4M0MxNi42NjY3IDExLjExMzEgMTYuMzg2OSAxMC44MzMzIDE2LjA0MTcgMTAuODMzM0gxMy41NDE3QzEzLjE5NjYgMTAuODMzMyAxMi45MTY3IDExLjExMzEgMTIuOTE2NyAxMS40NTgzVjE3LjA4MzNIMTYuNjY2N1YxMS40NTgzWiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Учет по месяцам</span></a>
+    <a href="/cabinet/history" class="nav-item"><span class="nav-item__label">История транзакций</span></a>
+    <a href="/cabinet/categories" class="nav-item"><span class="nav-item__label">Категории</span></a>
+    <a href="/cabinet/goals" class="nav-item"><span class="nav-item__label">Мои цели</span></a>
+    <a href="/cabinet/budget" class="nav-item"><span class="nav-item__label">Мой бюджет</span></a>
+    <a href="/cabinet/analytics" class="nav-item"><span class="nav-item__label">Аналитика</span></a>
+    <a href="#" class="nav-item is-dis-soon"><span class="nav-item__lw"><span class="nav-item__name">Семейный доступ</span><span class="nav-item__soon">Скоро!</span></span></a>
+    <a href="/cabinet/profile" class="nav-item"><span class="nav-item__label">Мой профиль</span></a>
+    <div class="nav-divider"></div>
+    <a href="/cabinet/how-to" class="nav-item"><span class="nav-item__label">Как установить бота</span></a>
+    <div class="nav-divider"></div>
+    <div class="nav-text-links">
+      <a href="/cabinet/faq" class="nav-text-link">Вопросы и ответы</a>
+      <a href="/cabinet/feedback" class="nav-text-link">Обратная связь</a>
+    </div>
+  </nav>
+  <div class="lk-drawer__footer">
+    <div class="lk-drawer__btns">
+      <a href="https://t.me/mercury_finbot" class="btn-hdr btn-hdr--sec" target="_blank">Открыть в Telegram</a>
+      <a href="https://t.me/mercury_finbot" class="btn-hdr btn-hdr--pri" target="_blank">Запустить бота</a>
+    </div>
+    <button class="lk-drawer__logout" onclick="window.openLogoutModal&&window.openLogoutModal()">Выйти из аккаунта</button>
+  </div>
+</div>
+
+<!-- LOGOUT MODAL -->
+<div class="logout-overlay" id="logoutOverlay">
+  <div class="logout-modal">
+    <button class="logout-modal__close" id="logoutModalClose" aria-label="Закрыть">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6L18 18" stroke="#4B5563" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <h2 class="logout-modal__title">Выйти из аккаунта?</h2>
+    <p class="logout-modal__text">Ты будешь перенаправлен на страницу входа.</p>
+    <div class="logout-modal__actions">
+      <button class="logout-modal__btn logout-modal__btn--dark" id="logoutConfirmBtn">Выйти</button>
+      <button class="logout-modal__btn logout-modal__btn--sec" id="logoutCancelBtn">Остаться</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initLayout, loadUser, getToken, authHeaders } from './layout.js';
+
+// ── Layout init ────────────────────────────────────────────────────────────
+initLayout('bot');
+loadUser();
+
+// ── Logout modal ───────────────────────────────────────────────────────────
+const logoutOverlay = document.getElementById('logoutOverlay');
+window.openLogoutModal = () => logoutOverlay.classList.add('is-open');
+const closeLogoutModal = () => logoutOverlay.classList.remove('is-open');
+document.getElementById('logoutModalClose').addEventListener('click', closeLogoutModal);
+document.getElementById('logoutCancelBtn').addEventListener('click', closeLogoutModal);
+document.getElementById('logoutConfirmBtn').addEventListener('click', () => {
+  localStorage.removeItem('mercury_token');
+  window.location.replace('/cabinet/login');
+});
+logoutOverlay.addEventListener('click', e => { if (e.target === logoutOverlay) closeLogoutModal(); });
+
+// ── Chat state ─────────────────────────────────────────────────────────────
+let polling = false;
+
+// ── Init chat ──────────────────────────────────────────────────────────────
+async function initChat() {
+  try {
+    const res = await fetch('/api/bot/init', { method: 'POST', headers: authHeaders() });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.ok && data.messages) {
+      renderMessages(data.messages);
+    }
+    startPolling();
+  } catch(e) {
+    console.error('[bot] initChat error:', e);
+  }
+}
+
+// ── Polling ────────────────────────────────────────────────────────────────
+function startPolling() {
+  if (polling) return;
+  polling = true;
+  pollLoop();
+}
+
+async function pollLoop() {
+  while (polling) {
+    try {
+      const res = await fetch('/api/bot/poll', { headers: authHeaders() });
+      if (!res.ok) { await sleep(2000); continue; }
+      const data = await res.json();
+      if (data.messages && data.messages.length > 0) {
+        renderMessages(data.messages);
+      }
+    } catch(e) {
+      await sleep(2000);
+    }
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Render messages ────────────────────────────────────────────────────────
+function removeTyping() {
+  document.getElementById('typingIndicator')?.remove();
+}
+
+function renderMessages(messages) {
+  removeTyping();
+  const area = document.getElementById('chatArea');
+  for (const msg of messages) {
+    if (msg.type !== 'message' && msg.type !== 'edit') continue;
+    const text = msg.text || '';
+    const keyboard = msg.opts?.reply_markup?.inline_keyboard || [];
+
+    const wrap = document.createElement('div');
+    wrap.className = 'bubble-wrap from-bot';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble bot';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    area.appendChild(wrap);
+
+    if (keyboard.length > 0) {
+      const ctaWrap = document.createElement('div');
+      ctaWrap.className = 'cta-wrap';
+      for (const row of keyboard) {
+        for (const btn of row) {
+          const b = document.createElement('button');
+          b.className = 'cta-btn';
+          b.textContent = btn.text;
+          b.dataset.callbackData = btn.callback_data || '';
+          b.addEventListener('click', function() {
+            handleInlineButton(this.dataset.callbackData, this.textContent, this.closest('.cta-wrap'));
+          });
+          ctaWrap.appendChild(b);
+        }
+      }
+      area.appendChild(ctaWrap);
+    }
+  }
+  area.scrollTop = area.scrollHeight;
+}
+
+// ── Send message ───────────────────────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const area = document.getElementById('chatArea');
+
+  // User bubble
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap from-user';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble user';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  area.appendChild(wrap);
+
+  // Typing indicator
+  const typingWrap = document.createElement('div');
+  typingWrap.className = 'typing-wrap';
+  typingWrap.id = 'typingIndicator';
+  typingWrap.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  area.appendChild(typingWrap);
+  area.scrollTop = area.scrollHeight;
+
+  try {
+    await fetch('/api/bot/send', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ text }),
+    });
+  } catch(e) {
+    console.error('[bot] sendMessage error:', e);
+    removeTyping();
+  }
+}
+
+// ── Inline button stub ─────────────────────────────────────────────────────
+// Показываем нажатую кнопку как пузырь пользователя.
+// Реализация callback-endpoint — после подтверждения подхода.
+function handleInlineButton(callbackData, text, ctaWrap) {
+  const area = document.getElementById('chatArea');
+
+  if (ctaWrap) ctaWrap.remove();
+
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap from-user';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble user';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  area.appendChild(wrap);
+  area.scrollTop = area.scrollHeight;
+
+  // TODO: отправить callback_data боту через /api/bot/callback
+  // (реализация после согласования подхода)
+}
+
+// ── Event listeners ────────────────────────────────────────────────────────
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// ── Start ──────────────────────────────────────────────────────────────────
+initChat();
+</script>
+</body>
+</html>

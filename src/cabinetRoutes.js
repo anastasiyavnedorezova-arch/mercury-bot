@@ -3,8 +3,43 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { supabase } from './db.js';
 import { requireAuth } from './authMiddleware.js';
+import { createWebBotAdapter, getWebChatQueue, clearWebChatQueue, waitForNewMessage } from './webBotAdapter.js';
+import { handleMessage } from './handlers/message.js';
+import { showMainMenu } from './handlers/menu.js';
+
+const webBot = createWebBotAdapter();
 
 const router = Router();
+
+// ──────────────────────────────────────────
+// Хелпер: возвращает chatId для веб-чата
+// Если у пользователя уже есть telegram external_id — используем его.
+// Если нет — генерируем псевдо-id вида "web_<userId>".
+// ──────────────────────────────────────────
+async function getOrCreateWebChatId(userId) {
+  const { data: user } = await supabase
+    .from('users')
+    .select('external_id, channel')
+    .eq('id', userId)
+    .single();
+
+  if (user?.external_id && user?.channel === 'telegram') {
+    return user.external_id;
+  }
+
+  if (user?.external_id && user?.channel === 'web') {
+    return user.external_id;
+  }
+
+  const webId = 'web_' + userId;
+  await supabase
+    .from('users')
+    .update({ external_id: webId, channel: 'web' })
+    .eq('id', userId)
+    .is('external_id', null);
+
+  return webId;
+}
 
 // ──────────────────────────────────────────
 // POST /api/auth/telegram
@@ -792,6 +827,155 @@ router.delete('/api/profile', requireAuth, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[cabinet] DELETE /api/profile error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/bot/init
+// Инициализация веб-чата. Вызывается при первом открытии чата в ЛК.
+// Показывает главное меню. Пользователь уже аутентифицирован через JWT,
+// поэтому handleStart не используется — только showMainMenu напрямую.
+// ──────────────────────────────────────────
+router.post('/api/bot/init', requireAuth, async (req, res) => {
+  try {
+    const chatId = await getOrCreateWebChatId(req.userId);
+    clearWebChatQueue(chatId);
+
+    // Убеждаемся что terms_accepted_at проставлен —
+    // JWT-аутентификация означает что пользователь уже прошёл регистрацию.
+    // Это позволяет requireTerms пропускать сообщения веб-чата.
+    await supabase
+      .from('users')
+      .update({ terms_accepted_at: new Date().toISOString() })
+      .eq('id', req.userId)
+      .is('terms_accepted_at', null);
+
+    await showMainMenu(webBot, chatId);
+
+    const queue = getWebChatQueue(chatId);
+    const messages = queue.splice(0, queue.length);
+    res.json({ ok: true, chatId, messages });
+  } catch (err) {
+    console.error('[cabinet] /api/bot/init error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/bot/send
+// Пользователь отправляет сообщение в веб-чат.
+// ──────────────────────────────────────────
+router.post('/api/bot/send', requireAuth, async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text || !text.trim()) return res.status(400).json({ error: 'Empty message' });
+
+    const chatId = await getOrCreateWebChatId(req.userId);
+    clearWebChatQueue(chatId);
+
+    const fakeMsg = {
+      message_id: Date.now(),
+      date: Math.floor(Date.now() / 1000),
+      chat: { id: chatId },
+      from: { id: chatId, username: null, first_name: null },
+      text: text.trim(),
+    };
+
+    // Запускаем обработку асинхронно — ответ придёт через /api/bot/poll
+    handleMessage(webBot, fakeMsg).catch(err => {
+      console.error('[webchat] handleMessage error:', err.message);
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] /api/bot/send error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// GET /api/bot/poll
+// Long-polling: ждёт новые сообщения от бота до 25 секунд.
+// ──────────────────────────────────────────
+router.get('/api/bot/poll', requireAuth, async (req, res) => {
+  try {
+    const chatId = await getOrCreateWebChatId(req.userId);
+    const queue = getWebChatQueue(chatId);
+
+    if (queue.length > 0) {
+      const messages = queue.splice(0, queue.length);
+      return res.json({ messages });
+    }
+
+    const got = await waitForNewMessage(chatId, 25000);
+    if (got) {
+      const messages = queue.splice(0, queue.length);
+      return res.json({ messages });
+    }
+    res.json({ messages: [] });
+  } catch (err) {
+    console.error('[cabinet] /api/bot/poll error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/profile/merge-telegram
+// Привязывает Telegram к существующему веб-аккаунту.
+// Если такой telegram_id уже есть у другого юзера — делает merge.
+// ──────────────────────────────────────────
+router.post('/api/profile/merge-telegram', requireAuth, async (req, res) => {
+  try {
+    const { telegram_id, tg_username } = req.body;
+    if (!telegram_id) return res.status(400).json({ error: 'Missing telegram_id' });
+
+    const currentUserId = req.userId;
+    const telegramIdStr = String(telegram_id);
+
+    // Ищем существующего юзера с этим telegram_id (не текущего)
+    const { data: existingTgUser } = await supabase
+      .from('users')
+      .select('id, external_id, channel')
+      .eq('external_id', telegramIdStr)
+      .eq('channel', 'telegram')
+      .neq('id', currentUserId)
+      .maybeSingle();
+
+    if (!existingTgUser) {
+      // Первый контакт — просто привязываем Telegram к текущему аккаунту
+      await supabase
+        .from('users')
+        .update({ external_id: telegramIdStr, channel: 'telegram', tg_username: tg_username || null })
+        .eq('id', currentUserId);
+      return res.json({ ok: true, merged: false });
+    }
+
+    // Коллизия: existingTgUser (Y) уже имеет этот telegram_id, текущий юзер (X) — веб
+    const Y = existingTgUser.id;
+    const X = currentUserId;
+
+    // Переносим все данные Y на X
+    await supabase.from('transactions').update({ user_id: X }).eq('user_id', Y);
+    await supabase.from('goals').update({ user_id: X }).eq('user_id', Y);
+    await supabase.from('budget').update({ user_id: X }).eq('user_id', Y);
+    await supabase.from('subscriptions').update({ user_id: X }).eq('user_id', Y);
+
+    // Помечаем Y как merged
+    await supabase
+      .from('users')
+      .update({ status: 'merged', merged_into: X })
+      .eq('id', Y);
+
+    // Обновляем X: привязываем настоящий telegram_id
+    await supabase
+      .from('users')
+      .update({ external_id: telegramIdStr, channel: 'telegram', tg_username: tg_username || null })
+      .eq('id', X);
+
+    res.json({ ok: true, merged: true });
+  } catch (err) {
+    console.error('[cabinet] merge-telegram error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
