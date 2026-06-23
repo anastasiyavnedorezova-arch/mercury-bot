@@ -413,12 +413,10 @@ function renderMessages(messages) {
       for (const row of keyboard) {
         for (const btn of row) {
           const b = document.createElement('button');
-          b.className = 'cta-btn';
+          b.className = 'cta-btn msg-inline-btn';
           b.textContent = btn.text;
-          b.dataset.callbackData = btn.callback_data || '';
-          b.addEventListener('click', function() {
-            handleInlineButton(this.dataset.callbackData, this.textContent, this.closest('.cta-wrap'));
-          });
+          b.callback_data = btn.callback_data || '';
+          b.onclick = () => handleInlineButton(b);
           ctaWrap.appendChild(b);
         }
       }
@@ -466,25 +464,50 @@ async function sendMessage() {
   }
 }
 
-// ── Inline button stub ─────────────────────────────────────────────────────
-// Показываем нажатую кнопку как пузырь пользователя.
-// Реализация callback-endpoint — после подтверждения подхода.
-function handleInlineButton(callbackData, text, ctaWrap) {
+// ── Inline button handler ──────────────────────────────────────────────────
+async function handleInlineButton(btn) {
+  // Блокируем все inline-кнопки чтобы избежать повторных нажатий
+  document.querySelectorAll('.msg-inline-btn').forEach(b => { b.disabled = true; });
+
   const area = document.getElementById('chatArea');
 
+  // Показываем нажатую кнопку как пузырь пользователя, убираем клавиатуру
+  const ctaWrap = btn.closest('.cta-wrap');
   if (ctaWrap) ctaWrap.remove();
 
-  const wrap = document.createElement('div');
-  wrap.className = 'bubble-wrap from-user';
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble user';
-  bubble.textContent = text;
-  wrap.appendChild(bubble);
-  area.appendChild(wrap);
+  const uWrap = document.createElement('div');
+  uWrap.className = 'bubble-wrap from-user';
+  const uBubble = document.createElement('div');
+  uBubble.className = 'bubble user';
+  uBubble.textContent = btn.textContent;
+  uWrap.appendChild(uBubble);
+  area.appendChild(uWrap);
+
+  // Показываем индикатор печати
+  const typingWrap = document.createElement('div');
+  typingWrap.className = 'typing-wrap';
+  typingWrap.id = 'typingIndicator';
+  typingWrap.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  area.appendChild(typingWrap);
   area.scrollTop = area.scrollHeight;
 
-  // TODO: отправить callback_data боту через /api/bot/callback
-  // (реализация после согласования подхода)
+  try {
+    const res = await fetch('/api/bot/callback', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ callback_data: btn.callback_data }),
+    });
+    if (res.status === 401) { window.location.href = '/cabinet/login'; return; }
+    const data = await res.json();
+    if (data.messages?.length) {
+      renderMessages(data.messages);
+    } else {
+      removeTyping();
+    }
+  } catch(e) {
+    console.error('[bot] callback error:', e);
+    removeTyping();
+  }
 }
 
 // ── Event listeners ────────────────────────────────────────────────────────

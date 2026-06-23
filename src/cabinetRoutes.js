@@ -6,6 +6,7 @@ import { requireAuth } from './authMiddleware.js';
 import { createWebBotAdapter, getWebChatQueue, clearWebChatQueue, waitForNewMessage } from './webBotAdapter.js';
 import { handleMessage } from './handlers/message.js';
 import { showMainMenu } from './handlers/menu.js';
+import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
 
 const webBot = createWebBotAdapter();
 
@@ -976,6 +977,41 @@ router.post('/api/profile/merge-telegram', requireAuth, async (req, res) => {
     res.json({ ok: true, merged: true });
   } catch (err) {
     console.error('[cabinet] merge-telegram error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/bot/callback
+// Обрабатывает нажатие inline-кнопки из веб-чата.
+// ──────────────────────────────────────────
+router.post('/api/bot/callback', requireAuth, async (req, res) => {
+  try {
+    const { callback_data } = req.body;
+    if (!callback_data) return res.status(400).json({ error: 'Missing callback_data' });
+
+    const chatId = await getOrCreateWebChatId(req.userId);
+    clearWebChatQueue(chatId);
+
+    const fakeQuery = {
+      id: String(Date.now()),
+      data: callback_data,
+      from: { id: chatId, username: null, first_name: null },
+      message: {
+        message_id: Date.now(),
+        chat: { id: chatId },
+        date: Math.floor(Date.now() / 1000),
+        text: '',
+      },
+    };
+
+    await dispatchCallbackQuery(webBot, fakeQuery);
+
+    const queue = getWebChatQueue(chatId);
+    const messages = queue.splice(0, queue.length);
+    res.json({ ok: true, messages });
+  } catch (err) {
+    console.error('[cabinet] /api/bot/callback error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
