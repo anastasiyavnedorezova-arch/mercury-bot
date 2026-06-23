@@ -1,5 +1,6 @@
 import { supabase } from '../db.js';
 import { userStates } from '../state.js';
+import { getRealBot } from '../realBot.js';
 
 const MENU_KEYBOARD = {
   reply_markup: {
@@ -12,7 +13,6 @@ async function getUserId(telegramId) {
     .from('users')
     .select('id')
     .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
     .single();
   return data?.id ?? null;
 }
@@ -55,7 +55,7 @@ export async function handleFeedbackMessage(bot, msg) {
   const adminId = process.env.ADMIN_TELEGRAM_ID;
   if (adminId) {
     const username = msg.from.username ? `@${msg.from.username}` : msg.from.first_name ?? 'без имени';
-    await bot.sendMessage(
+    await getRealBot().sendMessage(
       adminId,
       `📩 Новый фидбек от ${username} (${telegramId}):\n\n${text}`
     ).catch(err => console.error('Admin notify error:', err.message));

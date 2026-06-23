@@ -345,7 +345,7 @@ document.getElementById('logoutConfirmBtn').addEventListener('click', () => {
 logoutOverlay.addEventListener('click', e => { if (e.target === logoutOverlay) closeLogoutModal(); });
 
 // ── Chat state ─────────────────────────────────────────────────────────────
-let polling = false;
+let isPolling = false;
 
 // ── Init chat ──────────────────────────────────────────────────────────────
 async function initChat() {
@@ -364,27 +364,35 @@ async function initChat() {
 
 // ── Polling ────────────────────────────────────────────────────────────────
 function startPolling() {
-  if (polling) return;
-  polling = true;
+  if (isPolling) return;
+  isPolling = true;
   pollLoop();
 }
 
 async function pollLoop() {
-  while (polling) {
+  while (isPolling) {
     try {
       const res = await fetch('/api/bot/poll', { headers: authHeaders() });
-      if (!res.ok) { await sleep(2000); continue; }
+      if (res.status === 401) { window.location.href = '/cabinet/login'; return; }
+      if (!res.ok) throw new Error('poll failed: ' + res.status);
       const data = await res.json();
-      if (data.messages && data.messages.length > 0) {
+      if (data.messages?.length) {
         renderMessages(data.messages);
       }
     } catch(e) {
-      await sleep(2000);
+      console.warn('[bot] poll retry after error:', e.message);
+      await new Promise(r => setTimeout(r, 2000));
     }
   }
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+// При возврате вкладки в фокус следующая итерация pollLoop
+// переподключится автоматически после catch+sleep
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && isPolling) {
+    // pollLoop продолжает свой цикл — дополнительных действий не требуется
+  }
+});
 
 // ── Render messages ────────────────────────────────────────────────────────
 function removeTyping() {
