@@ -1016,4 +1016,31 @@ router.post('/api/bot/callback', requireAuth, async (req, res) => {
   }
 });
 
+router.post('/api/auth/web-login', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (\!email) return res.status(400).json({ error: 'Missing email' });
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, external_id, channel')
+      .eq('email', email)
+      .single();
+
+    if (error || \!user) return res.status(404).json({ error: 'User not found' });
+
+    const token = jwt.sign(
+      { userId: user.id, telegramId: user.external_id || null },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({ token });
+  } catch (err) {
+    console.error('[cabinet] /api/auth/web-login error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;
+

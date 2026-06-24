@@ -625,7 +625,17 @@
         })
       });
 
-      localStorage.setItem('mercury_token', JSON.stringify(authData));
+      // Получаем наш JWT вместо Supabase-токена
+      const loginRes = await fetch('/api/auth/web-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      });
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        localStorage.setItem('mercury_token', loginData.token);
+      }
+
       showSuccess();
 
     } catch (err) {

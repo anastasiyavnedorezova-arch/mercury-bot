@@ -541,8 +541,16 @@
         throw new Error(data.error_description || data.msg || 'Неверный e-mail или пароль');
       }
 
-      // Store token
-      localStorage.setItem('mercury-auth-token', JSON.stringify({ access_token: data.access_token, refresh_token: data.refresh_token }));
+      // Получаем наш JWT вместо Supabase-токена
+      const loginRes = await fetch('/api/auth/web-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail.value.trim().toLowerCase() })
+      });
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        localStorage.setItem('mercury_token', loginData.token);
+      }
       showToast('✅ Добро пожаловать!');
       setTimeout(() => window.location.href = DASHBOARD_URL, 1000);
 
