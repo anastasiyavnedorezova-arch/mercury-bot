@@ -625,6 +625,7 @@
         })
       });
 
+      localStorage.setItem('mercury_token', JSON.stringify(authData));
       showSuccess();
 
     } catch (err) {
@@ -645,8 +646,7 @@
     document.querySelector('.reg-divider').style.display = 'none';
     document.querySelector('.reg-social').style.display = 'none';
     document.getElementById('regSuccess').classList.add('is-visible');
-    // TODO: redirect to onboarding after 1.5s
-    // setTimeout(() => { window.location.href = '/onboarding'; }, 1500);
+    setTimeout(() => { window.location.href = '/cabinet/dashboard'; }, 1500);
   }
 </script>
 </body>
