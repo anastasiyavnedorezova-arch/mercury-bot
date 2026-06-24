@@ -1019,7 +1019,7 @@ router.post('/api/bot/callback', requireAuth, async (req, res) => {
 router.post('/api/auth/web-login', async (req, res) => {
   try {
     const { email } = req.body;
-    if (\!email) return res.status(400).json({ error: 'Missing email' });
+    if (!email) return res.status(400).json({ error: 'Missing email' });
 
     const { data: user, error } = await supabase
       .from('users')
@@ -1027,7 +1027,7 @@ router.post('/api/auth/web-login', async (req, res) => {
       .eq('email', email)
       .single();
 
-    if (error || \!user) return res.status(404).json({ error: 'User not found' });
+    if (error || !user) return res.status(404).json({ error: 'User not found' });
 
     const token = jwt.sign(
       { userId: user.id, telegramId: user.external_id || null },
