@@ -301,10 +301,10 @@
         .btn-export:hover { opacity: .85; }
     
         /* ══════ TOGGLE SWITCH ══════ */
-        .toggle-row { display: flex; align-items: center; gap: 12px; }
-        .toggle-row--desktop { flex-shrink: 0; }
+        .toggle-row { display: flex; align-items: center; gap: 12px; width: 100%; }
+        .toggle-row--desktop { width: 100%; }
         .toggle-row--mobile  { display: none; }
-        .toggle-label { font-size: 14px; font-weight: 400; color: #2D3748; line-height: 20px; }
+        .toggle-label { flex: 1; min-width: 0; font-size: 14px; font-weight: 400; color: #2D3748; line-height: 20px; }
         .toggle-switch {
           width: 45px; height: 25px; flex-shrink: 0;
           border-radius: 999px; border: none; cursor: pointer;
@@ -564,38 +564,41 @@
   <main class="page-content">
 
     <!-- Title row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-bottom:12px;">
+    <div style="display:flex;align-items:center;padding-bottom:12px;">
       <h1 class="page-title" style="padding-bottom:0;">Учет по месяцам</h1>
-      <button class="btn-export" id="btnExportCsv">Выгрузить таблицу в .csv</button>
     </div>
 
     <!-- Filters row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-      <div class="filter-bar">
-        <button class="filter-chip" id="chipExpense">РАСХОД</button>
-        <button class="filter-chip" id="chipIncome">ДОХОД</button>
-        <div class="cat-dropdown-wrap">
-          <button class="filter-chip" id="chipCategories">КАТЕГОРИИ <span class="filter-chip__arrow"></span></button>
-          <div class="cat-dropdown" id="catDropdown">
-            <div class="cat-dropdown__list" id="catDropdownList"></div>
-            <div class="cat-dropdown__footer">
-              <button class="btn-cat-confirm" id="btnCatConfirm">Подтвердить</button>
-              <button class="btn-cat-select-all" id="btnCatSelectAll">Выбрать все</button>
-            </div>
+    <div class="filter-bar">
+      <button class="filter-chip" id="chipExpense">РАСХОД</button>
+      <button class="filter-chip" id="chipIncome">ДОХОД</button>
+      <div class="cat-dropdown-wrap">
+        <button class="filter-chip" id="chipCategories">КАТЕГОРИИ <span class="filter-chip__arrow"></span></button>
+        <div class="cat-dropdown" id="catDropdown">
+          <div class="cat-dropdown__list" id="catDropdownList"></div>
+          <div class="cat-dropdown__footer">
+            <button class="btn-cat-confirm" id="btnCatConfirm">Подтвердить</button>
+            <button class="btn-cat-select-all" id="btnCatSelectAll">Выбрать все</button>
           </div>
         </div>
+      </div>
+    </div>
 
-      </div>
-      <div class="toggle-row toggle-row--desktop">
-        <span class="toggle-label">Показывать только те категории, в которых есть записи</span>
-        <button class="toggle-switch is-on" id="toggleCompact" role="switch" aria-checked="true"></button>
-      </div>
+    <!-- Toggle row (desktop) -->
+    <div class="toggle-row toggle-row--desktop">
+      <span class="toggle-label">Показывать только те категории, в которых есть записи</span>
+      <button class="toggle-switch is-on" id="toggleCompact" role="switch" aria-checked="true"></button>
     </div>
 
     <!-- Mobile toggle -->
     <div class="toggle-row toggle-row--mobile">
       <span class="toggle-label">Показывать только те категории, в которых есть записи</span>
       <button class="toggle-switch is-on" id="toggleCompactMob" role="switch" aria-checked="true"></button>
+    </div>
+
+    <!-- Export row -->
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn-export" id="btnExportCsv">Выгрузить таблицу в .csv</button>
     </div>
 
     <!-- Active filter chips -->
@@ -940,11 +943,15 @@
 
   // ── Export CSV ─────────────────────────────────────────
   document.getElementById('btnExportCsv').addEventListener('click',function(){
-    if(!accountingData.length){ alert('\u041d\u0435\u0442 \u0434\u0430\u043d\u043d\u044b\u0445 \u0434\u043b\u044f \u044d\u043a\u0441\u043f\u043e\u0440\u0442\u0430'); return; }
+    if(!accountingData.length){ alert('Нет данных для экспорта'); return; }
     var months=accountingMonths;
     var rows=[['Тип','Категория'].concat(months.map(function(m){return m.label;}))];
     var pivot={income:{},expense:{}};
-    var _dataFiltered=accountingData;
+    var _dataFiltered=accountingData.filter(function(r){
+      var t=r.type==='income'?'income':'expense';
+      if(filterType!=='all'&&t!==filterType)return false;
+      return true;
+    });
     _dataFiltered.forEach(function(r){
       var t=r.type==='income'?'income':'expense';
       var cat=r.category||'Другое';
@@ -955,12 +962,21 @@
       pivot[t][cat][mi]=(pivot[t][cat][mi]||0)+(parseFloat(r.amount)||0);
     });
     function addRow(type,cat){
+      if(filterCats.length>0&&filterCats.indexOf(cat)===-1)return;
+      var catData=(pivot[type]||{})[cat];
+      if(compactMode){
+        var hasAny=catData&&Object.values(catData).some(function(v){return v&&v!==0;});
+        if(!hasAny)return;
+      }
       var cells=[type==='income'?'Доход':'Расход',cat];
-      months.forEach(function(_,i){ cells.push(((pivot[type]||{})[cat]||{})[i]||0); });
+      months.forEach(function(_,i){cells.push((catData||{})[i]||0);});
       rows.push(cells);
     }
-    ALL_INCOME_CATS.forEach(function(c){addRow('income',c);});
-    ALL_EXPENSE_CATS.forEach(function(c){addRow('expense',c);});
+    var incomeCatsToExport=filterType==='expense'?[]:ALL_INCOME_CATS;
+    var expenseCatsToExport=filterType==='income'?[]:ALL_EXPENSE_CATS;
+    incomeCatsToExport.forEach(function(c){addRow('income',c);});
+    expenseCatsToExport.forEach(function(c){addRow('expense',c);});
+    if(rows.length<=1){alert('Нет данных для экспорта с текущими фильтрами');return;}
     var csv=rows.map(function(r){return r.join(';');}).join('\n');
     var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
     var url=URL.createObjectURL(blob);
