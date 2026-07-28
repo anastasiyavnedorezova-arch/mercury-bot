@@ -280,8 +280,6 @@
           .page-content { padding: 20px 20px 80px; }
           .page-title  { font-size: 24px; line-height: 32px; padding-bottom: 0; }
     
-          /* Mobile title row: export button below title */
-          .hist-title-row { flex-direction: column; align-items: flex-start; gap: 12px; }
           .btn-export { width: 100%; justify-content: center; }
     
           /* Mobile: hide table, show card list */
@@ -662,49 +660,51 @@
   <main class="page-content">
 
     <!-- Title row -->
-    <div class="hist-title-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding-bottom:12px;">
+    <div style="display:flex;align-items:center;padding-bottom:12px;">
       <h1 class="page-title" style="padding-bottom:0;">История транзакций</h1>
-      <button class="btn-export" id="btnExportCsv">Выгрузить таблицу в .csv</button>
     </div>
 
     <!-- Filters row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-      <div class="filter-bar">
-        <button class="filter-chip" id="chipExpense">РАСХОД</button>
-        <button class="filter-chip" id="chipIncome">ДОХОД</button>
-        <div class="cat-dropdown-wrap">
-          <button class="filter-chip" id="chipCategories">КАТЕГОРИИ <span class="filter-chip__arrow"></span></button>
-          <div class="cat-dropdown" id="catDropdown">
-            <div class="cat-dropdown__list" id="catDropdownList"></div>
-            <div class="cat-dropdown__footer">
-              <button class="btn-cat-confirm" id="btnCatConfirm">Подтвердить</button>
-              <button class="btn-cat-select-all" id="btnCatSelectAll">Выбрать все</button>
-            </div>
-          </div>
-        </div>
-        <div class="date-dropdown-wrap">
-          <button class="filter-chip" id="chipDates">ДАТЫ <span class="filter-chip__arrow"></span></button>
-          <div class="date-dropdown" id="dateDropdown">
-            <div class="dp-header">
-              <span class="dp-month-label" id="dpMonthLabel"></span>
-              <div class="dp-arrows">
-                <button class="dp-arrow is-active" id="dpPrev">&#8249;</button>
-                <button class="dp-arrow" id="dpNext">&#8250;</button>
-              </div>
-            </div>
-            <div class="dp-dow-row">
-              <div class="dp-dow-cell">ПН</div><div class="dp-dow-cell">ВТ</div>
-              <div class="dp-dow-cell">СР</div><div class="dp-dow-cell">ЧТ</div>
-              <div class="dp-dow-cell">ПТ</div><div class="dp-dow-cell">СБ</div>
-              <div class="dp-dow-cell">ВС</div>
-            </div>
-            <div class="dp-grid" id="dpGrid"></div>
-            <div class="dp-footer">
-              <button class="btn-dp-confirm" id="btnDpConfirm">Подтвердить</button>
-            </div>
+    <div class="filter-bar">
+      <button class="filter-chip" id="chipExpense">РАСХОД</button>
+      <button class="filter-chip" id="chipIncome">ДОХОД</button>
+      <div class="cat-dropdown-wrap">
+        <button class="filter-chip" id="chipCategories">КАТЕГОРИИ <span class="filter-chip__arrow"></span></button>
+        <div class="cat-dropdown" id="catDropdown">
+          <div class="cat-dropdown__list" id="catDropdownList"></div>
+          <div class="cat-dropdown__footer">
+            <button class="btn-cat-confirm" id="btnCatConfirm">Подтвердить</button>
+            <button class="btn-cat-select-all" id="btnCatSelectAll">Выбрать все</button>
           </div>
         </div>
       </div>
+      <div class="date-dropdown-wrap">
+        <button class="filter-chip" id="chipDates">ДАТЫ <span class="filter-chip__arrow"></span></button>
+        <div class="date-dropdown" id="dateDropdown">
+          <div class="dp-header">
+            <span class="dp-month-label" id="dpMonthLabel"></span>
+            <div class="dp-arrows">
+              <button class="dp-arrow is-active" id="dpPrev">&#8249;</button>
+              <button class="dp-arrow" id="dpNext">&#8250;</button>
+            </div>
+          </div>
+          <div class="dp-dow-row">
+            <div class="dp-dow-cell">ПН</div><div class="dp-dow-cell">ВТ</div>
+            <div class="dp-dow-cell">СР</div><div class="dp-dow-cell">ЧТ</div>
+            <div class="dp-dow-cell">ПТ</div><div class="dp-dow-cell">СБ</div>
+            <div class="dp-dow-cell">ВС</div>
+          </div>
+          <div class="dp-grid" id="dpGrid"></div>
+          <div class="dp-footer">
+            <button class="btn-dp-confirm" id="btnDpConfirm">Подтвердить</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export row -->
+    <div style="display:flex;justify-content:flex-start;">
+      <button class="btn-export" id="btnExportCsv">Выгрузить таблицу в .csv</button>
     </div>
 
     <!-- Active filter chips -->
@@ -1079,7 +1079,20 @@
   document.getElementById('dateSheetOverlay').addEventListener('click',function(e){if(e.target===this){this.classList.remove('is-open');document.body.style.overflow='';}});
 
   // Export CSV
-  document.getElementById('btnExportCsv').addEventListener('click',function(){if(!historyData.length){alert('Нет данных');return;}var rows=[['Дата','Тип','Категория','Комментарий','Сумма']];historyData.forEach(function(r){rows.push([fmtDateRow(r.transaction_date),r.type==='income'?'Доход':'Расход',r.category||'',r.comment||'',r.amount||0]);});var csv=rows.map(function(r){return r.join(';');}).join('\n');var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='mercury-history.csv';a.click();URL.revokeObjectURL(url);});
+  document.getElementById('btnExportCsv').addEventListener('click',function(){
+    var data=historyData;
+    if(filterDateRange){data=data.filter(function(r){var d=new Date(r.transaction_date);return d>=filterDateRange.start&&d<=filterDateRange.end;});}
+    if(filterType!=='all'){data=data.filter(function(r){return r.type===filterType;});}
+    if(filterCats.length>0){data=data.filter(function(r){return filterCats.indexOf(r.category)>=0;});}
+    if(!data.length){alert('Нет данных для экспорта с текущими фильтрами');return;}
+    var rows=[['Дата','Тип','Категория','Комментарий','Сумма']];
+    data.forEach(function(r){rows.push([fmtDateRow(r.transaction_date),r.type==='income'?'Доход':'Расход',r.category||'',r.comment||'',r.amount||0]);});
+    var csv=rows.map(function(r){return r.join(';');}).join('\n');
+    var blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download='mercury-history.csv';a.click();
+    URL.revokeObjectURL(url);
+  });
 
   // Active filter chips
   function fmtChipDate(d){return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear();}
