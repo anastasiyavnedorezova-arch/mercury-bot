@@ -608,8 +608,7 @@
   function renderActiveGoals(container, goals) {
     var html = '<div class="goals-grid">';
     goals.forEach(function(g) { html += renderGoalCard(g, false); });
-    // TODO: сценарий для 2+ целей не описан явно в задаче — уточнить у Анастасии текст сообщения бота для этого случая
-    var scenario = goals.length === 1 ? 'one_goal_active' : 'no_goals';
+    var scenario = goals.length >= 1 ? 'one_goal_active' : 'no_goals';
     html += renderBotCard(scenario);
     html += '</div>';
     container.innerHTML = html;
