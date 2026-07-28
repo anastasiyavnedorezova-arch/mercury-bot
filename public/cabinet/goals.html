@@ -294,7 +294,7 @@
         }
         .bot-goal-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
         .bot-message-area { display: flex; flex-direction: column; gap: 14px; }
-        .bot-avatar { width: 44px; height: 44px; background: var(--color-brand-main); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .bot-avatar { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .bot-time { font-size: 11px; font-weight: 500; color: var(--color-text-main); opacity: 0.5; margin-bottom: 6px; }
         .bot-bubble { background: var(--color-bg-alt); border-radius: 16px 16px 16px 4px; padding: 8px 12px; font-size: 14px; line-height: 20px; color: var(--color-text-main); }
         .bot-bubble + .bot-bubble { margin-top: 6px; }
@@ -602,13 +602,15 @@
 
   // ── Render functions ─────────────────────────────────────
   function renderNoGoals(container) {
-    container.innerHTML = '<div class="goals-grid">' + renderBotCard() + '</div>';
+    container.innerHTML = '<div class="goals-grid">' + renderBotCard('no_goals') + '</div>';
   }
 
   function renderActiveGoals(container, goals) {
     var html = '<div class="goals-grid">';
     goals.forEach(function(g) { html += renderGoalCard(g, false); });
-    html += renderBotCard();
+    // TODO: сценарий для 2+ целей не описан явно в задаче — уточнить у Анастасии текст сообщения бота для этого случая
+    var scenario = goals.length === 1 ? 'one_goal_active' : 'no_goals';
+    html += renderBotCard(scenario);
     html += '</div>';
     container.innerHTML = html;
   }
@@ -680,14 +682,23 @@
     '</div>';
   }
 
-  function renderBotCard() {
+  function renderBotCard(scenario) {
+    var bubbles;
+    if (scenario === 'one_goal_active') {
+      bubbles =
+        '<div class="bot-bubble">Ты молодец! Цели поставлены, а значит — достижимы! 💪</div>' +
+        '<div class="bot-bubble">Если хочешь, можем поставить ещё одну цель 🤗</div>';
+    } else {
+      // 'no_goals' и любой нераспознанный сценарий — прежнее поведение
+      bubbles = '<div class="bot-bubble">Упс! Похоже, у тебя ещё нет установленных финансовых целей. Давай сделаем? 🤗</div>';
+    }
     return '<div class="bot-goal-card">' +
       '<div class="bot-message-area">' +
         '<div class="bot-avatar">' +
-          '<svg width="22" height="20" viewBox="0 0 22 20" fill="none"><path d="M4 7L8.5 13.5L11 10.5L13.5 13.5L18 7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="17" r="1.5" fill="#2FBF71"/></svg>' +
+          '<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI1LjAwMDUgMTAuMTY0MUMzNC41MjMxIDEwLjE2NDMgNDIuMjQyNiAxNi44MDY2IDQyLjI0MjcgMjVDNDIuMjQyNyAzMy4xOTM1IDM0LjUyMzEgMzkuODM1NyAyNS4wMDA1IDM5LjgzNTlDMjEuNjk1NSAzOS44MzU5IDE4LjYwNzIgMzkuMDM1NyAxNS45ODM5IDM3LjY0ODRDMTQuODM1OSAzOC42NTA3IDEzLjM0MjkgMzkuMjU4NCAxMS44MTg4IDM5LjMxOTNDMTIuNjA1IDM4LjI5NjkgMTMuMDU0MSAzNy4wMjE1IDEzLjA5NjIgMzUuNzMzNEM5LjgwNjgzIDMzLjAzMTggNy43NTczMiAyOS4yMjE4IDcuNzU3MzIgMjVDNy43NTczNiAxNi44MDY1IDE1LjQ3NzggMTAuMTY0MSAyNS4wMDA1IDEwLjE2NDFaTTguMjQ5NTEgMTkuMTI3QzcuMzc4MzcgMjAuOTkyNCA2LjkzNzAyIDIyLjk2NjggNi45MzcwMSAyNUM2LjkzNzAxIDI3LjAzNSA3LjM3ODE1IDI5LjAwODUgOC4yNDk1MSAzMC44NzNDNS45MjE1OCAzMC4xMDc2IDQuMjI3MDUgMjguNTkyMyA0LjIyNzA1IDI1QzQuMjI3MDggMjEuNTkyNiA1LjkyMTQgMTkuODkyNCA4LjI0OTUxIDE5LjEyN1pNNDEuNzUwNSAxOS4xMjdDNDQuMDc4NCAxOS44OTI1IDQ1Ljc3MjkgMjEuNTkyNyA0NS43NzI5IDI1QzQ1Ljc3MjkgMjguNTkyMyA0NC4wNzg1IDMwLjEwNzYgNDEuNzUwNSAzMC44NzNDNDIuNjIxOSAyOS4wMDg1IDQzLjA2MyAyNy4wMzUgNDMuMDYzIDI1QzQzLjA2MyAyMi45NjY5IDQyLjYyMTYgMjAuOTkyNCA0MS43NTA1IDE5LjEyN1pNMzUuNzE2MyAyMC41NzAzQzM1LjA3NTIgMTkuODYwMSAzNC4xODY5IDIwLjU3MDMgMzMuMjMgMjAuNTcwM0gxNi43N0MxNS44MjQ0IDIwLjU3MDMgMTQuOTE5MiAxOS44NyAxNC4yODM3IDIwLjU3MDNDMTIuNDg0MyAyMi41NTMxIDExLjQxMTYgMjIuMjg5MiAxMS40MTE2IDI1QzExLjQxMTYgMjcuNzEwOSAxMi40ODQ0IDI3Ljc2OTEgMTQuMjgzNyAyOS43NTJDMTQuOTE5MiAzMC40NTIxIDE2LjA3NzUgMzAuMzI5MSAxNy4wMjI5IDMwLjMyOTFIMzMuNTM2NkMzNC40ODIgMzAuMzI5MSAzNS4wODA5IDMxLjAyOTEgMzUuNzE2MyAzMC4zMjkxQzM3LjUxNTYgMjguMzQ2MiAzOC41ODg0IDI3LjcxMDkgMzguNTg4NCAyNUMzOC41ODg0IDIyLjMwMDQgMzcuNTAyNCAyMi41NDkyIDM1LjcxNjMgMjAuNTcwM1oiIGZpbGw9IiMyRkJGNzEiLz4KPHBhdGggZD0iTTM1LjEyMzkgMzEuMTkwOUgxNC45MTUxQzEyLjA3NjggMzEuMTkwOSA5Ljc3NTg4IDI4Ljg5IDkuNzc1ODggMjYuMDUxN1YyNC40NTM3QzkuNzc1ODggMjEuNjE1NCAxMi4wNzY4IDE5LjMxNDUgMTQuOTE1MSAxOS4zMTQ1SDM1LjEyMzlDMzcuOTYyMiAxOS4zMTQ1IDQwLjI2MzEgMjEuNjE1NCA0MC4yNjMxIDI0LjQ1MzdWMjYuMDUxN0M0MC4yNjMxIDI4Ljg5IDM3Ljk2MjIgMzEuMTkwOSAzNS4xMjM5IDMxLjE5MDlaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjYuNjQxOCAyNi40OTQ5QzI2Ljk2MzQgMjYuNDk0OSAyNy4xOTk1IDI2LjgwMjUgMjcuMTA4OSAyNy4xMTA3QzI2Ljg0MjggMjguMDE3MiAyNi4wMDUyIDI4LjY3OTIgMjUuMDEyMyAyOC42NzkyQzI0LjAyIDI4LjY3OTIgMjMuMTgyMyAyOC4wMTcyIDIyLjkxNjIgMjcuMTEwN0MyMi44MjU3IDI2LjgwMjUgMjMuMDYyMiAyNi40OTQ5IDIzLjM4MzMgMjYuNDk0OUgyNi42NDE4WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMTguMjg2MSAyNS40MDIxQzE4LjI4NjEgMjYuNjA4NSAxNy4zMDggMjcuNTg2NCAxNi4xMDE5IDI3LjU4NjRDMTQuODk1MyAyNy41ODY0IDEzLjkxNzIgMjYuNjA4NSAxMy45MTcyIDI1LjQwMjFDMTMuOTE3MiAyNC4xOTU3IDE0Ljg5NTMgMjMuMjE3NyAxNi4xMDE5IDIzLjIxNzdDMTcuMzA4IDIzLjIxNzcgMTguMjg2MSAyNC4xOTU3IDE4LjI4NjEgMjUuNDAyMVoiIGZpbGw9IiMxRTJBMzgiLz4KPHBhdGggZD0iTTE2LjYzOTIgMjUuNzY3NkMxNi43NzM1IDI1Ljc2NzYgMTYuODgyMyAyNS44NzY2IDE2Ljg4MjMgMjYuMDEwN0MxNi44ODIzIDI2LjE0NSAxNi43NzM2IDI2LjI1MzkgMTYuNjM5MiAyNi4yNTM5QzE2LjUwNDkgMjYuMjUzNyAxNi4zOTcgMjYuMTQ0OSAxNi4zOTcgMjYuMDEwN0MxNi4zOTcgMjUuODc2NyAxNi41MDUgMjUuNzY3OCAxNi42MzkyIDI1Ljc2NzZaTTE1LjUxOSAyNC4xNjExQzE1LjkwOTYgMjQuMTYxMiAxNi4yMjYxIDI0LjQ3NzcgMTYuMjI2MSAyNC44NjgyQzE2LjIyNiAyNS4yNTg1IDE1LjkwOTYgMjUuNTc1MSAxNS41MTkgMjUuNTc1MkMxNS4xMjg1IDI1LjU3NTIgMTQuODEyMSAyNS4yNTg1IDE0LjgxMiAyNC44NjgyQzE0LjgxMiAyNC40Nzc3IDE1LjEyODUgMjQuMTYxMSAxNS41MTkgMjQuMTYxMVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNC41OTQ0IDI3Ljk1MTdDMTQuNDY3MiAyNy45NTE3IDE0LjM0NDEgMjcuODg0OSAxNC4yNzcxIDI3Ljc2NjRDMTQuMTc4IDI3LjU5MTQgMTQuMjQwNCAyNy4zNjg4IDE0LjQxNTYgMjcuMjY5N0MxNC40NDMyIDI3LjI1NCAxNS4xMDY3IDI2Ljg4NTEgMTYuMTAxOSAyNi44ODUxQzE3LjA5NjcgMjYuODg1MSAxNy43NjAyIDI3LjI1NCAxNy43ODgzIDI3LjI2OTdDMTcuOTYzIDI3LjM2ODggMTguMDI0NiAyNy41OTA5IDE3LjkyNTkgMjcuNzY2QzE3LjgyNjggMjcuOTQwNSAxNy42MDU5IDI4LjAwMjQgMTcuNDMwOCAyNy45MDQ0QzE3LjQxOTkgMjcuODk4NSAxNi44OTA4IDI3LjYxMzQgMTYuMTAxOSAyNy42MTM0QzE1LjMwODYgMjcuNjEzNCAxNC43NzgxIDI3LjkwMTYgMTQuNzcyNyAyNy45MDQ1QzE0LjcxNjEgMjcuOTM2NSAxNC42NTQ2IDI3Ljk1MTcgMTQuNTk0NCAyNy45NTE3WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMzYuMTA4NCAyNS40MDI2QzM2LjEwODQgMjYuNjA4OSAzNS4xMzAzIDI3LjU4NjkgMzMuOTIzOSAyNy41ODY5QzMyLjcxNzUgMjcuNTg2OSAzMS43Mzk1IDI2LjYwODkgMzEuNzM5NSAyNS40MDI2QzMxLjczOTUgMjQuMTk2MiAzMi43MTc1IDIzLjIxODIgMzMuOTIzOSAyMy4yMTgyQzM1LjEzMDMgMjMuMjE4MiAzNi4xMDg0IDI0LjE5NjIgMzYuMTA4NCAyNS40MDI2WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMzQuNDYxOSAyNS43Njc2QzM0LjU5NTUgMjUuNzY3NiAzNC43MDUgMjUuODc2NiAzNC43MDUxIDI2LjAxMDdDMzQuNzA1MSAyNi4xNDUgMzQuNTk1NSAyNi4yNTM5IDM0LjQ2MTkgMjYuMjUzOUMzNC4zMjc1IDI2LjI1MzcgMzQuMjE4OCAyNi4xNDQ4IDM0LjIxODggMjYuMDEwN0MzNC4yMTg4IDI1Ljg3NjggMzQuMzI3NSAyNS43Njc4IDM0LjQ2MTkgMjUuNzY3NlpNMzMuMzQxOCAyNC4xNjExQzMzLjczMTcgMjQuMTYxMyAzNC4wNDg4IDI0LjQ3NzggMzQuMDQ4OCAyNC44NjgyQzM0LjA0ODggMjUuMjU4NCAzMy43MzE3IDI1LjU3NSAzMy4zNDE4IDI1LjU3NTJDMzIuOTUxMiAyNS41NzUyIDMyLjYzNDggMjUuMjU4NSAzMi42MzQ4IDI0Ljg2ODJDMzIuNjM0OCAyNC40Nzc3IDMyLjk1MTIgMjQuMTYxMSAzMy4zNDE4IDI0LjE2MTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMzIuNDE2NSAyNy45NTE3QzMyLjI4OTggMjcuOTUxNyAzMi4xNjY3IDI3Ljg4NSAzMi4wOTk3IDI3Ljc2NjRDMzIuMDAwOCAyNy41OTE0IDMyLjA2MzIgMjcuMzY4OCAzMi4yMzgzIDI3LjI2OTdDMzIuMjY2MSAyNy4yNTQgMzIuOTI5NSAyNi44ODUxIDMzLjkyNDEgMjYuODg1MUMzNC45MTk3IDI2Ljg4NTEgMzUuNTgzMSAyNy4yNTQgMzUuNjEwNCAyNy4yNjk3QzM1Ljc4NiAyNy4zNjg4IDM1Ljg0NzMgMjcuNTkwOSAzNS43NDg0IDI3Ljc2NkMzNS42NDk1IDI3Ljk0MDYgMzUuNDI4IDI4LjAwMjMgMzUuMjUzNCAyNy45MDQ0QzM1LjI0MjYgMjcuODk4NSAzNC43MTM2IDI3LjYxMzQgMzMuOTI0MSAyNy42MTM0QzMzLjEzMDkgMjcuNjEzNCAzMi42MDA0IDI3LjkwMTUgMzIuNTk1MiAyNy45MDQ1QzMyLjUzOTEgMjcuOTM2NSAzMi40NzczIDI3Ljk1MTcgMzIuNDE2NSAyNy45NTE3WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMjUuMzEzNiAxMy4zNTg3QzI1LjM1ODggMTQuMjk1MiAyNi4wNjkxIDE1LjA1ODkgMjcuMTA1MyAxNS4zMjQ1QzI1Ljk5NDkgMTUuNTcxMSAyNS4wNjUzIDE2LjMyMDMgMjQuNzQ5IDE3LjI1MzVDMjQuNzAzOCAxNi4zMTcgMjMuOTkzNCAxNS41NTM0IDIyLjk1NzIgMTUuMjg3OCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==" alt="Mercury" width="22" height="22"/>' +
         '</div>' +
         '<div class="bot-time">Mercury · сейчас</div>' +
-        '<div class="bot-bubble">Упс! Похоже, у тебя ещё нет установленных финансовых целей. Давай сделаем? 🤗</div>' +
+        bubbles +
       '</div>' +
       '<div class="bot-card-action">' +
         '<button class="btn btn-dark btn-sm" onclick="window.openModal(\'modalAddGoal\')">+ Добавить цель</button>' +
