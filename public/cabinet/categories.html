@@ -209,7 +209,6 @@
           white-space: nowrap;
         }
         .filter-chip:hover { opacity: 0.65; }
-        #chipMine { color: #2D3748; }
         .filter-chip.is-active { opacity: 1; }
         .filter-chip__arrow {
           width: 10px; height: 6px;
@@ -290,6 +289,8 @@
           color: #fff;
         }
         .filter-chip.is-active .filter-chip__arrow { border-top-color: #fff; }
+        .filter-chip#chipMine { color: #2D3748; }
+        .filter-chip#chipMine.is-active { color: #fff; }
     
         /* ══════ EXPORT BUTTON ══════ */
         .btn-export {
@@ -649,7 +650,7 @@
       <button class="filter-chip is-active" id="chipAll">ВСЕ</button>
       <button class="filter-chip" id="chipIncome">ДОХОД</button>
       <button class="filter-chip" id="chipExpense">РАСХОД</button>
-      <button class="filter-chip" id="chipMine" disabled style="opacity:.4;cursor:not-allowed;">МОИ КАТЕГОРИИ</button>
+      <button class="filter-chip" id="chipMine">МОИ КАТЕГОРИИ</button>
     </div>
     <div class="table-outer">
       <table class="catt-table" id="catTable">
@@ -781,15 +782,6 @@
       var canAdd = sub === 'trial' || sub === 'active';
       var btnAdd = document.getElementById('btnAddCat');
       if (btnAdd) btnAdd.disabled = !canAdd;
-
-      // ПРАВКА 5: чип "Мои категории" — только если есть хоть одна пользовательская категория
-      var hasUserCats = allCats.some(function(c) { return c.user_id !== null; });
-      var cm = document.getElementById('chipMine');
-      if (cm) {
-        cm.disabled = !hasUserCats;
-        cm.style.opacity = hasUserCats ? '1' : '0.4';
-        cm.style.cursor = hasUserCats ? 'pointer' : 'not-allowed';
-      }
 
       renderTable();
     } catch(e) { console.error('Categories error:', e); }
@@ -943,7 +935,6 @@
   document.getElementById('chipIncome').addEventListener('click', function() { filterType = 'income'; filterMine = false; setActiveChip('chipIncome'); renderTable(); });
   document.getElementById('chipExpense').addEventListener('click', function() { filterType = 'expense'; filterMine = false; setActiveChip('chipExpense'); renderTable(); });
   document.getElementById('chipMine').addEventListener('click', function() {
-    if (this.disabled) return;
     filterMine = !filterMine; filterType = 'all';
     this.classList.toggle('is-active', filterMine);
     if (filterMine) setActiveChip(null); else setActiveChip('chipAll');
