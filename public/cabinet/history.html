@@ -266,9 +266,14 @@
         @media (max-width: 900px) {
           body { background: #fff; }
           .lk-logo--desktop { display: none; }
-          .lk-logo--mobile  { display: block; }
+          .lk-logo--mobile  { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; overflow: hidden; }
           .lk-header__actions { display: none; }
-          .lk-header__username { font-size: 14px; }
+          .lk-header { height: 60px; padding: 8px 12px; }
+          .lk-logo--mobile img { height: 44px; width: 44px; object-fit: contain; }
+          .lk-header__username { font-size: 13px; line-height: 18px; height: 20px; display: flex; align-items: center; }
+          .lk-header__sub-text { font-size: 12px; line-height: 16px; }
+          .lk-badge { padding: 2px 4px 3px; font-size: 10px; line-height: 13px; letter-spacing: 0.06px; }
+          .lk-header__user { gap: 1px; }
           .lk-burger { display: flex; }
           .lk-sidebar { display: none !important; }
           .lk-burger { display: flex !important; }

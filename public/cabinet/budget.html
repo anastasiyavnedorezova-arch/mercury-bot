@@ -330,7 +330,7 @@
           }
           .lk-sidebar { display: none !important; }
           .lk-logo--desktop { display: none; }
-          .lk-logo--mobile { display: block; }
+          .lk-logo--mobile { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; overflow: hidden; }
           .main-content {
             padding: 28px 20px 120px;
             display: flex;
@@ -352,7 +352,12 @@
             margin-top: 0;
             margin-bottom: 0;
           }
-          .lk-header { padding: 0 12px; gap: 10px; }
+          .lk-header { padding: 8px 12px; gap: 10px; height: 60px; }
+          .lk-logo--mobile img { height: 44px; width: 44px; object-fit: contain; }
+          .lk-header__username { font-size: 13px; line-height: 18px; height: 20px; display: flex; align-items: center; }
+          .lk-header__sub-text { font-size: 12px; line-height: 16px; }
+          .lk-badge { padding: 2px 4px 3px; font-size: 10px; line-height: 13px; letter-spacing: 0.06px; }
+          .lk-header__user { gap: 1px; }
           .lk-logo-text { font-size: 14px; }
           .lk-subscription { font-size: 11px; }
           .lk-header__actions { display: none !important; }
