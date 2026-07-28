@@ -1,5 +1,5 @@
 # Меркури — Саммари проекта
-*Последнее обновление: июнь 2026*
+*Последнее обновление: июль 2026*
 
 ---
 
@@ -54,10 +54,12 @@
 
 ### Ключевые поля users
 ```
-external_id, channel, username, email,
+external_id, channel, tg_username, web_username, email,
 terms_accepted_at, terms_version,
+status (active/deleted/merged), deleted_at, merged_into,
 created_at, last_active_at
 ```
+> Переименование: `username` → `tg_username`, `telegram_username` → `web_username`
 
 ### Важные особенности схемы БД
 - Поле даты транзакций: `transaction_date` (не `date`)
@@ -268,13 +270,23 @@ NIXPACKS_NODE_VERSION=20
 - Блок "Что вы получаете после установки"
 - Блок контактов с email
 
+**bot.html** ✅
+- Веб-чат с ботом (полноценный, работает без Telegram)
+- API: POST /api/bot/init, POST /api/bot/send, GET /api/bot/poll, POST /api/bot/callback
+
+**profile.html** ✅
+- Личные данные, подключение Telegram, статус подписки, удаление аккаунта
+
+**faq.html** ✅
+- Вопросы и ответы (табы + аккордеон)
+
+**feedback.html** ✅
+- Обратная связь (письмо на почту + запись в БД)
+
 ### Страницы ЛК — ещё не реализованы
 - goals.html — мои цели
 - budget.html — мой бюджет
 - analytics.html — аналитика
-- profile.html — мой профиль
-- faq.html — вопросы и ответы
-- feedback.html — обратная связь
 
 ---
 
@@ -364,9 +376,6 @@ pm2 stop all  # если бот запустился на VPS и создаёт 
 - [ ] goals.html — мои цели
 - [ ] budget.html — мой бюджет
 - [ ] analytics.html — аналитика
-- [ ] profile.html — мой профиль
-- [ ] faq.html — вопросы и ответы
-- [ ] feedback.html — обратная связь
 
 ### Инфраструктура (план миграции на РФ)
 - Фаза 0: исследование YandexGPT / GigaChat как замена OpenAI
@@ -391,6 +400,17 @@ pm2 stop all  # если бот запустился на VPS и создаёт 
 - Бэкенд канал-независимый: `external_id + channel` в users
 - LLM-парсер живёт в API, не в боте
 - State хранится в памяти (Map) — сбрасывается через 30 минут
+
+### Ключевые архитектурные решения
+- **src/webBotAdapter.js** — адаптер бота для веб-канала: имитирует node-telegram-bot-api, очередь сообщений через EventEmitter
+- **src/realBot.js** — singleton TelegramBot без polling, используется для отправки уведомлений админу из любого канала
+- **src/handlers/callbackDispatcher.js** — диспетчер callback_query, общий для Telegram и веб-канала
+- **Merge-логика при подключении Telegram:** POST /api/profile/merge-telegram — переносит transactions, goals, budget, subscriptions со старого user_id на новый
+- **Идентификация веб-юзеров:** external_id = `web_<userId>` если Telegram не подключён, реальный telegram_id если подключён
+- **Переименование колонок users:** `username` → `tg_username`, `telegram_username` → `web_username`
+- **Новые колонки users:** status (active/deleted/merged), deleted_at, merged_into
+- **Cron 0 3 * * \*:** очистка данных удалённых аккаунтов старше 30 дней (transactions, goals, budget)
+- **Регистрация по email:** после signup Supabase вызывается POST /api/auth/web-login для получения нашего JWT
 
 ### Логика прогресса целей
 `saved = initial_saved + SUM(транзакции где category_id = id категории "Цель")`
