@@ -117,44 +117,6 @@
         .page-content { flex: 1; min-width: 0; overflow-y: auto; padding: 28px 40px 80px; }
         .page-title { font-size: 32px; font-weight: 600; color: #2D3748; line-height: 40px; padding-bottom: 12px; }
     
-        /* ══════ CARD GRID ══════ */
-        /* Desktop: flex-wrap, row 1 = три по 340px, row 2 = 340 + 700 */
-        .dash-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 20px;
-          align-items: flex-start;
-          align-content: flex-start;
-          width: 100%;
-          max-width: 1060px;
-        }
-    
-        .dash-card {
-          background: #fff;
-          border-radius: 24px;
-          border: 1px solid #E2E8F0;
-          box-shadow: 0 2px 8px rgba(0,0,0,.08);
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          overflow: hidden;
-          flex-shrink: 0;
-        }
-    
-        /* Exact Figma sizes */
-        .dash-card--balance  { width: 340px; height: 248px; }
-        .dash-card--budget   { width: 340px; height: 248px; }
-        .dash-card--goal     { width: 340px; height: 248px; }
-        .dash-card--top5     { width: 340px; height: 360px; }
-        .dash-card--trans    { width: 700px; height: 360px; }
-    
-        .dash-card__header { display: flex; align-items: center; gap: 10px; }
-        .dash-card__title  { flex: 1; font-size: 14px; font-weight: 700; color: #6B7280; line-height: 20px; }
-    
-        /* Card body slot — карточки будут добавлены позже */
-        .dash-card__body { flex: 1; }
-    
         /* ══════ MOBILE OVERLAY + DRAWER ══════ */
         .lk-overlay { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); opacity: 0; transition: opacity 250ms; }
         .lk-overlay.is-open { display: block; }
