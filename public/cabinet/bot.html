@@ -143,10 +143,7 @@ body{font-family:'Manrope',sans-serif;background:#F5F7FA;margin:0;overflow:hidde
       <button class="input-icon-btn" id="botMenuBtn" aria-label="Главное меню">
         <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNCA2SDIwTTQgMTJIMjBNNCAxOEgyMCIgc3Ryb2tlPSIjNEM5QUZGIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==" width="24" height="24" alt=""/>
       </button>
-      <button class="input-icon-btn" id="attachBtn" aria-label="Прикрепить файл">
-        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjEuNDQgMTEuMDVMMTIuMjUgMjAuMjRDMTEuMTI0MiAyMS4zNjU4IDkuNTk3MTggMjEuOTk4MyA4LjAwNTAyIDIxLjk5ODNDNi40MTI4NiAyMS45OTgzIDQuODg1ODQgMjEuMzY1OCAzLjc2MDAyIDIwLjI0QzIuNjM0MiAxOS4xMTQyIDIuMDAxNzEgMTcuNTg3MiAyLjAwMTcxIDE1Ljk5NUMyLjAwMTcxIDE0LjQwMjggMi42MzQyIDEyLjg3NTggMy43NjAwMiAxMS43NUwxMi4zMyAzLjE4QzEzLjA4MDYgMi40Mjk3NSAxNC4wOTkxIDIuMDA4NzkgMTUuMTYgMi4wMDg3OUMxNi4yMjA5IDIuMDA4NzkgMTcuMjM5NCAyLjQyOTc1IDE3Ljk5IDMuMThDMTguNzQwMyAzLjkzMDYxIDE5LjE2MTIgNC45NDkwOCAxOS4xNjEyIDYuMDFDMTkuMTYxMiA3LjA3MDkyIDE4Ljc0MDMgOC4wODkzOSAxNy45OSA4Ljg0TDkuNDEwMDIgMTcuNDFDOS4wMzQ4OSAxNy43ODUxIDguNTI2MTQgMTcuOTk1NCA3Ljk5NTAyIDE3Ljk5NTRDNy40NjM5IDE3Ljk5NTQgNi45NTUxNSAxNy43ODUxIDYuNTgwMDIgMTcuNDFDNi4yMDQ4OSAxNy4wMzQ5IDUuOTk0NjMgMTYuNTI2MSA1Ljk5NDYzIDE1Ljk5NUM1Ljk5NDYzIDE1LjQ2MzkgNi4yMDQ4OSAxNC45NTUxIDYuNTgwMDIgMTQuNThMMTUuMDcgNi4xIiBzdHJva2U9IiM0QzlBRkYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+" width="24" height="24" alt=""/>
-      </button>
-      <input type="file" id="attachFileInput" accept="image/*,.pdf" style="display:none"/>
+
       <input class="chat-input" id="chatInput" type="text" placeholder="Написать сообщение..." autocomplete="off"/>
       <button class="send-btn" id="sendBtn" aria-label="Отправить">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -360,16 +357,6 @@ document.getElementById('botMenuBtn').addEventListener('click', () => {
   fakeBtn.textContent = '☰ Главное меню';
   fakeBtn.callback_data = 'menu:main';
   handleInlineButton(fakeBtn);
-});
-document.getElementById('attachBtn').addEventListener('click', () => {
-  document.getElementById('attachFileInput').click();
-});
-document.getElementById('attachFileInput').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  console.log('[bot] attach file:', file.name);
-  // TODO: implement file upload
-  e.target.value = '';
 });
 
 // ── Start ──────────────────────────────────────────────────────────────────
