@@ -216,7 +216,7 @@ document.addEventListener('visibilitychange', () => {
 
 // ── Render messages ────────────────────────────────────────────────────────
 function removeTyping() {
-  document.getElementById('typingIndicator')?.remove();
+  document.querySelectorAll('.typing-wrap').forEach(el => el.remove());
 }
 
 function renderMessages(messages) {
@@ -273,9 +273,10 @@ async function sendMessage() {
   area.appendChild(wrap);
 
   // Typing indicator
+  const typingId = 'typingIndicator-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   const typingWrap = document.createElement('div');
   typingWrap.className = 'typing-wrap';
-  typingWrap.id = 'typingIndicator';
+  typingWrap.id = typingId;
   typingWrap.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
   area.appendChild(typingWrap);
   area.scrollTop = area.scrollHeight;
@@ -312,9 +313,10 @@ async function handleInlineButton(btn) {
   area.appendChild(uWrap);
 
   // Показываем индикатор печати
+  const typingId = 'typingIndicator-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   const typingWrap = document.createElement('div');
   typingWrap.className = 'typing-wrap';
-  typingWrap.id = 'typingIndicator';
+  typingWrap.id = typingId;
   typingWrap.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
   area.appendChild(typingWrap);
   area.scrollTop = area.scrollHeight;
