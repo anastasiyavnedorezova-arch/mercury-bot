@@ -281,7 +281,10 @@
     
         /* ══════ BUDGET TABLE ══════ */
         .budget-table-wrap { background: var(--color-white); border-radius: var(--radius-md); overflow: clip; box-shadow: var(--shadow-card); border: 1px solid var(--color-border); }
-        .budget-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .budget-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #CBD5E1 transparent; }
+        .budget-table-scroll::-webkit-scrollbar { height: 6px; }
+        .budget-table-scroll::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+        .budget-table-scroll::-webkit-scrollbar-track { background: transparent; }
         .budget-table { min-width: 580px; width: 100%; border-collapse: collapse; }
         .budget-table th { background: var(--color-bg-alt); padding: 8px 14px; font-size: 12px; font-weight: 700; color: var(--color-text-second); text-align: left; border-bottom: 1px solid var(--color-border); white-space: nowrap; }
         .budget-table td { padding: 10px 14px; font-size: 14px; color: var(--color-text-main); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
@@ -327,6 +330,7 @@
             padding: 20px 20px 80px;
             box-sizing: border-box;
             overflow: visible;
+            gap: 0;
           }
           .lk-sidebar { display: none !important; }
           .lk-logo--desktop { display: none; }
@@ -341,16 +345,16 @@
             font-size: 24px;
             font-weight: 600;
             line-height: 32px;
-            text-align: center;
-            margin-bottom: 0;
-            padding-bottom: 12px;
+            text-align: left;
+            margin-bottom: 32px;
+            padding-bottom: 0;
           }
           .section-subtitle {
             font-size: 18px;
-            text-align: center;
-            padding-bottom: 12px;
+            text-align: left;
+            padding-bottom: 0;
             margin-top: 0;
-            margin-bottom: 0;
+            margin-bottom: 32px;
           }
           .lk-header { padding: 8px 12px; gap: 10px; height: 60px; }
           .lk-logo--mobile img { height: 44px; width: 44px; object-fit: contain; }
@@ -369,6 +373,7 @@
             padding: 20px;
             border-radius: 20px;
             gap: 12px;
+            margin-bottom: 0;
           }
           .budget-card-empty-body {
             padding: 0 24px;
