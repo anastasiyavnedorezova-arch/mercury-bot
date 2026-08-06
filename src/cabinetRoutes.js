@@ -873,7 +873,6 @@ router.post('/api/bot/send', requireAuth, async (req, res) => {
     if (!text || !text.trim()) return res.status(400).json({ error: 'Empty message' });
 
     const chatId = await getOrCreateWebChatId(req.userId);
-    clearWebChatQueue(chatId);
 
     const fakeMsg = {
       message_id: Date.now(),
