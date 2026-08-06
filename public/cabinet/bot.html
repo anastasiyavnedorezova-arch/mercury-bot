@@ -330,9 +330,10 @@ document.getElementById('botCloseBtn').addEventListener('click', () => {
   }
 });
 document.getElementById('botMenuBtn').addEventListener('click', () => {
-  const input = document.getElementById('chatInput');
-  input.value = 'Главное меню';
-  sendMessage();
+  const fakeBtn = document.createElement('button');
+  fakeBtn.textContent = '☰ Главное меню';
+  fakeBtn.callback_data = 'menu:main';
+  handleInlineButton(fakeBtn);
 });
 document.getElementById('attachBtn').addEventListener('click', () => {
   document.getElementById('attachFileInput').click();
