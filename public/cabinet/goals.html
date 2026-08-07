@@ -499,9 +499,10 @@
 
 
 <script type="module">
-  import { initLayout, loadUser, getToken, authHeaders, renderHeader } from './layout.js';
+  import { initLayout, loadUser, getToken, authHeaders, renderHeader, initLogoutModal } from './layout.js';
   document.addEventListener('DOMContentLoaded', function() {
     initLayout('goals');
+    initLogoutModal();
     loadUser();
 
   // ── Helpers ──────────────────────────────────────────────

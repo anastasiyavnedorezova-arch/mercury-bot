@@ -721,9 +721,10 @@
 
 
 <script type="module">
-  import { initLayout, loadUser, getToken, authHeaders } from './layout.js';
+  import { initLayout, loadUser, getToken, authHeaders, initLogoutModal } from './layout.js';
   document.addEventListener('DOMContentLoaded', function() {
     initLayout('categories');
+    initLogoutModal();
     loadUser();
   // ── Categories ───────────────────────────────────────────
   var allCats = [];

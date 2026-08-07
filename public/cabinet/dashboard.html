@@ -674,9 +674,10 @@
 </div>
 
 <script type="module">
-  import { initLayout, getToken, renderHeader } from './layout.js';
+  import { initLayout, getToken, renderHeader, initLogoutModal } from './layout.js';
 
   initLayout('dashboard');
+  initLogoutModal();
 
   // ══════════════════════════════════════════════════════
   // MAIN DASHBOARD LOADER
@@ -1168,39 +1169,7 @@
   }
 
   async function loadTop5Card() { /* handled by loadDashboard */ }
-  // ── LOGOUT MODAL ────────────────────────────────────────────────────
-  function openLogoutModal() {
-    const _logoutOverlay = document.getElementById('logoutOverlay');
-    if (_logoutOverlay) _logoutOverlay.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeLogoutModal() {
-    const _logoutOverlay2 = document.getElementById('logoutOverlay');
-    if (_logoutOverlay2) _logoutOverlay2.classList.remove('is-open');
-    document.body.style.overflow = '';
-  }
-  function doLogout() {
-    localStorage.removeItem('mercury_token');
-    window.location.replace('/cabinet/login');
-  }
-  window.openLogoutModal = openLogoutModal;
 
 </script>
-</script>
-
-<!-- LOGOUT MODAL -->
-<div class="logout-overlay" id="logoutOverlay" onclick="if(event.target===this)closeLogoutModal()">
-  <div class="logout-modal">
-    <button class="logout-modal__close" onclick="closeLogoutModal()" aria-label="Закрыть">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5L15 15" stroke="#9CA3AF" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
-    <h2 class="logout-modal__title">Выход из аккаунта</h2>
-    <p class="logout-modal__text">Вы уверены, что хотите выйти из аккаунта на этом устройстве?</p>
-    <div class="logout-modal__actions">
-      <button class="logout-modal__btn logout-modal__btn--dark" onclick="doLogout()">Выйти</button>
-      <button class="logout-modal__btn logout-modal__btn--sec" onclick="closeLogoutModal()">Отменить</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>

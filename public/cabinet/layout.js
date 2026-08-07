@@ -136,6 +136,51 @@ export function initLayout(activeNavItem) {
   });
 }
 
+export function initLogoutModal() {
+  if (!document.getElementById('logoutOverlay')) {
+    const overlayHtml = `
+      <div class="logout-overlay" id="logoutOverlay">
+        <div class="logout-modal">
+          <button class="logout-modal__close" id="logoutModalCloseBtn" aria-label="Закрыть">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5L15 15" stroke="#9CA3AF" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </button>
+          <h2 class="logout-modal__title">Выход из аккаунта</h2>
+          <p class="logout-modal__text">Вы уверены, что хотите выйти из аккаунта на этом устройстве?</p>
+          <div class="logout-modal__actions">
+            <button class="logout-modal__btn logout-modal__btn--dark" id="logoutModalConfirmBtn">Выйти</button>
+            <button class="logout-modal__btn logout-modal__btn--sec" id="logoutModalCancelBtn">Отменить</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', overlayHtml);
+  }
+
+  const overlay = document.getElementById('logoutOverlay');
+  const closeBtn = document.getElementById('logoutModalCloseBtn');
+  const cancelBtn = document.getElementById('logoutModalCancelBtn');
+  const confirmBtn = document.getElementById('logoutModalConfirmBtn');
+
+  function openLogoutModal() {
+    overlay.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLogoutModal() {
+    overlay.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+  function doLogout() {
+    localStorage.removeItem('mercury_token');
+    window.location.replace('/cabinet/login');
+  }
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLogoutModal(); });
+  closeBtn.addEventListener('click', closeLogoutModal);
+  cancelBtn.addEventListener('click', closeLogoutModal);
+  confirmBtn.addEventListener('click', doLogout);
+
+  window.openLogoutModal = openLogoutModal;
+}
+
 export async function loadUser() {
   const token = getToken();
   if (!token) { window.location.replace('/cabinet/login'); return; }
