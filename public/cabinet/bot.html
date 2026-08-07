@@ -171,6 +171,12 @@ body{font-family:'Manrope',sans-serif;background:#F5F7FA;margin:0;overflow:hidde
 <script type="module">
 import { getToken, authHeaders } from './layout.js';
 
+// ── Auth guard: redirect to login if no token present ──────────────────────
+if (!getToken()) {
+  window.location.href = '/cabinet/login?redirect=/cabinet/bot';
+  throw new Error('Not authenticated — redirecting to login');
+}
+
 // ── Chat state ─────────────────────────────────────────────────────────────
 let isPolling = false;
 
@@ -178,6 +184,10 @@ let isPolling = false;
 async function initChat() {
   try {
     const res = await fetch('/api/bot/init', { method: 'POST', headers: authHeaders() });
+    if (res.status === 401) {
+      window.location.href = '/cabinet/login?redirect=/cabinet/bot';
+      return;
+    }
     if (!res.ok) return;
     const data = await res.json();
     if (data.ok && data.messages) {
@@ -289,11 +299,16 @@ async function sendMessage() {
   area.scrollTop = area.scrollHeight;
 
   try {
-    await fetch('/api/bot/send', {
+    const res = await fetch('/api/bot/send', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({ text }),
     });
+    if (res.status === 401) {
+      removeTyping();
+      window.location.href = '/cabinet/login?redirect=/cabinet/bot';
+      return;
+    }
   } catch(e) {
     console.error('[bot] sendMessage error:', e);
     removeTyping();

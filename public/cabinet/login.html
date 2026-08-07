@@ -360,11 +360,20 @@
 
         <div class="social-row">
           <span class="social-row__label">Войти с помощью</span>
-          <script async src="https://telegram.org/js/telegram-widget.js?22"
-            data-telegram-login="mercury_finbot"
-            data-size="large"
-            data-auth-url="https://mercuryfinbot.ru/cabinet/tg-callback.html"
-            data-request-access="write">
+          <script>
+            (function() {
+              const _rp = new URLSearchParams(window.location.search).get('redirect');
+              const _sr = (_rp && _rp.startsWith('/') && !_rp.startsWith('//')) ? _rp : null;
+              const _au = 'https://mercuryfinbot.ru/cabinet/tg-callback.html' + (_sr ? '?redirect=' + encodeURIComponent(_sr) : '');
+              const _s = document.createElement('script');
+              _s.async = true;
+              _s.src = 'https://telegram.org/js/telegram-widget.js?22';
+              _s.setAttribute('data-telegram-login', 'mercury_finbot');
+              _s.setAttribute('data-size', 'large');
+              _s.setAttribute('data-auth-url', _au);
+              _s.setAttribute('data-request-access', 'write');
+              document.currentScript.parentNode.replaceChild(_s, document.currentScript);
+            })();
           </script>
         </div>
       </div>
@@ -424,7 +433,10 @@
   // ── CONFIG ────────────────────────────────────────────────
   const SUPABASE_URL      = 'https://ijvkcskzvwluntrsbcsj.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg';
-  const DASHBOARD_URL     = '/dashboard';
+  const urlParams = new URLSearchParams(window.location.search);
+  const rawRedirect = urlParams.get('redirect');
+  const REDIRECT_TARGET = (rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) ? rawRedirect : '/dashboard';
+  const DASHBOARD_URL     = REDIRECT_TARGET;
   const REGISTER_URL      = '/register';
   const TG_BOT_URL        = 'https://t.me/mercury_finbot';
   // ─────────────────────────────────────────────────────────

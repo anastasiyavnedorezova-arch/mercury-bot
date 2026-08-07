@@ -88,7 +88,10 @@
 
       const { token } = await res.json();
       localStorage.setItem('mercury_token', token);
-      window.location.href = '/cabinet/dashboard.html';
+      const tgUrlParams = new URLSearchParams(window.location.search);
+      const tgRawRedirect = tgUrlParams.get('redirect');
+      const tgRedirectTarget = (tgRawRedirect && tgRawRedirect.startsWith('/') && !tgRawRedirect.startsWith('//')) ? tgRawRedirect : '/cabinet/dashboard.html';
+      window.location.href = tgRedirectTarget;
     } catch (e) {
       showError('Сетевая ошибка. Попробуйте позже.');
     }
