@@ -460,8 +460,8 @@
     <button class="modal-close-btn" onclick="closeModal('modalAddGoal')">&#10005;</button>
     <div class="modal-title">Добавить цель</div>
     <div class="modal-body">
-      Финансовые цели создаются и настраиваются через бота в Telegram.<br><br>
-      Запусти бота и выбери раздел <strong>«Мои цели»</strong>, чтобы добавить новую цель.
+      Финансовые цели создаются и настраиваются через бота.<br><br>
+      Запусти бота и выбери раздел <strong>«Мои цели»</strong>, чтобы отредактировать или добавить новую цель.
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary btn-sm" onclick="closeModal('modalAddGoal')">Закрыть</button>
@@ -641,7 +641,7 @@
       '</div>' +
       '<div class="card-actions">' +
         '<button class="btn btn-danger-text btn-sm" onclick="window.openDeleteGoalModal(\'' + gId + '\',\'' + gName + '\')">Удалить</button>' +
-        '<button class="btn btn-mini-dark btn-sm" onclick="window.openBotWidget();">Редактировать</button>' +
+        '<button class="btn btn-mini-dark btn-sm" onclick="window.openModal(\'modalAddGoal\');">Редактировать</button>' +
       '</div>' +
     '</div>';
   }
