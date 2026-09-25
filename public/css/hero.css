@@ -882,6 +882,26 @@ body {
 }
 
 
+/* ── START2 (Как начать пользоваться ботом) ── */
+.start2 { padding: 120px 140px; background: #EEF2F6; }
+.start2__container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 40px; }
+.start2__title { font-size: 32px; font-weight: 600; line-height: 40px; color: #2D3748; text-align: center; margin: 0; }
+.start2__list { list-style: none; margin: 0; padding: 0; width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.start2__card { width: 100%; padding: 24px; background: #fff; border-radius: 24px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; }
+.start2__step-label { font-size: 12px; font-weight: 500; line-height: 16px; color: #6B7280; }
+.start2__row { display: flex; align-items: center; gap: 12px; }
+.start2__icon { flex-shrink: 0; }
+.start2__text { flex: 1; margin: 0; font-size: 18px; font-weight: 600; line-height: 26px; color: #2D3748; }
+.start2__cta { flex-shrink: 0; }
+
+@media (max-width: 768px) {
+  .start2 { padding: 60px 20px; }
+  .start2__title { font-size: 24px; line-height: 32px; }
+  .start2__row { flex-wrap: wrap; }
+  .start2__cta { width: 100%; }
+}
+
+
 /* ================================================
    ПРЕИМУЩЕСТВА
    Figma: padding 120px 140px, bg #F5F7FA,
@@ -2225,3 +2245,7 @@ body {
 }
 
 .header__mobile-nav-btn:hover { color: var(--blue); }
+
+/* ── Channel modal ── */
+.modal-box--small { max-width: 420px; }
+.channel-modal__options { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }

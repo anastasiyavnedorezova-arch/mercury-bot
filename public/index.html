@@ -36,8 +36,8 @@
       </nav>
 
       <div class="header__actions">
-        <a href="https://t.me/mercury_finbot" class="btn btn--secondary" target="_blank" rel="noopener">Войти</a>
-        <a href="https://t.me/mercury_finbot" class="btn btn--primary" target="_blank" rel="noopener">Создать аккаунт</a>
+        <a href="https://finnikbot.ru/cabinet/login" class="btn btn--secondary">Войти</a>
+        <a href="https://finnikbot.ru/cabinet/register" class="btn btn--primary">Создать аккаунт</a>
       </div>
 
       <!-- Бургер — иконка X при открытом меню -->
@@ -59,8 +59,8 @@
         <a href="#faq">Вопросы и ответы</a>
       </nav>
       <div class="header__mobile-actions">
-        <a href="https://t.me/mercury_finbot" class="btn btn--secondary" target="_blank" rel="noopener">Войти</a>
-        <a href="https://t.me/mercury_finbot" class="btn btn--blue" target="_blank" rel="noopener">Создать аккаунт</a>
+        <a href="https://finnikbot.ru/cabinet/login" class="btn btn--secondary">Войти</a>
+        <a href="https://finnikbot.ru/cabinet/register" class="btn btn--blue">Создать аккаунт</a>
       </div>
     </div>
   </header>
@@ -100,7 +100,7 @@
 
             <div class="hero__cta">
               <div class="hero__buttons">
-                <a href="https://t.me/mercury_finbot" class="btn btn--accent" target="_blank" rel="noopener">Установить бота</a>
+                <a href="/cabinet/how-to" class="btn btn--accent">Установить бота</a>
                 <a href="https://t.me/mercury_finbot" class="btn btn--secondary" target="_blank" rel="noopener">Открыть в Telegram</a>
               </div>
               <p class="hero__note">Бот работает в Telegram и через виджет в личном кабинете на сайте</p>
@@ -250,38 +250,33 @@
       </div>
     </section>
     <!-- ===================== КАК НАЧАТЬ ===================== -->
-    <section class="start" id="start">
-      <div class="start__container">
-        <div class="start__inner">
-
-          <!-- Левая колонка: текст + шаги -->
-          <div class="start__content">
-            <div class="start__head">
-              <h2 class="start__title">Как начать пользоваться ботом?</h2>
-              <p class="start__desc">Выбирайте тот формат бота, который вам больше всего подходит: в Telegram или через виджет в личном кабинете.</p>
+    <section class="start2" id="start">
+      <div class="start2__container">
+        <h2 class="start2__title">Как начать пользоваться ботом?</h2>
+        <ol class="start2__list">
+          <li class="start2__card">
+            <span class="start2__step-label">Шаг 1.</span>
+            <div class="start2__row">
+              <img src="images/icon-user-circle.svg" width="32" height="32" alt="" class="start2__icon" />
+              <p class="start2__text">Создайте аккаунт на сайте и активируйте пробный период на 30 дней</p>
             </div>
-            <ol class="start__steps">
-              <li class="start__step">
-                <span class="start__step-label">Шаг 1.</span>
-                <p class="start__step-text">Откройте бот в Telegram или создайте аккаунт на сайте. Виджет Бота можно установить на экран телефона</p>
-              </li>
-              <li class="start__step">
-                <span class="start__step-label">Шаг 2.</span>
-                <p class="start__step-text">Активируйте пробный период на 30 дней</p>
-              </li>
-              <li class="start__step">
-                <span class="start__step-label">Шаг 3.</span>
-                <p class="start__step-text">Сделайте свою первую запись!</p>
-              </li>
-            </ol>
-          </div>
-
-          <!-- Правая колонка: картинка -->
-          <div class="start__visual">
-            <img src="images/image-start.png" alt="Запись расхода в боте Финник" width="462" height="304" />
-          </div>
-
-        </div>
+          </li>
+          <li class="start2__card">
+            <span class="start2__step-label">Шаг 2.</span>
+            <div class="start2__row">
+              <img src="images/icon-inbox-in.svg" width="32" height="32" alt="" class="start2__icon" />
+              <p class="start2__text">Установите виджет Бота на экран телефона (инструкция есть в Личном кабинете для Android и iOS устройств)</p>
+            </div>
+          </li>
+          <li class="start2__card start2__card--last">
+            <span class="start2__step-label">Шаг 3.</span>
+            <div class="start2__row">
+              <img src="images/icon-chat-round-dots.svg" width="32" height="32" alt="" class="start2__icon" />
+              <p class="start2__text">Сделайте свою первую запись!</p>
+              <a href="/cabinet/login" class="btn btn--dark start2__cta">Начать</a>
+            </div>
+          </li>
+        </ol>
       </div>
     </section>
 
@@ -415,7 +410,7 @@
             </div>
 
             <div class="pricing__card-cta">
-              <a href="https://t.me/mercury_finbot" class="btn btn--blue btn--full" target="_blank" rel="noopener">Попробовать бесплатно</a>
+              <button class="btn btn--blue btn--full" id="openChannelModal" type="button">Попробовать бесплатно</button>
             </div>
           </div>
 
@@ -489,7 +484,7 @@
 
             <div class="trial__actions">
               <a href="https://t.me/mercury_finbot" class="btn btn--accent" target="_blank" rel="noopener">Начать в Telegram</a>
-              <a href="https://t.me/mercury_finbot" class="btn btn--dark" target="_blank" rel="noopener">Войти через сайт</a>
+              <a href="/cabinet/login" class="btn btn--dark">Войти через сайт</a>
             </div>
           </div>
 
@@ -758,6 +753,22 @@
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== МОДАЛ: ВЫБОР КАНАЛА ===================== -->
+  <div class="modal-overlay" id="channelModal" aria-hidden="true" role="dialog" aria-labelledby="channelModalTitle" aria-modal="true">
+    <div class="modal-box modal-box--small" role="document">
+      <button class="modal-close" id="channelModalClose" aria-label="Закрыть">
+        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+          <path d="M1 1L14 14M14 1L1 14" stroke="#6B7280" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <h2 class="modal-title" id="channelModalTitle">Запускаем бота через личный кабинет или Telegram?</h2>
+      <div class="channel-modal__options">
+        <a href="/cabinet/bot" class="btn btn--primary btn--full">Личный кабинет</a>
+        <a href="https://t.me/mercury_finbot" class="btn btn--secondary btn--full" target="_blank" rel="noopener">В Telegram</a>
       </div>
     </div>
   </div>
