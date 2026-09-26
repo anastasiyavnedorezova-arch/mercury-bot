@@ -676,7 +676,7 @@
 
       <!-- Строка 2: ИНН + документы -->
       <div class="footer__bottom">
-        <p class="footer__legal">Недорезова Анастасия Вячеславовна, самозанятая</p>
+        <p class="footer__legal">Захарова Анастасия Вячеславовна, физическое лицо, применяющее специальный налоговый режим «Налог на профессиональный доход», ИНН 504230305760</p>
         <div class="footer__docs">
           <a href="https://telegra.ph/Politika-konfidencialnosti-servisa-Merkuri-03-31" class="footer__doc-link" target="_blank" rel="noopener">Политика конфиденциальности</a>
           <a href="https://telegra.ph/Polzovatelskoe-soglashenie-servisa-Merkuri-03-31" class="footer__doc-link" target="_blank" rel="noopener">Пользовательское соглашение</a>
@@ -691,7 +691,7 @@
 
   <!-- ===================== МОДАЛ: ВЫБОР ТАРИФА ===================== -->
   <div class="modal-overlay" id="pricingModal" aria-hidden="true" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
-    <div class="modal-box" role="document">
+    <div class="modal-box modal-box--pricing" role="document">
 
       <!-- Кнопка закрытия -->
       <button class="modal-close" id="modalClose" aria-label="Закрыть">
@@ -702,54 +702,68 @@
 
       <h2 class="modal-title" id="modalTitle">Выберите тариф</h2>
 
-      <div class="modal-plans">
+      <div class="modal-plans2">
 
         <!-- 1 месяц -->
-        <div class="modal-plan">
-          <div class="modal-plan__top">
-            <span class="modal-plan__period">1 месяц</span>
-          </div>
-          <div class="modal-plan__bottom">
-            <div class="modal-plan__prices">
-              <span class="modal-plan__price">499 руб.</span>
+        <div class="modal-plan2">
+          <div class="modal-plan2__head">
+            <span class="modal-plan2__label">1 месяц доступа</span>
+            <div class="modal-plan2__row">
+              <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="modal-plan2__text">Полный доступ на <strong>1 месяц</strong> (30 календарных дней)</span>
             </div>
-            <a href="https://t.me/mercury_finbot" class="modal-plan__btn" target="_blank" rel="noopener">Оплатить</a>
+            <div class="modal-plan2__row">
+              <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="modal-plan2__text">Для сохранения доступа необходимо оплачивать тариф самостоятельно каждый месяц</span>
+            </div>
+          </div>
+          <div class="modal-plan2__bottom">
+            <span class="modal-plan2__price">399 руб.</span>
+            <a href="https://t.me/mercury_finbot" class="modal-plan2__btn" target="_blank" rel="noopener">К оплате</a>
           </div>
         </div>
 
         <!-- 6 месяцев -->
-        <div class="modal-plan">
-          <div class="modal-plan__top">
-            <span class="modal-plan__period modal-plan__period--active">6 месяцев</span>
-            <span class="modal-plan__badge">
-              <span class="modal-plan__badge-dot" aria-hidden="true"></span>
-              скидка 17%
-            </span>
-          </div>
-          <div class="modal-plan__bottom">
-            <div class="modal-plan__prices">
-              <span class="modal-plan__old-price">2 994 руб.</span>
-              <span class="modal-plan__new-price">2 490 руб.</span>
+        <div class="modal-plan2 modal-plan2--highlight">
+          <div class="modal-plan2__head">
+            <span class="modal-plan2__label">6 месяцев доступа</span>
+            <div class="modal-plan2__row">
+              <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="modal-plan2__text">Полный доступ на <strong>5 месяцев</strong></span>
             </div>
-            <a href="https://t.me/mercury_finbot" class="modal-plan__btn" target="_blank" rel="noopener">Оплатить</a>
+            <div class="modal-plan2__row">
+              <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="modal-plan2__text">+1 месяц в подарок <strong>бесплатно! 🎁</strong></span>
+            </div>
+          </div>
+          <div class="modal-plan2__bottom">
+            <div class="modal-plan2__prices">
+              <span class="modal-plan2__old-price">2 394 руб.</span>
+              <span class="modal-plan2__new-price">1 995 руб.</span>
+            </div>
+            <a href="https://t.me/mercury_finbot" class="modal-plan2__btn modal-plan2__btn--accent" target="_blank" rel="noopener">К оплате</a>
           </div>
         </div>
 
         <!-- 12 месяцев -->
-        <div class="modal-plan">
-          <div class="modal-plan__top">
-            <span class="modal-plan__period modal-plan__period--active">12 месяцев</span>
-            <span class="modal-plan__badge">
-              <span class="modal-plan__badge-dot" aria-hidden="true"></span>
-              скидка 20%
-            </span>
-          </div>
-          <div class="modal-plan__bottom">
-            <div class="modal-plan__prices">
-              <span class="modal-plan__old-price">5 988 руб.</span>
-              <span class="modal-plan__new-price">4 490 руб.</span>
+        <div class="modal-plan2">
+          <div class="modal-plan2__head">
+            <span class="modal-plan2__label">1 год доступа</span>
+            <div class="modal-plan2__row">
+              <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="modal-plan2__text">Полный доступ на <strong>10 месяцев</strong></span>
             </div>
-            <a href="https://t.me/mercury_finbot" class="modal-plan__btn" target="_blank" rel="noopener">Оплатить</a>
+            <div class="modal-plan2__row">
+              <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span class="modal-plan2__text">+2 месяца в подарок <strong>бесплатно! 🎁🎁</strong></span>
+            </div>
+          </div>
+          <div class="modal-plan2__bottom">
+            <div class="modal-plan2__prices">
+              <span class="modal-plan2__old-price">4 788 руб.</span>
+              <span class="modal-plan2__new-price">3 990 руб.</span>
+            </div>
+            <a href="https://t.me/mercury_finbot" class="modal-plan2__btn" target="_blank" rel="noopener">К оплате</a>
           </div>
         </div>
 

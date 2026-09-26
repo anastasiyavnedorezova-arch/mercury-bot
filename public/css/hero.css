@@ -2219,6 +2219,34 @@ body {
 }
 
 
+/* ── PRICING MODAL v2 ── */
+.modal-box--pricing { max-width: 500px; padding: 32px 32px 48px; }
+.modal-plans2 { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 24px; }
+.modal-plan2 { padding: 16px 20px; background: #fff; border-radius: 20px; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 12px; }
+.modal-plan2--highlight { background: #F5F7FA; border-color: #CBD5E1; }
+.modal-plan2__head { display: flex; flex-direction: column; gap: 4px; }
+.modal-plan2__label { font-size: 12px; font-weight: 500; line-height: 16px; color: #6B7280; }
+.modal-plan2__row { display: flex; align-items: center; gap: 4px; }
+.modal-plan2__check { flex-shrink: 0; }
+.modal-plan2__text { font-size: 12px; font-weight: 500; line-height: 16px; color: #2D3748; }
+.modal-plan2__text strong { font-weight: 700; }
+.modal-plan2__bottom { display: flex; justify-content: space-between; align-items: flex-end; }
+.modal-plan2__price { font-size: 20px; font-weight: 600; line-height: 27px; letter-spacing: 0.4px; color: #2D3748; }
+.modal-plan2__prices { display: flex; align-items: baseline; gap: 4px; }
+.modal-plan2__old-price { font-size: 16px; font-weight: 400; line-height: 24px; color: #9CA3AF; text-decoration: line-through; }
+.modal-plan2__new-price { font-size: 20px; font-weight: 600; line-height: 27px; letter-spacing: 0.4px; color: #E5484D; }
+.modal-plan2__btn { padding: 6px 14px; background: #1E2A38; color: #fff; border-radius: 8px; font-size: 14px; font-weight: 600; line-height: 20px; letter-spacing: 0.14px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: opacity 150ms; }
+.modal-plan2__btn:hover { opacity: 0.85; }
+.modal-plan2__btn--accent { background: #4C9AFF; }
+
+@media (max-width: 768px) {
+  .modal-box--pricing { padding: 24px 20px 32px; max-width: calc(100vw - 32px); }
+  .modal-plan2 { padding: 14px 16px; }
+  .modal-plan2__price,
+  .modal-plan2__new-price { font-size: 18px; line-height: 26px; }
+}
+
+
 /* Header nav кнопка — выглядит как ссылка */
 .header__nav-btn {
   background: none;
