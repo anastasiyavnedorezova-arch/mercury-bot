@@ -14,14 +14,9 @@ import { handleSubscriptionEmailState } from './subscription.js';
 import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
+import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, TEXTS } from '../utils/botTexts.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const TYPE_RU = {
-  expense: 'расход',
-  income: 'доход',
-  goal: 'цель',
-};
 
 const MENU_KEYBOARD = {
   reply_markup: {
@@ -47,51 +42,49 @@ async function getUserId(externalId) {
   return data?.id ?? null;
 }
 
-async function getCategoryId(name) {
-  const { data } = await supabase
+// Ищет категорию по названию среди системных и категорий самого пользователя
+// (своя категория приоритетнее системной). Не найдена — «Остальное».
+// Раньше поиск шёл по имени среди ВСЕХ пользователей через .single(): при одинаковых названиях
+// у разных людей запись уходила в «Остальное» или в чужую категорию.
+async function resolveCategory(userId, name) {
+  const { data: rows } = await supabase
     .from('categories')
-    .select('id')
+    .select('id, name, user_id')
     .eq('name', name)
-    .single();
-  if (data?.id) return data.id;
+    .eq('is_active', true);
+  const list = rows ?? [];
+  const found = list.find((r) => r.user_id === userId) ?? list.find((r) => r.user_id === null);
+  if (found) return { id: found.id, name: found.name };
 
-  // Fallback: если категория не найдена — используем «Остальное»
-  console.warn('[getCategoryId] Category not found:', name, '— falling back to Остальное');
+  console.warn('[resolveCategory] Category not found:', name, '— falling back to Остальное');
   const { data: fallback } = await supabase
     .from('categories')
-    .select('id')
+    .select('id, name')
     .eq('name', 'Остальное')
-    .single();
-  return fallback?.id ?? null;
+    .is('user_id', null)
+    .limit(1)
+    .maybeSingle();
+  return { id: fallback?.id ?? null, name: fallback?.name ?? 'Остальное' };
 }
 
 export async function saveTransaction(userId, parsed, rawMessage) {
-  const categoryId = await getCategoryId(parsed.category);
+  const category = await resolveCategory(userId, parsed.category);
+  parsed.category_saved = category.name; // категория, которая реально попала в базу — её показываем пользователю
   const { data, error } = await supabase.from('transactions').insert({
     user_id: userId,
     type: parsed.type,
     amount: parsed.amount,
-    category_id: categoryId,
+    category_id: category.id,
     comment: parsed.comment ?? null,
     transaction_date: parsed.transaction_date,
     raw_message: rawMessage,
   }).select('id').single();
 
   if (error) {
-    console.error('[saveTransaction] Supabase error:', error.message, '| category:', parsed.category, '| categoryId:', categoryId);
+    console.error('[saveTransaction] Supabase error:', error.message, '| category:', parsed.category, '| categoryId:', category.id);
     return null;
   }
   return data?.id ?? null;
-}
-
-function buildConfirmationText(parsed) {
-  return (
-    `Записал ✅\n` +
-    `📅 Дата: ${parsed.transaction_date}\n` +
-    `📌 Тип: ${TYPE_RU[parsed.type] ?? parsed.type}\n` +
-    `📂 Категория: ${parsed.category}\n` +
-    `💸 Сумма: ${parsed.amount} ₽`
-  );
 }
 
 async function sendConfirmation(bot, chatId, parsed, txId, access) {
@@ -169,11 +162,15 @@ A: Просто отправь мне фото или скрин истории 
 
 Если вопрос не про Финника — мягко предложи написать через кнопку «Обратная связь».`;
 
-async function callFaqLLM(question) {
+const FAQ_WEB_NOTE = `
+
+ВАЖНО: сейчас пользователь пишет из веб-чата в личном кабинете. Здесь пока нельзя отправлять голосовые сообщения и фото или скриншоты — не предлагай их. Записывать траты нужно текстом. Если спросят про голос или скриншоты — скажи, что это пока работает только в Telegram-боте 💛`;
+
+async function callFaqLLM(question, bot) {
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
-      { role: 'system', content: FAQ_SYSTEM_PROMPT },
+      { role: 'system', content: FAQ_SYSTEM_PROMPT + (isWebBot(bot) ? FAQ_WEB_NOTE : '') },
       { role: 'user', content: question },
     ],
     temperature: 0.3,
@@ -187,11 +184,26 @@ async function callLLM(userText, userCategories = []) {
     model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: getSystemPrompt(userCategories) },
-      { role: 'user', content: `Сегодня ${today}. ${userText}` },
+      // Дата и сообщение — на разных строках: в записи «Сегодня 2026-09-27. 3917 …» модель могла принять «27. 3917» за число
+      { role: 'user', content: `Сегодня ${today}.\nСообщение пользователя: ${userText}` },
     ],
     temperature: 0,
   });
-  return JSON.parse(response.choices[0].message.content.trim());
+  const raw = response.choices[0].message.content.trim();
+  // Иногда модель оборачивает JSON в ```json … ``` — убираем ограждение
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  let result;
+  try {
+    result = JSON.parse(cleaned);
+  } catch (err) {
+    console.error('[llm] invalid JSON', JSON.stringify({ text: userText, raw: raw.slice(0, 300) }));
+    throw err;
+  }
+  if (result === null || typeof result !== 'object') {
+    console.error('[llm] unexpected result', JSON.stringify({ text: userText, raw: raw.slice(0, 300) }));
+    throw new Error('LLM returned non-object');
+  }
+  return result;
 }
 
 function inlineKeyboard(options) {
@@ -222,18 +234,18 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
     }
     if (savedCount === 0) {
       await bot.sendMessage(chatId,
-        'Не удалось сохранить записи — попробуй ещё раз 🙏',
+        TEXTS.saveFailedMany,
         MENU_KEYBOARD
       );
       return;
     }
-    const text = parsed.map(buildConfirmationText).join('\n\n');
+    const text = buildMultiConfirmationText(parsed);
     await bot.sendMessage(chatId, text, MENU_KEYBOARD);
   } else {
     const txId = await saveTransaction(userId, parsed, rawMessage);
     if (txId === null) {
       await bot.sendMessage(chatId,
-        'Не удалось сохранить запись — попробуй ещё раз или напиши в обратную связь 🙏',
+        TEXTS.saveFailed,
         MENU_KEYBOARD
       );
       return;
@@ -255,7 +267,7 @@ export async function handleCategorySelection(bot, chatId, telegramId, category)
   }
 
   if (!state.amount) {
-    await bot.sendMessage(chatId, 'Не смог определить сумму. Попробуй написать заново 🤔');
+    await bot.sendMessage(chatId, TEXTS.noAmountInState);
     return true;
   }
 
@@ -299,7 +311,7 @@ async function handleManualAmountState(bot, msg) {
 
   const amount = parseAmount(msg.text?.trim());
   if (amount === null) {
-    await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число, например: 1500 👇');
+    await bot.sendMessage(chatId, TEXTS.manualNoAmount);
     return true;
   }
 
@@ -323,7 +335,7 @@ async function handleManualAmountState(bot, msg) {
   const txId = await saveTransaction(userId, parsed, msg.text);
   if (txId === null) {
     await bot.sendMessage(chatId,
-      'Не удалось сохранить запись — попробуй ещё раз или напиши в обратную связь 🙏',
+      TEXTS.saveFailed,
       MENU_KEYBOARD
     );
     return true;
@@ -389,6 +401,19 @@ export async function handleManualCallback(bot, query) {
   }
 }
 
+// Точное совпадение текста с названием категории (системной или самого пользователя)
+async function matchCategoryName(externalId, text) {
+  const userId = await getUserId(externalId);
+  if (!userId) return null;
+  const { data } = await supabase
+    .from('categories')
+    .select('name')
+    .or(`user_id.is.null,user_id.eq.${userId}`)
+    .eq('is_active', true);
+  const t = String(text ?? '').trim().toLowerCase();
+  return (data ?? []).find((c) => c.name.toLowerCase() === t)?.name ?? null;
+}
+
 export async function handleMessage(bot, msg) {
   const text = msg.text;
   const telegramId = msg.from.id;
@@ -427,13 +452,30 @@ export async function handleMessage(bot, msg) {
   if (await handleCategoryNameState(bot, msg)) return;
   if (await handleManualAmountState(bot, msg)) return;
 
-  const state = userStates.get(telegramId);
+  let state = userStates.get(telegramId);
+
+  // Бот ждёт категорию после вопроса про маркетплейс (кнопки). Если вместо кнопки пришёл текст:
+  //  — это точное название категории → записываем в неё;
+  //  — иначе отложенная запись отменяется. Ответ без цифр («одежда», «платье») считаем описанием покупки
+  //    для отложенной суммы; со цифрами («3400 продукты») — это уже новое сообщение о трате.
+  // Раньше любой текст здесь принимался за название категории («3400 продукты» уходило в «Остальное»).
+  let pendingAnswerText = null;
+  if (state?.awaitingCategory && state.pendingAmount === undefined) {
+    const picked = await matchCategoryName(telegramId, text);
+    if (picked) {
+      await handleCategorySelection(bot, chatId, telegramId, picked);
+      return;
+    }
+    userStates.delete(telegramId);
+    if (state.amount && !/\d/.test(text)) pendingAnswerText = `${text} ${state.amount}`;
+    state = undefined;
+  }
 
   // FAQ-вопрос
   if (state?.awaitingQuestion) {
     userStates.delete(telegramId);
     try {
-      const answer = await callFaqLLM(text);
+      const answer = await callFaqLLM(text, bot);
       await bot.sendMessage(chatId, answer, {
         reply_markup: {
           inline_keyboard: [[
@@ -444,14 +486,14 @@ export async function handleMessage(bot, msg) {
       });
     } catch (err) {
       console.error('FAQ LLM error:', err.message);
-      await bot.sendMessage(chatId, 'Не смог ответить. Попробуй ещё раз 🙏');
+      await bot.sendMessage(chatId, TEXTS.faqFailed);
     }
     return;
   }
 
   // ── Определяем effectiveText в зависимости от pending-состояния ───────────
 
-  let effectiveText = text;
+  let effectiveText = pendingAnswerText ?? text;
 
   if (state?.awaitingCategory && state.pendingAmount !== undefined) {
     // Сценарий А — ответ: пользователь написал категорию для отложенной суммы
@@ -467,11 +509,6 @@ export async function handleMessage(bot, msg) {
       effectiveText = `${state.pendingCategory} ${text}`;
     }
     // если не число — pass through as-is
-
-  } else if (state?.awaitingCategory) {
-    // WB/маркетплейс — пользователь набрал категорию текстом
-    await handleCategorySelection(bot, chatId, telegramId, text);
-    return;
 
   } else {
     // Нет активного state — проверяем Сценарии А и Б
@@ -489,7 +526,7 @@ export async function handleMessage(bot, msg) {
       });
       await bot.sendMessage(
         chatId,
-        `Сумма <b>${pureAmount} ₽</b> — уточни в какую категорию записать эту транзакцию 👇`,
+        `Записываю <b>${pureAmount} ₽</b> 💸 В какую категорию отнести? Напиши название 👇`,
         { parse_mode: 'HTML' }
       );
       return;
@@ -515,7 +552,7 @@ export async function handleMessage(bot, msg) {
           });
           await bot.sendMessage(
             chatId,
-            `Расход в категории <b>${matchedCat.name}</b>. Уточни, какую сумму записать 👇`,
+            `Категория <b>${matchedCat.name}</b> 👌 Какую сумму записать? 👇`,
             { parse_mode: 'HTML' }
           );
           return;
@@ -542,11 +579,21 @@ export async function handleMessage(bot, msg) {
     parsed = await callLLM(effectiveText, userCategories);
   } catch (err) {
     console.error('OpenAI error:', err.message);
-    await bot.sendMessage(chatId, 'Ошибка при обработке сообщения. Попробуй ещё раз 🙏');
+    await bot.sendMessage(chatId, TEXTS.processingError);
     return;
   }
 
   if (!Array.isArray(parsed) && parsed.error) {
+    if (
+      parsed.error === 'clarification_needed' &&
+      parsed.clarification_type === 'wb_category' &&
+      !mentionsMarketplace(effectiveText)
+    ) {
+      // Модель ошиблась: маркетплейс в сообщении не назван — вопрос про него не нужен
+      console.log('[llm] wb_category без названия маркетплейса → не распознано', JSON.stringify(effectiveText));
+      await bot.sendMessage(chatId, TEXTS.unrecognized, MANUAL_ERROR_KEYBOARD);
+      return;
+    }
     if (parsed.error === 'clarification_needed' && parsed.clarification_type === 'wb_category') {
       // Fix 5: если в сообщении есть слова про возврат — не спрашиваем про WB
       const isReturn = /возврат|вернули|вернул|refund/i.test(effectiveText);
@@ -569,7 +616,7 @@ export async function handleMessage(bot, msg) {
         transaction_date: parsed.transaction_date ?? new Date().toISOString().split('T')[0],
         createdAt: Date.now(),
       });
-      const options = parsed.options ?? ['Одежда и обувь', 'Дом и быт', 'Техника и мебель', 'Красота', 'Другое'];
+      const options = parsed.options ?? ['Одежда и обувь', 'Товары в дом', 'Техника и мебель', 'Красота и уход за собой', 'Остальное'];
       await bot.sendMessage(chatId, parsed.message, { reply_markup: inlineKeyboard(options) });
       return;
     }
@@ -577,11 +624,13 @@ export async function handleMessage(bot, msg) {
       await bot.sendMessage(chatId, parsed.message, MANUAL_ERROR_KEYBOARD);
       return;
     }
+    // Сырой ответ модели попадает в лог Railway — так видно, почему запись не распозналась
+    console.log('[llm] не распознано', JSON.stringify({ text: effectiveText, result: parsed }));
     if (parsed.error === 'no_amount') {
-      await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число 👇', MANUAL_ERROR_KEYBOARD);
+      await bot.sendMessage(chatId, TEXTS.noAmount, MANUAL_ERROR_KEYBOARD);
       return;
     }
-    await bot.sendMessage(chatId, 'Не смог распознать запись. Попробуй в формате: Продукты 2500 🤔', MANUAL_ERROR_KEYBOARD);
+    await bot.sendMessage(chatId, TEXTS.unrecognized, MANUAL_ERROR_KEYBOARD);
     return;
   }
 

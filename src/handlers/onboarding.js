@@ -3,6 +3,8 @@ import { showMainMenu } from './menu.js';
 import { showGoal } from './goal.js';
 import { showBudget } from './budget.js';
 import { showSubscription } from './subscription.js';
+import { getUserAccess } from '../utils/access.js';
+import { recordHint } from '../utils/botTexts.js';
 
 const STEP1_TEXT =
   `Привет! Я Финник — твой личный финансовый помощник 👋\n\n` +
@@ -56,6 +58,41 @@ export async function showConsentScreen(bot, chatId) {
   await bot.sendMessage(chatId, CONSENT_TEXT, CONSENT_KEYBOARD);
 }
 
+// Приветствие для веб-чата. Показывается при открытии виджета, пока у пользователя нет ни одной записи.
+// Экран согласия не нужен: согласие уже дано галочкой при регистрации на сайте.
+// Текст про пробный период зависит от подписки: предлагаем активацию только тем, у кого триала ещё не было.
+export async function maybeShowWebWelcome(bot, chatId, userId) {
+  const { count: txCount } = await supabase
+    .from('transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId);
+  if ((txCount ?? 0) > 0) return false;
+
+  const access = await getUserAccess(userId);
+
+  if (access === 'free') {
+    const { count: subCount } = await supabase
+      .from('subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    if ((subCount ?? 0) === 0) {
+      await bot.sendMessage(chatId, STEP1_TEXT, STEP1_KEYBOARD);
+      return true;
+    }
+  }
+
+  const cut = STEP1_TEXT.indexOf('У тебя есть 30 дней');
+  const intro = (cut > 0 ? STEP1_TEXT.slice(0, cut) : STEP1_TEXT).trimEnd();
+  let tail = 'Рассказать подробнее о моих возможностях или сразу запишем первую трату?';
+  if (access === 'trial') tail = `Пробный период уже активирован — тебе доступны все функции 🎉 ${tail}`;
+  if (access === 'active') tail = `Подписка уже активна — тебе доступны все функции 🎉 ${tail}`;
+
+  const rows = STEP1_KEYBOARD.reply_markup.inline_keyboard.slice(0, 4);
+  rows.push([{ text: 'Записать первую трату', callback_data: 'onboarding:start_transaction' }]);
+  await bot.sendMessage(chatId, `${intro}\n\n${tail}`, { reply_markup: { inline_keyboard: rows } });
+  return true;
+}
+
 export async function hasAcceptedTerms(externalId) {
   const { data } = await supabase
     .from('users')
@@ -78,15 +115,9 @@ async function getUserId(telegramId) {
     .from('users')
     .select('id')
     .eq('external_id', telegramId)
-    .eq('channel', 'telegram')
-    .single();
+    .maybeSingle();
   return data?.id ?? null;
 }
-
-const START_TRANSACTION_TEXT =
-  `Напиши мне о своей трате или доходе в свободной форме\n` +
-  `или запиши голосовое — я распознаю его 🎤\n` +
-  `Например: «продукты 1800», «такси 450», «зарплата 120000»`;
 
 export async function handleOnboardingCallback(bot, query) {
   const chatId = query.message.chat.id;
@@ -107,8 +138,7 @@ export async function handleOnboardingCallback(bot, query) {
     await supabase
       .from('users')
       .update({ terms_accepted_at: new Date().toISOString(), terms_version: '1.0' })
-      .eq('external_id', telegramId)
-      .eq('channel', 'telegram');
+      .eq('external_id', telegramId);
 
     await bot.sendMessage(chatId, STEP1_TEXT, STEP1_KEYBOARD);
     return;
@@ -139,7 +169,7 @@ export async function handleOnboardingCallback(bot, query) {
   }
 
   if (action === 'onboarding:start_transaction' || action === 'onboarding:start_transaction_2') {
-    await bot.sendMessage(chatId, START_TRANSACTION_TEXT);
+    await bot.sendMessage(chatId, recordHint(bot));
     return;
   }
 
@@ -279,33 +309,54 @@ export async function handleOnboardingCallback(bot, query) {
 
   if (action === 'onboarding:activate_trial') {
     const userId = await getUserId(telegramId);
+    if (!userId) {
+      await bot.sendMessage(chatId, 'Не нашёл твой аккаунт 😔 Попробуй ещё раз или напиши нам через «Обратную связь»');
+      return;
+    }
 
-    if (userId) {
-      const { data: existingSub } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('user_id', userId)
-        .in('status', ['trial', 'active'])
-        .maybeSingle();
+    // Есть ли уже пробный период или подписка (в том числе закончившиеся)
+    const { data: existingSub } = await supabase
+      .from('subscriptions')
+      .select('status, ends_at')
+      .eq('user_id', userId)
+      .in('status', ['trial', 'active'])
+      .order('ends_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-      if (existingSub) {
-        await bot.sendMessage(chatId, `У тебя уже активирован пробный период 💛`);
-        return;
+    if (existingSub) {
+      const isActive = new Date(existingSub.ends_at) > new Date();
+      if (isActive) {
+        await bot.sendMessage(chatId, 'У тебя уже всё активировано 💛 Все функции доступны, пользуйся!');
+      } else {
+        await bot.sendMessage(
+          chatId,
+          'Пробный период уже был использован 💛 Чтобы вернуть все функции, можно оформить подписку 👇',
+          { reply_markup: { inline_keyboard: [[{ text: 'Оформить подписку', callback_data: 'onboarding:pay_subscription' }]] } }
+        );
       }
+      return;
+    }
 
-      const now = new Date();
-      const endsAt = new Date(now);
-      endsAt.setDate(endsAt.getDate() + 30);
+    const now = new Date();
+    const endsAt = new Date(now);
+    endsAt.setDate(endsAt.getDate() + 30);
 
-      await supabase.from('subscriptions').insert({
-        user_id: userId,
-        status: 'trial',
-        starts_at: now.toISOString(),
-        ends_at: endsAt.toISOString(),
-        period_months: null,
-        payment_id: null,
-        amount_rub: null,
-      });
+    const { error: insertError } = await supabase.from('subscriptions').insert({
+      user_id: userId,
+      status: 'trial',
+      starts_at: now.toISOString(),
+      ends_at: endsAt.toISOString(),
+      period_months: null,
+      payment_id: null,
+      amount_rub: null,
+    });
+
+    // Раньше при ошибке бот всё равно отвечал «Пробный период активирован»
+    if (insertError) {
+      console.error('[onboarding] activate_trial insert error:', insertError.message);
+      await bot.sendMessage(chatId, 'Не получилось активировать пробный период 😔 Попробуй ещё раз, а если повторится — напиши нам через «Обратную связь»');
+      return;
     }
 
     await bot.sendMessage(

@@ -6,6 +6,7 @@ import { showFeedback } from './feedback.js';
 import { showSubscription } from './subscription.js';
 import { showCategories } from './categories.js';
 import { userStates } from '../state.js';
+import { recordHint } from '../utils/botTexts.js';
 
 const MENU_BUTTONS = [
   [
@@ -44,9 +45,7 @@ export async function handleMenuCallback(bot, query) {
   if (action === 'menu:add') {
     await bot.sendMessage(
       chatId,
-      'Напиши мне о своей трате или доходе в свободной форме\n' +
-      'или запиши голосовое — я распознаю его 🎤\n' +
-      'Например: «продукты 1800», «такси 450», «зарплата 120000»'
+      recordHint(bot)
     );
     return;
   }

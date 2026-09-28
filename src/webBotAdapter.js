@@ -25,6 +25,7 @@ export function clearWebChatQueue(chatId) {
 // Адаптер, имитирующий интерфейс node-telegram-bot-api для веб-канала
 export function createWebBotAdapter() {
   return {
+    isWeb: true,
     sendMessage: async (chatId, text, opts = {}) => {
       const queue = getWebChatQueue(chatId);
       queue.push({ type: 'message', text, opts, timestamp: Date.now() });

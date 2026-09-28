@@ -10,6 +10,7 @@ import { showMainMenu, handleMenuCallback } from './menu.js';
 import { handleTransactionCallback } from './transaction.js';
 import { handleFileCallback } from './fileUpload.js';
 import { userStates } from '../state.js';
+import { recordHint } from '../utils/botTexts.js';
 
 // Все обновления старше этого момента — остатки очереди после перезапуска
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
@@ -90,9 +91,7 @@ export async function dispatchCallbackQuery(bot, query) {
     await bot.answerCallbackQuery(query.id);
     await bot.sendMessage(
       query.message.chat.id,
-      'Напиши мне о своей трате или доходе в свободной форме\n' +
-      'или запиши голосовое — я распознаю его 🎤\n' +
-      'Например: «продукты 1800», «такси 450», «зарплата 120000»'
+      recordHint(bot)
     );
     return;
   }

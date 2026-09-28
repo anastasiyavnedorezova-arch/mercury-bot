@@ -6,6 +6,7 @@ import { requireAuth } from './authMiddleware.js';
 import { createWebBotAdapter, getWebChatQueue, clearWebChatQueue, waitForNewMessage } from './webBotAdapter.js';
 import { handleMessage } from './handlers/message.js';
 import { showMainMenu } from './handlers/menu.js';
+import { maybeShowWebWelcome } from './handlers/onboarding.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
 
 const webBot = createWebBotAdapter();
@@ -852,7 +853,8 @@ router.post('/api/bot/init', requireAuth, async (req, res) => {
       .eq('id', req.userId)
       .is('terms_accepted_at', null);
 
-    await showMainMenu(webBot, chatId);
+    const welcomed = await maybeShowWebWelcome(webBot, chatId, req.userId);
+    if (!welcomed) await showMainMenu(webBot, chatId);
 
     const queue = getWebChatQueue(chatId);
     const messages = queue.splice(0, queue.length);
