@@ -323,7 +323,31 @@ export function closeBotWidget() {
   document.body.style.overflow = '';
 }
 
+const FAB_STYLES = `
+.bot-fab{display:none;position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:none;padding:0;background:#4C9AFF;color:#fff;align-items:center;justify-content:center;cursor:pointer;z-index:250;box-shadow:0 6px 20px rgba(76,154,255,.45);-webkit-tap-highlight-color:transparent;transition:transform 150ms,background 150ms}
+.bot-fab:active{transform:scale(.94);background:#3B82F6}
+@media (max-width:768px){.bot-fab{display:flex}}
+`;
+
+// Плавающая кнопка чата (только на мобильных): быстрый доступ к боту с любой страницы ЛК
+function mountBotFab() {
+  if (document.getElementById('botFab')) return;
+  const style = document.createElement('style');
+  style.id = 'bot-fab-styles';
+  style.textContent = FAB_STYLES;
+  document.head.appendChild(style);
+  const btn = document.createElement('button');
+  btn.id = 'botFab';
+  btn.className = 'bot-fab';
+  btn.type = 'button';
+  btn.setAttribute('aria-label', 'Открыть чат с Финником');
+  btn.innerHTML = '<svg width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M12 16.0001C12 16.7365 11.403 17.3334 10.6666 17.3334C9.93025 17.3334 9.33329 16.7365 9.33329 16.0001C9.33329 15.2637 9.93025 14.6667 10.6666 14.6667C11.403 14.6667 12 15.2637 12 16.0001Z" fill="#fff"/><path d="M17.3333 16.0001C17.3333 16.7365 16.7363 17.3334 16 17.3334C15.2636 17.3334 14.6666 16.7365 14.6666 16.0001C14.6666 15.2637 15.2636 14.6667 16 14.6667C16.7363 14.6667 17.3333 15.2637 17.3333 16.0001Z" fill="#fff"/><path d="M22.6666 16.0001C22.6666 16.7365 22.0697 17.3334 21.3333 17.3334C20.5969 17.3334 20 16.7365 20 16.0001C20 15.2637 20.5969 14.6667 21.3333 14.6667C22.0697 14.6667 22.6666 15.2637 22.6666 16.0001Z" fill="#fff"/><path fill-rule="evenodd" clip-rule="evenodd" d="M30.3333 16.0001C30.3333 8.084 23.916 1.66675 16 1.66675C8.08388 1.66675 1.66663 8.084 1.66663 16.0001C1.66663 18.2912 2.2049 20.4594 3.16279 22.3825C3.30574 22.6695 3.33606 22.9626 3.2701 23.2091L2.47595 26.1771C1.93232 28.2089 3.79111 30.0677 5.82289 29.5241L8.79095 28.7299C9.03747 28.664 9.3305 28.6943 9.61749 28.8372C11.5407 29.7951 13.7089 30.3334 16 30.3334C23.916 30.3334 30.3333 23.9162 30.3333 16.0001ZM16 3.66675C22.8115 3.66675 28.3333 9.18857 28.3333 16.0001C28.3333 22.8116 22.8115 28.3334 16 28.3334C14.0252 28.3334 12.1616 27.87 10.5092 27.047C9.84597 26.7167 9.05293 26.5895 8.274 26.7979L5.30595 27.592C4.76084 27.7379 4.26214 27.2392 4.40799 26.6941L5.20214 23.726C5.41055 22.9471 5.28335 22.1541 4.95302 21.4909C4.12999 19.8385 3.66663 17.9748 3.66663 16.0001C3.66663 9.18857 9.18845 3.66675 16 3.66675Z" fill="#fff"/></svg>';
+  btn.addEventListener('click', openBotWidget);
+  document.body.appendChild(btn);
+}
+
 export function initBotWidgetTrigger() {
+  mountBotFab();
   document.querySelectorAll('[data-bot-widget-trigger]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();

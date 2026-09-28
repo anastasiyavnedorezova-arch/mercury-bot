@@ -61,6 +61,7 @@ export function startWebhookServer(bot) {
   app.get('/cabinet/bot',       (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/bot.html')));
   app.get('/cabinet',           (req, res) => res.redirect(301, '/cabinet/dashboard'));
 
+  app.use('/fonts', express.static(path.join(__dirname, '../public/fonts'), { maxAge: '365d', immutable: true }));
   app.use(express.static(path.join(__dirname, '../public')));
   app.use(cabinetRoutes);
 
