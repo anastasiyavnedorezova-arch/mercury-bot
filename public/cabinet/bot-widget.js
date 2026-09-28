@@ -70,9 +70,9 @@ const WIDGET_HTML = `
   <main class="bot-widget-page">
     <div class="bot-widget-chat-header">
       <div class="bot-widget-chat-header__info">
-        <img src="/images/bot-face.svg" class="bot-widget-avatar" alt="Mercury Bot"/>
+        <img src="/images/bot-face.svg" class="bot-widget-avatar" alt="Финник бот"/>
         <div>
-          <div class="bot-widget-name">Меркури</div>
+          <div class="bot-widget-name">Финник</div>
           <div class="bot-widget-status">онлайн</div>
         </div>
       </div>

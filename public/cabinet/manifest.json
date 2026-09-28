@@ -1,6 +1,6 @@
 {
-  "name": "Меркури — Личный кабинет",
-  "short_name": "Меркури",
+  "name": "Финник — Личный кабинет",
+  "short_name": "Финник",
   "description": "Личный финансовый помощник",
   "start_url": "/cabinet/",
   "display": "standalone",
@@ -8,7 +8,7 @@
   "theme_color": "#1E2A38",
   "icons": [
     {
-      "src": "/images/logo-mercury-main.svg",
+      "src": "/images/emblem-finnik.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

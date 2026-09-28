@@ -1,7 +1,7 @@
 {
-  "name": "Mercury — Чат с ботом",
-  "short_name": "Mercury",
-  "description": "Личный финансовый помощник Mercury",
+  "name": "Финник — Чат с ботом",
+  "short_name": "Финник",
+  "description": "Личный финансовый помощник Финник",
   "start_url": "/cabinet/bot",
   "display": "standalone",
   "background_color": "#F5F7FA",
