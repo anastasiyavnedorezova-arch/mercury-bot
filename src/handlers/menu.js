@@ -90,7 +90,7 @@ export async function handleMenuCallback(bot, query) {
     userStates.set(query.from.id, { awaitingQuestion: true });
     await bot.sendMessage(
       chatId,
-      'Задай мне любой вопрос о работе Меркури 💛\n' +
+      'Задай мне любой вопрос о работе Финника 💛\n' +
       'Например: «Как посмотреть аналитику?» или «Как изменить бюджет?»'
     );
     return;

@@ -65,7 +65,7 @@ export function startWebhookServer(bot) {
   app.use(cabinetRoutes);
 
   app.get('/', (req, res) => {
-    res.send('Mercury bot webhook server is running');
+    res.send('Finnik bot webhook server is running');
   });
 
   app.post('/webhook/yookassa', async (req, res) => {
@@ -158,7 +158,7 @@ export function startWebhookServer(bot) {
         '🎉 Подписка активирована!\n\n' +
         `✅ Период: ${months} ${monthsWord(months)}\n` +
         `📅 Действует до: ${endsAt.toLocaleDateString('ru-RU')}\n\n` +
-        'Теперь тебе доступны все функции Меркури 💛',
+        'Теперь тебе доступны все функции Финника 💛',
         {
           reply_markup: {
             inline_keyboard: [[

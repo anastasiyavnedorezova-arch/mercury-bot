@@ -174,7 +174,7 @@ export async function handleSubscriptionCallback(bot, query) {
   if (action === 'buy_subscription') {
     await bot.sendMessage(
       chatId,
-      '💳 Оформление подписки Меркури\n\n' +
+      '💳 Оформление подписки Финника\n\n' +
       'Подписка даёт полный доступ ко всем функциям:\n' +
       '✅ до 3 финансовых целей с расчётом доходности\n' +
       '✅ бюджет и алерты о превышении\n' +
@@ -260,7 +260,7 @@ export async function activateSubscription(bot, targetExternalId, months) {
   await bot.sendMessage(
     targetExternalId,
     '🎉 Подписка активирована!\n\n' +
-    'Теперь тебе доступны все функции Меркури.\n' +
+    'Теперь тебе доступны все функции Финника.\n' +
     'Спасибо что выбрал(а) нас 💛',
     {
       reply_markup: {

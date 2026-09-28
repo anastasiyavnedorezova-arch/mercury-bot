@@ -75,7 +75,7 @@ async function showMyCategories(bot, chatId, telegramId) {
 
 async function showAllCategories(bot, chatId) {
   const text =
-`📋 <b>Все категории Меркури:</b>
+`📋 <b>Все категории Финника:</b>
 
 💰 <b>ДОХОДЫ:</b>
 <b>Доход за работу и выплаты:</b> Зарплата, Фриланс и подработка, Продажа и соцвыплаты

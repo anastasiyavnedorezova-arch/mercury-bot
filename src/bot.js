@@ -26,7 +26,7 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
 
 bot.getMe().then(() => {
-  console.log('Mercury bot started');
+  console.log('Finnik bot started');
 }).catch(err => {
   console.error('Bot connection error:', err.message);
 });

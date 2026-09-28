@@ -22,7 +22,7 @@ export async function showFeedback(bot, chatId, telegramId) {
   userStates.set(telegramId, { awaitingFeedback: true });
   await bot.sendMessage(
     chatId,
-    'Напиши своё сообщение — я передам его команде Меркури 💛\n' +
+    'Напиши своё сообщение — я передам его команде Финника 💛\n' +
     'Это может быть вопрос, пожелание или что-то что пошло не так.'
   );
 }
