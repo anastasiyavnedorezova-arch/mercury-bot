@@ -4,6 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Финник — Вход</title>
+  <link rel="icon" type="image/svg+xml" href="/images/favicon-finnik.svg">
+  <link rel="icon" type="image/png" sizes="48x48" href="/images/favicon-48.png">
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -435,9 +437,9 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg';
   const urlParams = new URLSearchParams(window.location.search);
   const rawRedirect = urlParams.get('redirect');
-  const REDIRECT_TARGET = (rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) ? rawRedirect : '/dashboard';
+  const REDIRECT_TARGET = (rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) ? rawRedirect : '/cabinet/dashboard';
   const DASHBOARD_URL     = REDIRECT_TARGET;
-  const REGISTER_URL      = '/register';
+  const REGISTER_URL      = '/cabinet/register';
   const TG_BOT_URL        = 'https://t.me/mercury_finbot';
   // ─────────────────────────────────────────────────────────
 
@@ -650,7 +652,7 @@
     Object.keys(localStorage).filter(k => k.includes('auth')).forEach(k => localStorage.removeItem(k));
     closeLogoutModal();
     showToast('👋 Вы вышли из аккаунта');
-    setTimeout(() => window.location.href = '/login', 1200);
+    setTimeout(() => window.location.href = '/cabinet/login', 1200);
   });
 </script>
 </body>

@@ -189,7 +189,7 @@ export async function loadUser() {
     if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
     if (!res.ok) return;
     const d = await res.json();
-    renderHeader({ username: d.username || d.external_id || 'Пользователь', subscription: d.subscription || null });
+    renderHeader({ username: d.username || 'Пользователь', subscription: d.subscription || null });
   } catch(e) {
     const el = document.getElementById('lkUserInfo');
     if (el) el.textContent = 'Ошибка загрузки';

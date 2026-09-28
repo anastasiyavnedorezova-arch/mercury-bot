@@ -288,7 +288,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
 
     const [userRes, subRes, txRes, goalsRes] = await Promise.all([
-      supabase.from('users').select('id, external_id, tg_username, web_username').eq('id', req.userId).single(),
+      supabase.from('users').select('id, external_id, tg_username, web_username, email').eq('id', req.userId).single(),
       supabase.from('subscriptions')
         .select('status, ends_at')
         .eq('user_id', req.userId)
@@ -386,7 +386,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
 
     res.json({
       user: {
-        name: user.web_username || user.tg_username || user.external_id || 'Пользователь',
+        name: user.web_username || user.tg_username || user.email || 'Пользователь',
         subscription_status: sub?.status ?? null,
         subscription_end: sub?.ends_at ?? null,
       },
