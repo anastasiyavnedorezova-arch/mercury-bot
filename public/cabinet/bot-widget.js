@@ -31,6 +31,7 @@ const WIDGET_STYLES = `
 .bot-widget-cta-btn{height:40px;padding:10px 16px;background:#fff;border:1px solid #E2E8F0;border-radius:10px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;line-height:20px;color:#2D3748;cursor:pointer;white-space:nowrap;transition:background 150ms,border-color 150ms}
 .bot-widget-cta-btn:hover{background:#EEF2F6;border-color:#CBD5E1}
 .bot-widget-cta-btn:active{transform:scale(.98)}
+.bot-widget-cta-btn:disabled{opacity:.45;cursor:default;pointer-events:none}
 .bot-widget-input-bar{display:flex;align-items:center;gap:10px;padding:12px 16px;flex-shrink:0;border-top:1px solid #E2E8F0;background:#fff}
 .bot-widget-chat-input{flex:1;padding:10px 14px;background:#fff;border:1px solid #CBD5E1;border-radius:12px;font-family:'Manrope',sans-serif;font-size:16px;font-weight:400;line-height:24px;color:#2D3748;outline:none;transition:border-color 200ms,box-shadow 200ms;resize:none}
 .bot-widget-chat-input::placeholder{color:#9CA3AF}
@@ -220,12 +221,12 @@ async function sendMessage() {
 }
 
 async function handleInlineButton(btn) {
-  document.querySelectorAll('.bot-widget-inline-btn').forEach(b => { b.disabled = true; });
-
   const area = document.getElementById('botWidgetChatArea');
-
   const ctaWrap = btn.closest('.bot-widget-cta-wrap');
-  if (ctaWrap) ctaWrap.remove();
+
+  // Кнопки этого набора отключаем (чтобы нельзя было нажать дважды), но НЕ удаляем —
+  // как в Telegram, где кнопки под сообщением остаются кликабельными и после ответа.
+  if (ctaWrap) ctaWrap.querySelectorAll('.bot-widget-inline-btn').forEach((b) => { b.disabled = true; });
 
   const uWrap = document.createElement('div');
   uWrap.className = 'bot-widget-bubble-wrap from-user';
