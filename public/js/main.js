@@ -113,10 +113,10 @@ function closeItem(btn) {
 
 
 function initChannelModal() {
-  const modal   = document.getElementById('channelModal');
-  const openBtn = document.getElementById('openChannelModal');
+  const modal    = document.getElementById('channelModal');
+  const openBtns = document.querySelectorAll('.js-open-channel-modal');
   const closeBtn = document.getElementById('channelModalClose');
-  if (!modal || !openBtn) return;
+  if (!modal || !openBtns.length) return;
 
   function openModal() {
     modal.classList.add('is-open');
@@ -129,10 +129,10 @@ function initChannelModal() {
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
-    openBtn.focus();
+    openBtns[0]?.focus();
   }
 
-  openBtn.addEventListener('click', openModal);
+  openBtns.forEach((btn) => btn.addEventListener('click', openModal));
   closeBtn?.addEventListener('click', closeModal);
 
   modal.addEventListener('click', e => {
