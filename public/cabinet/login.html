@@ -420,37 +420,6 @@
         </div>
       </div>
 
-      <!-- ── PANEL: NEW PASSWORD ── -->
-      <div class="panel" id="panelNewPassword">
-        <div class="card__title" style="text-align:left;">Новый пароль</div>
-
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <p class="helper-text" style="color:#6B7280;font-size:14px;">Придумайте новый пароль для входа в личный кабинет.</p>
-          <div class="field">
-            <input class="field__input" id="newPassword" type="password" autocomplete="new-password" placeholder="Новый пароль"/>
-            <span class="field__hint" id="newPasswordHint"></span>
-          </div>
-          <div class="field">
-            <input class="field__input" id="newPassword2" type="password" autocomplete="new-password" placeholder="Повторите пароль"/>
-            <span class="field__hint" id="newPassword2Hint"></span>
-          </div>
-        </div>
-
-        <div style="display:flex;justify-content:flex-end;">
-          <button class="btn btn--dark" id="btnSetPassword" style="width:auto;padding:10px 20px;height:40px;font-size:14px;border-radius:10px;">Сохранить пароль</button>
-        </div>
-      </div>
-
-      <!-- ── PANEL: NEW PASSWORD OK ── -->
-      <div class="panel" id="panelNewPasswordOk">
-        <div style="text-align:center;padding:24px 0;display:flex;flex-direction:column;align-items:center;gap:16px;">
-          <div style="font-size:48px;">✅</div>
-          <div class="card__title">Пароль изменён</div>
-          <p class="helper-text" style="text-align:center;color:#6B7280;">Теперь можно войти с новым паролем.</p>
-          <button class="btn btn--primary" id="btnNewPassToLogin" style="margin-top:8px;">Войти</button>
-        </div>
-      </div>
-
     </div><!-- /card__body -->
   </div><!-- /card -->
 
@@ -489,16 +458,11 @@
   const panelLogin         = document.getElementById('panelLogin');
   const panelReset         = document.getElementById('panelReset');
   const panelResetOk       = document.getElementById('panelResetSuccess');
-  const panelNewPassword   = document.getElementById('panelNewPassword');
-  const panelNewPasswordOk = document.getElementById('panelNewPasswordOk');
   const toast              = document.getElementById('toast');
-
-  // Recovery token lives in memory only — never in localStorage/sessionStorage
-  let recoveryToken = null;
 
   // ── Panel switching ───────────────────────────────────────
   function showPanel(name) {
-    [panelLogin, panelReset, panelResetOk, panelNewPassword, panelNewPasswordOk]
+    [panelLogin, panelReset, panelResetOk]
       .forEach(p => p.classList.remove('is-active'));
     if (name === 'login') {
       panelLogin.classList.add('is-active');
@@ -510,14 +474,6 @@
       body.className = 'bg-reset';
     } else if (name === 'reset-success') {
       panelResetOk.classList.add('is-active');
-      cardHero.style.display = 'none';
-      body.className = 'bg-reset';
-    } else if (name === 'new-password') {
-      panelNewPassword.classList.add('is-active');
-      cardHero.style.display = 'none';
-      body.className = 'bg-reset';
-    } else if (name === 'new-password-ok') {
-      panelNewPasswordOk.classList.add('is-active');
       cardHero.style.display = 'none';
       body.className = 'bg-reset';
     }
@@ -560,41 +516,35 @@
     return res;
   }
 
-  async function supabasePut(path, body_data, token) {
-    const headers = {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_ANON_KEY
-    };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(SUPABASE_URL + path, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify(body_data)
-    });
-    return res;
-  }
-
-  // ── Recovery return handler ───────────────────────────────
-  (function handleRecoveryReturn() {
+  // ── Recovery fallback ─────────────────────────────────────
+  (function recoveryFallback() {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const type = hash.get('type');
     const accessToken = hash.get('access_token');
     const errorCode = hash.get('error_code');
     const errorDesc = hash.get('error_description');
 
-    // Immediately strip secrets from address bar and history
+    if (type === 'recovery' && accessToken) {
+      // Old-format email link pointing to login — redirect to dedicated page with token
+      window.location.replace('/cabinet/reset-password' + window.location.hash);
+      return;
+    }
+
     if (window.location.hash) {
       history.replaceState(null, '', window.location.pathname + window.location.search);
     }
 
-    if (type === 'recovery' && accessToken) {
-      recoveryToken = accessToken;
-      showPanel('new-password');
-      return;
-    }
     if (errorCode || errorDesc) {
       showPanel('reset');
       showToast('Ссылка недействительна или устарела. Запросите новое письмо.', 5000);
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const reset = params.get('reset');
+    if (reset === 'ok' || reset === '1') {
+      history.replaceState(null, '', window.location.pathname);
+      showToast('Пароль изменён — теперь можно войти 🔐', 5000);
     }
   })();
 
@@ -699,7 +649,7 @@
     btn.textContent = 'Отправляем…';
 
     try {
-      const RESET_REDIRECT = 'https://finnikbot.ru/cabinet/login';
+      const RESET_REDIRECT = 'https://finnikbot.ru/cabinet/reset-password';
       await supabasePost('/auth/v1/recover?redirect_to=' + encodeURIComponent(RESET_REDIRECT), { email: resetEmail.value.trim().toLowerCase() });
       showPanel('reset-success');
     } catch (err) {
@@ -710,62 +660,7 @@
   });
 
   // ══════════════════════════════════
-  // SCENARIO 3: Set new password
-  // ══════════════════════════════════
-  const newPasswordField  = document.getElementById('newPassword');
-  const newPasswordHint   = document.getElementById('newPasswordHint');
-  const newPassword2Field = document.getElementById('newPassword2');
-  const newPassword2Hint  = document.getElementById('newPassword2Hint');
-
-  document.getElementById('btnSetPassword').addEventListener('click', async () => {
-    clearErr(newPasswordField, newPasswordHint);
-    clearErr(newPassword2Field, newPassword2Hint);
-
-    const pw1 = newPasswordField.value;
-    const pw2 = newPassword2Field.value;
-
-    if (!pw1) { setErr(newPasswordField, newPasswordHint, 'Обязательное поле'); return; }
-    if (pw1.length < 6) { setErr(newPasswordField, newPasswordHint, 'Минимум 6 символов'); return; }
-    if (!pw2) { setErr(newPassword2Field, newPassword2Hint, 'Обязательное поле'); return; }
-    if (pw1 !== pw2) { setErr(newPassword2Field, newPassword2Hint, 'Пароли не совпадают'); return; }
-
-    const btn = document.getElementById('btnSetPassword');
-    btn.disabled = true;
-    btn.textContent = 'Сохраняем…';
-
-    try {
-      const res = await supabasePut('/auth/v1/user', { password: pw1 }, recoveryToken);
-      const data = await res.json();
-
-      if (res.ok) {
-        recoveryToken = null;
-        newPasswordField.value = '';
-        newPassword2Field.value = '';
-        showPanel('new-password-ok');
-      } else {
-        btn.disabled = false;
-        btn.textContent = 'Сохранить пароль';
-        const msg = (data.msg || data.error_description || '').toLowerCase();
-        if (msg.includes('same') || msg.includes('different from the old')) {
-          setErr(newPassword2Field, newPassword2Hint, 'Новый пароль должен отличаться от старого');
-        } else if (res.status === 401 || res.status === 403 || msg.includes('expired') || msg.includes('invalid')) {
-          setErr(newPassword2Field, newPassword2Hint, 'Ссылка устарела. Запросите новое письмо.');
-          showPanel('reset');
-        } else {
-          setErr(newPassword2Field, newPassword2Hint, 'Не удалось сохранить пароль. Попробуйте ещё раз.');
-        }
-      }
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = 'Сохранить пароль';
-      setErr(newPassword2Field, newPassword2Hint, 'Не удалось сохранить пароль. Попробуйте ещё раз.');
-    }
-  });
-
-  document.getElementById('btnNewPassToLogin').addEventListener('click', () => showPanel('login'));
-
-  // ══════════════════════════════════
-  // SCENARIO 4: Logout modal
+  // SCENARIO 3: Logout modal
   // ══════════════════════════════════
   const logoutModal = document.getElementById('logoutModal');
 
