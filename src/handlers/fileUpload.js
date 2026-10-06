@@ -7,6 +7,7 @@ import { userStates } from '../state.js';
 import { getUserAccess } from '../utils/access.js';
 import { saveTransaction } from './message.js';
 import { todayStr } from '../utils/dateTz.js';
+import { telegramFileUrl } from '../utils/endpoints.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -63,7 +64,7 @@ function downloadFile(url, destPath) {
 
 async function downloadTelegramFile(bot, fileId) {
   const file = await bot.getFile(fileId);
-  const url = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+  const url = telegramFileUrl(file.file_path);
   const ext = path.extname(file.file_path) || '.jpg';
   const tmpPath = path.join('/tmp', `stmt_${Date.now()}${ext}`);
   await downloadFile(url, tmpPath);

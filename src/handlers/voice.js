@@ -3,6 +3,7 @@ import path from 'path';
 import https from 'https';
 import OpenAI from 'openai';
 import { handleMessage } from './message.js';
+import { telegramFileUrl } from '../utils/endpoints.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -27,7 +28,7 @@ export async function handleVoiceMessage(bot, msg) {
 
     const fileId = msg.voice.file_id;
     const file = await bot.getFile(fileId);
-    const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+    const fileUrl = telegramFileUrl(file.file_path);
 
     const tmpPath = path.join('/tmp', `voice_${Date.now()}.ogg`);
     await downloadFile(fileUrl, tmpPath);

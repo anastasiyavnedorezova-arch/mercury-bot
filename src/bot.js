@@ -14,6 +14,7 @@ import { showSubscription, handleSubscriptionCallback, activateSubscription } fr
 import { showCategories, handleCategoriesCallback } from './handlers/categories.js';
 import { startScheduler } from './notifications/scheduler.js';
 import { emailConfigStatus } from './utils/email.js';
+import { telegramBotOptions, endpointsStatus } from './utils/endpoints.js';
 import { handleVoiceMessage } from './handlers/voice.js';
 import { handleFileUpload, handleFileCallback } from './handlers/fileUpload.js';
 import { startWebhookServer } from './webhook.js';
@@ -21,7 +22,7 @@ import { userStates } from './state.js';
 import { supabase } from './db.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, telegramBotOptions({ polling: true }));
 
 // Все обновления старше этого момента — остатки очереди после перезапуска
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
@@ -204,6 +205,7 @@ bot.on('callback_query', (query) => dispatchCallbackQuery(bot, query));
 
 startScheduler(bot);
 console.log('[email] config:', JSON.stringify(emailConfigStatus()));
+console.log('[endpoints]', JSON.stringify(endpointsStatus()));
 startWebhookServer(bot);
 
 bot.on('polling_error', (error) => {
