@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { supabase } from './db.js';
+import { supabase, supabaseAuth } from './db.js';
 import { requireAuth } from './authMiddleware.js';
 import { createWebBotAdapter, getWebChatQueue, clearWebChatQueue, waitForNewMessage } from './webBotAdapter.js';
 import { handleMessage } from './handlers/message.js';
@@ -1049,7 +1049,8 @@ router.post('/api/auth/register-profile', async (req, res) => {
       return res.status(400).json({ error: 'Missing access_token' });
     }
 
-    const { data: authData, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!supabaseAuth) return res.status(503).json({ error: 'Auth provider is not configured' });
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(accessToken);
     const authUser = authData?.user;
     if (authError || !authUser?.id || !authUser?.email) {
       console.warn('[cabinet] register-profile: invalid access token');
@@ -1107,7 +1108,8 @@ router.post('/api/auth/web-login', async (req, res) => {
       return res.status(400).json({ error: 'Missing access_token' });
     }
 
-    const { data: authData, error: authError } = await supabase.auth.getUser(accessToken);
+    if (!supabaseAuth) return res.status(503).json({ error: 'Auth provider is not configured' });
+    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(accessToken);
     const authUserId = authData?.user?.id;
     if (authError || !authUserId) {
       console.warn('[cabinet] web-login: invalid access token');

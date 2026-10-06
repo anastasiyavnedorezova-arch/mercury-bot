@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/bot.js",
     "migrate": "node migrate.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/pgClient.test.mjs"
   },
   "keywords": [],
   "author": "",
@@ -24,5 +24,8 @@
     "node-telegram-bot-api": "^0.67.0",
     "openai": "^6.33.0",
     "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
   }
 }

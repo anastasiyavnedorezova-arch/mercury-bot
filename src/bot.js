@@ -19,7 +19,7 @@ import { handleVoiceMessage } from './handlers/voice.js';
 import { handleFileUpload, handleFileCallback } from './handlers/fileUpload.js';
 import { startWebhookServer } from './webhook.js';
 import { userStates } from './state.js';
-import { supabase } from './db.js';
+import { supabase, dbDriver } from './db.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, telegramBotOptions({ polling: true }));
@@ -206,6 +206,12 @@ bot.on('callback_query', (query) => dispatchCallbackQuery(bot, query));
 startScheduler(bot);
 console.log('[email] config:', JSON.stringify(emailConfigStatus()));
 console.log('[endpoints]', JSON.stringify(endpointsStatus()));
+console.log('[db] driver:', dbDriver);
+if (dbDriver === 'postgres') {
+  supabase.ping()
+    .then(() => console.log('[db] postgres connection OK'))
+    .catch((e) => console.error('[db] postgres connection FAILED:', e.message));
+}
 startWebhookServer(bot);
 
 bot.on('polling_error', (error) => {
