@@ -117,24 +117,24 @@ export async function sendWelcomeEmail({ to, name, userId } = {}) {
   }
 
   const safeName = escapeHtml((name ?? '').slice(0, 100));
-  const greeting = safeName ? `Здравствуйте, ${safeName}!` : 'Здравствуйте!';
-  const greetingText = safeName ? `Здравствуйте, ${name?.slice(0, 100)}!` : 'Здравствуйте!';
+  const greeting = safeName ? `Привет, ${safeName}!` : 'Привет!';
+  const greetingText = safeName ? `Привет, ${(name ?? '').slice(0, 100)}!` : 'Привет!';
 
   const html = `<p>${greeting}</p>
-<p>Вы зарегистрировались в Финнике — помощнике для учёта личных финансов.</p>
-<p>Записывать траты можно в личном кабинете: <a href="https://finnikbot.ru/cabinet/dashboard">https://finnikbot.ru/cabinet/dashboard</a> — или в Telegram: <a href="https://t.me/FinnikMoneyBot">https://t.me/FinnikMoneyBot</a>.</p>
-<p>Если что-то непонятно, просто ответьте на это письмо — оно придёт нам.</p>
-<p>Команда Финника</p>`;
+<p>Вы зарегистрировались в Финнике — помощнике для учета личных финансов.</p>
+<p>Записывать расходы или доходы можно обычным сообщением боту в личном кабинете: <a href="https://finnikbot.ru/cabinet/dashboard">finnikbot.ru/cabinet/dashboard</a> — или в Telegram: <a href="https://t.me/FinnikMoneyBot">t.me/FinnikMoneyBot</a>.</p>
+<p>Если возникнут вопросы, просто напишите нам на почту <a href="mailto:hello@finnikbot.ru">hello@finnikbot.ru</a>.</p>
+<p>Поддержка Финника</p>`;
 
   const text = `${greetingText}
 
-Вы зарегистрировались в Финнике — помощнике для учёта личных финансов.
+Вы зарегистрировались в Финнике — помощнике для учета личных финансов.
 
-Записывать траты можно в личном кабинете: https://finnikbot.ru/cabinet/dashboard — или в Telegram: https://t.me/FinnikMoneyBot.
+Записывать расходы или доходы можно обычным сообщением боту в личном кабинете: https://finnikbot.ru/cabinet/dashboard — или в Telegram: https://t.me/FinnikMoneyBot.
 
-Если что-то непонятно, просто ответьте на это письмо — оно придёт нам.
+Если возникнут вопросы, просто напишите нам на почту hello@finnikbot.ru.
 
-Команда Финника`;
+Поддержка Финника`;
 
   const iKey = userId ? `welcome-${userId}` : crypto.randomUUID();
 
