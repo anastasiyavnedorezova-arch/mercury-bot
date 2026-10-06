@@ -9,6 +9,8 @@ import { showMainMenu } from './handlers/menu.js';
 import { maybeShowWebWelcome } from './handlers/onboarding.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
 import { inTz, monthStartStr, monthEndStr } from './utils/dateTz.js';
+import { notifyAdminAboutFeedback } from './utils/feedbackNotify.js';
+import { sendWelcomeEmail } from './utils/email.js';
 
 const webBot = createWebBotAdapter();
 
@@ -687,12 +689,23 @@ router.post('/api/feedback', requireAuth, async (req, res) => {
     if (!email || !message) {
       return res.status(400).json({ error: 'Email and message are required' });
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Invalid email' });
+    }
+    if (message.length > 5000) {
+      return res.status(400).json({ error: 'Message too long' });
+    }
+    if (subject && subject.length > 200) {
+      return res.status(400).json({ error: 'Subject too long' });
+    }
     const fullMessage = `От: ${email}\nТема: ${subject || '—'}\n\n${message}`;
     const { error } = await supabase.from('feedback').insert({
       user_id: req.userId,
       message: fullMessage,
+      status: 'new',
     });
     if (error) throw error;
+    notifyAdminAboutFeedback({ source: 'web', from: email, text: fullMessage }).catch(() => {});
     res.json({ ok: true });
   } catch (err) {
     console.error('[cabinet] POST /api/feedback error:', err.message);
@@ -1070,6 +1083,10 @@ router.post('/api/auth/register-profile', async (req, res) => {
     // 23505 — строка уже создана параллельным запросом (двойной клик): это не ошибка
     if (insertError?.code === '23505') return res.json({ ok: true, existed: true });
     if (insertError) throw insertError;
+
+    sendWelcomeEmail({ to: authUser.email, name: clean(name, 100), userId: authUser.id })
+      .then(r => console.log('[email] welcome:', r.ok ? 'sent' : (r.skipped ? 'skipped' : 'failed ' + (r.status ?? r.error))))
+      .catch(() => {});
 
     res.json({ ok: true });
   } catch (err) {
