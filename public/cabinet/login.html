@@ -565,16 +565,17 @@
         throw new Error(data.error_description || data.msg || 'Неверный e-mail или пароль');
       }
 
-      // Получаем наш JWT вместо Supabase-токена
+      // Меняем токен Supabase на наш JWT: сервер сам проверяет токен
       const loginRes = await fetch('/api/auth/web-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail.value.trim().toLowerCase() })
+        body: JSON.stringify({ access_token: data.access_token })
       });
-      if (loginRes.ok) {
-        const loginData = await loginRes.json();
-        localStorage.setItem('mercury_token', loginData.token);
+      if (!loginRes.ok) {
+        throw new Error('Не удалось войти. Попробуйте ещё раз или напишите нам: finnikbot.help@yandex.com');
       }
+      const loginData = await loginRes.json();
+      localStorage.setItem('mercury_token', loginData.token);
       showToast('✅ Добро пожаловать!');
       setTimeout(() => window.location.href = DASHBOARD_URL, 1000);
 

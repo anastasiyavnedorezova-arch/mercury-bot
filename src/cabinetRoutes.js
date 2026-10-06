@@ -1017,18 +1017,33 @@ router.post('/api/bot/callback', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/auth/web-login
+// Меняет access_token Supabase Auth на наш JWT.
+// Личность подтверждает Supabase: токен выдаётся только после проверки пароля.
+// Пользователь ищется по id из токена, а НЕ по email из тела запроса: иначе можно
+// получить чужой JWT, зная email (или зарегистрировавшись на чужой email).
 router.post('/api/auth/web-login', async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) return res.status(400).json({ error: 'Missing email' });
+    const accessToken = req.body?.access_token;
+    if (!accessToken || typeof accessToken !== 'string') {
+      return res.status(400).json({ error: 'Missing access_token' });
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.getUser(accessToken);
+    const authUserId = authData?.user?.id;
+    if (authError || !authUserId) {
+      console.warn('[cabinet] web-login: invalid access token');
+      return res.status(401).json({ error: 'Invalid access token' });
+    }
 
     const { data: user, error } = await supabase
       .from('users')
       .select('id, external_id, channel')
-      .eq('email', email)
-      .single();
+      .eq('id', authUserId)
+      .maybeSingle();
 
-    if (error || !user) return res.status(404).json({ error: 'User not found' });
+    if (error) throw error;
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     const token = jwt.sign(
       { userId: user.id, telegramId: user.external_id || null },

@@ -637,16 +637,17 @@
         })
       });
 
-      // Получаем наш JWT вместо Supabase-токена
+      // Меняем токен Supabase на наш JWT: сервер сам проверяет токен
       const loginRes = await fetch('/api/auth/web-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email })
+        body: JSON.stringify({ access_token: authData.access_token })
       });
-      if (loginRes.ok) {
-        const loginData = await loginRes.json();
-        localStorage.setItem('mercury_token', loginData.token);
+      if (!loginRes.ok) {
+        throw new Error('Аккаунт создан, но войти автоматически не удалось. Войдите на странице входа.');
       }
+      const loginData = await loginRes.json();
+      localStorage.setItem('mercury_token', loginData.token);
 
       showSuccess();
 
