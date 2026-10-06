@@ -15,6 +15,7 @@ import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, TEXTS } from '../utils/botTexts.js';
+import { todayStr } from '../utils/dateTz.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -179,7 +180,7 @@ async function callFaqLLM(question, bot) {
 }
 
 async function callLLM(userText, userCategories = []) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
@@ -277,7 +278,7 @@ export async function handleCategorySelection(bot, chatId, telegramId, category)
     amount: state.amount,
     category,
     comment: null,
-    transaction_date: state.transaction_date ?? new Date().toISOString().split('T')[0],
+    transaction_date: state.transaction_date ?? todayStr(),
   };
 
   const txId = await saveTransaction(userId, parsed, state.rawMessage);
@@ -329,7 +330,7 @@ async function handleManualAmountState(bot, msg) {
     amount,
     category: state.manualCategory,
     comment: null,
-    transaction_date: new Date().toISOString().split('T')[0],
+    transaction_date: todayStr(),
   };
 
   const txId = await saveTransaction(userId, parsed, msg.text);
@@ -603,7 +604,7 @@ export async function handleMessage(bot, msg) {
           amount: parsed.amount,
           category: 'Возврат денег',
           comment: 'возврат товара',
-          transaction_date: parsed.transaction_date ?? new Date().toISOString().split('T')[0],
+          transaction_date: parsed.transaction_date ?? todayStr(),
         }, effectiveText);
         return;
       }
@@ -613,7 +614,7 @@ export async function handleMessage(bot, msg) {
         rawMessage: effectiveText,
         amount: parsed.amount ?? null,
         type: parsed.type ?? 'expense',
-        transaction_date: parsed.transaction_date ?? new Date().toISOString().split('T')[0],
+        transaction_date: parsed.transaction_date ?? todayStr(),
         createdAt: Date.now(),
       });
       const options = parsed.options ?? ['Одежда и обувь', 'Товары в дом', 'Техника и мебель', 'Красота и уход за собой', 'Остальное'];

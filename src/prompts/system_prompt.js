@@ -1,5 +1,7 @@
+import { todayStr } from '../utils/dateTz.js';
+
 export function getSystemPrompt(userCategories = []) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
   return buildPrompt(today, userCategories);
 }
 

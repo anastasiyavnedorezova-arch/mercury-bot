@@ -9,8 +9,10 @@
 // Возвращает: { futureValue, monthlyPayment, months }
 // Бросает Error если дата в прошлом или уже накоплено достаточно.
 
+import { inTz } from './dateTz.js';
+
 export function calculateMonthlyPayment({ targetAmount, initialSaved, targetDate, yieldRate = null }) {
-  const today = new Date();
+  const today = inTz();
   const target = new Date(targetDate);
 
   // Количество полных календарных месяцев до цели

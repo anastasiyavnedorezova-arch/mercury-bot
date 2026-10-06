@@ -1,5 +1,6 @@
 import { supabase } from '../db.js';
 import { userStates } from '../state.js';
+import { inTz } from '../utils/dateTz.js';
 
 // ── Константы ─────────────────────────────────────────────────────────────────
 
@@ -15,28 +16,28 @@ function dateStr(d) {
 }
 
 function today() {
-  return dateStr(new Date());
+  return dateStr(inTz());
 }
 
 function daysAgo(n) {
-  const d = new Date();
+  const d = inTz();
   d.setDate(d.getDate() - n);
   return dateStr(d);
 }
 
 function currentMonthStart() {
-  const d = new Date();
+  const d = inTz();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
 function monthsAgo(n) {
-  const d = new Date();
+  const d = inTz();
   d.setMonth(d.getMonth() - n);
   return dateStr(d);
 }
 
 function yearAgo() {
-  const d = new Date();
+  const d = inTz();
   d.setFullYear(d.getFullYear() - 1);
   return dateStr(d);
 }

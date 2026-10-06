@@ -2,6 +2,7 @@ import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { parseAmount } from '../utils/parseAmount.js';
+import { inTz } from '../utils/dateTz.js';
 
 // ── Вспомогательные функции ───────────────────────────────────────────────────
 
@@ -17,20 +18,19 @@ const MENU_KEYBOARD = {
 };
 
 function getMonthStart() {
-  const now = new Date();
-  // Строим дату без конвертации в UTC, чтобы избежать сдвига часового пояса
+  const now = inTz();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
 function getNextMonthStart() {
-  const now = new Date();
+  const now = inTz();
   const y = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
   const m = now.getMonth() === 11 ? 1 : now.getMonth() + 2;
   return `${y}-${String(m).padStart(2, '0')}-01`;
 }
 
 function currentMonthName() {
-  return MONTHS_RU_NAMES[new Date().getMonth()];
+  return MONTHS_RU_NAMES[inTz().getMonth()];
 }
 
 function formatNum(n) {
@@ -83,7 +83,7 @@ async function showForecast(bot, chatId, userId, budget) {
     return;
   }
 
-  const now = new Date();
+  const now = inTz();
   const passedDays = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const remainingDays = daysInMonth - passedDays;

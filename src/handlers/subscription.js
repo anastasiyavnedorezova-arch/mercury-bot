@@ -1,6 +1,7 @@
 import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
+import { inTz } from '../utils/dateTz.js';
 
 async function getUserId(telegramId) {
   const { data } = await supabase
@@ -13,7 +14,7 @@ async function getUserId(telegramId) {
 }
 
 function formatDate(isoStr) {
-  const d = new Date(isoStr);
+  const d = inTz(new Date(isoStr));
   return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
 }
 

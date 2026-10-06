@@ -8,6 +8,7 @@ import { handleMessage } from './handlers/message.js';
 import { showMainMenu } from './handlers/menu.js';
 import { maybeShowWebWelcome } from './handlers/onboarding.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
+import { inTz, monthStartStr, monthEndStr } from './utils/dateTz.js';
 
 const webBot = createWebBotAdapter();
 
@@ -175,8 +176,11 @@ router.get('/api/transactions', requireAuth, async (req, res) => {
 
     if (req.query.month) {
       const [year, month] = req.query.month.split('-').map(Number);
-      const from = new Date(year, month - 1, 1).toISOString().slice(0, 10);
-      const to = new Date(year, month, 0).toISOString().slice(0, 10);
+      if (!year || !month || month < 1 || month > 12) {
+        return res.status(400).json({ error: 'Invalid month' });
+      }
+      const from = monthStartStr(year, month);
+      const to = monthEndStr(year, month);
       query = query.gte('transaction_date', from).lte('transaction_date', to);
     }
 
@@ -257,12 +261,13 @@ router.get('/api/budget', requireAuth, async (req, res) => {
 
     if (monthParam) {
       const [year, month] = monthParam.split('-').map(Number);
-      monthDate = new Date(year, month - 1, 1).toISOString().slice(0, 10);
+      if (!year || !month || month < 1 || month > 12) {
+        return res.status(400).json({ error: 'Invalid month' });
+      }
+      monthDate = monthStartStr(year, month);
     } else {
-      const now = new Date();
-      monthDate = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .slice(0, 10);
+      const now = inTz();
+      monthDate = monthStartStr(now.getFullYear(), now.getMonth() + 1);
     }
 
     const { data, error } = await supabase
@@ -286,7 +291,8 @@ router.get('/api/budget', requireAuth, async (req, res) => {
 router.get('/api/dashboard', requireAuth, async (req, res) => {
   try {
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const nowTz = inTz(now);
+    const monthStart = monthStartStr(nowTz.getFullYear(), nowTz.getMonth() + 1);
 
     const [userRes, subRes, txRes, goalsRes] = await Promise.all([
       supabase.from('users').select('id, external_id, tg_username, web_username, email').eq('id', req.userId).single(),

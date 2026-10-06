@@ -2,6 +2,7 @@ import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { showBudget } from './budget.js';
 import { showGoal } from './goal.js';
+import { inTz } from '../utils/dateTz.js';
 
 // ── Константы ─────────────────────────────────────────────────────────────────
 
@@ -16,7 +17,7 @@ const MONTHS_GEN = [
 ];
 
 // Именительный падеж — для "за [месяц]": "Расходы за апрель"
-function getMonthName(d = new Date()) {
+function getMonthName(d = inTz()) {
   return MONTHS_NOM[d.getMonth()];
 }
 
@@ -44,18 +45,18 @@ function dateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function getMonthStart(d = new Date()) {
+function getMonthStart(d = inTz()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
-function getNextMonthStart(d = new Date()) {
+function getNextMonthStart(d = inTz()) {
   const y = d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear();
   const m = d.getMonth() === 11 ? 1 : d.getMonth() + 2;
   return `${y}-${String(m).padStart(2, '0')}-01`;
 }
 
 function daysAgo(n) {
-  const d = new Date();
+  const d = inTz();
   d.setDate(d.getDate() - n);
   return dateStr(d);
 }
@@ -118,7 +119,7 @@ async function showPaywall(bot, chatId) {
 // ── 1. Расходы за месяц ───────────────────────────────────────────────────────
 
 async function analyticsExpenses(bot, chatId, userId) {
-  const now = new Date();
+  const now = inTz();
   const { data } = await supabase
     .from('transactions')
     .select('amount')
@@ -148,7 +149,7 @@ async function analyticsExpenses(bot, chatId, userId) {
 // ── 2. Доходы за месяц ────────────────────────────────────────────────────────
 
 async function analyticsIncome(bot, chatId, userId) {
-  const now = new Date();
+  const now = inTz();
   const { data } = await supabase
     .from('transactions')
     .select('amount')
@@ -179,7 +180,7 @@ async function analyticsIncome(bot, chatId, userId) {
 
 async function analyticsTopExpenses(bot, chatId, userId) {
   const startDate = daysAgo(90);
-  const today = dateStr(new Date());
+  const today = dateStr(inTz());
 
   const { data } = await supabase
     .from('transactions')
@@ -234,7 +235,7 @@ async function analyticsTopExpenses(bot, chatId, userId) {
 // ── 5b. Топ-5 категорий за текущий месяц (из алертов бюджета) ────────────────
 
 async function analyticsTopExpensesMonth(bot, chatId, userId) {
-  const now = new Date();
+  const now = inTz();
 
   const { data: nonSystemCats } = await supabase
     .from('categories')
@@ -281,7 +282,7 @@ async function analyticsTopExpensesMonth(bot, chatId, userId) {
 // ── 6. Сравнить доходы и расходы ─────────────────────────────────────────────
 
 async function analyticsCompare(bot, chatId, userId) {
-  const now = new Date();
+  const now = inTz();
 
   const { data: currData } = await supabase
     .from('transactions')
@@ -337,7 +338,7 @@ async function analyticsForecast(bot, chatId, userId) {
     .lt('month', getNextMonthStart())
     .maybeSingle();
 
-  const now = new Date();
+  const now = inTz();
   const passedDays = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const remainingDays = daysInMonth - passedDays;
@@ -371,7 +372,7 @@ async function analyticsForecast(bot, chatId, userId) {
 // ── Ежемесячный отчёт (по нажатию кнопки) ────────────────────────────────────
 
 async function showMonthlyReport(bot, chatId, userId) {
-  const now = new Date();
+  const now = inTz();
   const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const startDate = getMonthStart(prevDate);
   const endDate = getMonthStart(now);
@@ -539,7 +540,7 @@ export async function handleAnalyticsCallback(bot, query) {
 // ── Ежемесячная рассылка (вызывать из bot.js) ─────────────────────────────────
 
 export async function sendMonthlyAnalytics(bot) {
-  const today = new Date();
+  const today = inTz();
   if (today.getDate() !== 1) return;
 
   const prevDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);

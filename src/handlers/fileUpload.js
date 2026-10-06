@@ -6,11 +6,12 @@ import { supabase } from '../db.js';
 import { userStates } from '../state.js';
 import { getUserAccess } from '../utils/access.js';
 import { saveTransaction } from './message.js';
+import { todayStr } from '../utils/dateTz.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function getStatementPrompt() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayStr();
   return `Ты — парсер банковских выписок. Проанализируй изображение(я) банковской выписки и извлеки все транзакции.
 
 Сегодня ${today}. Используй текущий год для определения дат транзакций.
