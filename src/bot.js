@@ -13,6 +13,7 @@ import { showFeedback } from './handlers/feedback.js';
 import { showSubscription, handleSubscriptionCallback, activateSubscription } from './handlers/subscription.js';
 import { showCategories, handleCategoriesCallback } from './handlers/categories.js';
 import { startScheduler } from './notifications/scheduler.js';
+import { emailConfigStatus } from './utils/email.js';
 import { handleVoiceMessage } from './handlers/voice.js';
 import { handleFileUpload, handleFileCallback } from './handlers/fileUpload.js';
 import { startWebhookServer } from './webhook.js';
@@ -202,6 +203,7 @@ bot.on('callback_query', (query) => dispatchCallbackQuery(bot, query));
 // ── Системные обработчики ─────────────────────────────────────────────────────
 
 startScheduler(bot);
+console.log('[email] config:', JSON.stringify(emailConfigStatus()));
 startWebhookServer(bot);
 
 bot.on('polling_error', (error) => {

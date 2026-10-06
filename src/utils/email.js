@@ -146,3 +146,14 @@ export async function sendWelcomeEmail({ to, name, userId } = {}) {
     idempotencyKey: iKey,
   });
 }
+
+// Возвращает статус наличия почтовых переменных (только true/false, без значений).
+export function emailConfigStatus() {
+  return {
+    RUSENDER_API_TOKEN: !!process.env.RUSENDER_API_TOKEN,
+    RUSENDER_KEY_ID: !!process.env.RUSENDER_KEY_ID,
+    MAIL_FROM_EMAIL: !!process.env.MAIL_FROM_EMAIL,
+    ADMIN_NOTIFY_EMAIL: !!process.env.ADMIN_NOTIFY_EMAIL,
+    WELCOME_EMAIL_ENABLED: process.env.WELCOME_EMAIL_ENABLED !== 'false',
+  };
+}
