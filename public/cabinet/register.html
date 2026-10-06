@@ -613,29 +613,21 @@
 
       const userId = authData.user?.id;
 
-      // 2. Insert into users table (web channel)
-      await fetch(`${SUPABASE_URL}/rest/v1/users`, {
+      // 2. Профиль в таблице users создаёт сервер после проверки токена;
+      //    браузер в базу напрямую не пишет
+      const profileRes = await fetch('/api/auth/register-profile', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${authData.access_token}`,
-          'Prefer': 'return=minimal'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id:                     userId,
-          channel:                'web',
-          external_id:            userId,
-          web_username:           name || null,
-          email:                  email,
-          tg_username:            telegram || null,
-          terms_accepted_at:      new Date().toISOString(),
-          terms_version:          '1.0',
-          email_letters_accepted: newsChecked,
-          created_at:             new Date().toISOString(),
-          last_active_at:         new Date().toISOString()
+          access_token:           authData.access_token,
+          name:                   name || null,
+          telegram:               telegram || null,
+          email_letters_accepted: newsChecked
         })
       });
+      if (!profileRes.ok) {
+        throw new Error('Не удалось создать профиль. Попробуйте ещё раз или напишите нам: finnikbot.help@yandex.com');
+      }
 
       // Меняем токен Supabase на наш JWT: сервер сам проверяет токен
       const loginRes = await fetch('/api/auth/web-login', {

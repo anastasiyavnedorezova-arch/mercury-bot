@@ -1017,6 +1017,61 @@ router.post('/api/bot/callback', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/auth/register-profile
+// Создаёт строку в users после регистрации на сайте.
+// Раньше браузер писал в таблицу напрямую с публичным ключом, а политика RLS разрешала
+// вставку любому вошедшему пользователю с любыми значениями полей (можно было заранее
+// занять чужой Telegram-ID). Теперь запись делает сервер: id и email берутся из
+// проверенного токена Supabase, остальные поля проверяются и обрезаются.
+router.post('/api/auth/register-profile', async (req, res) => {
+  try {
+    const { access_token: accessToken, name, telegram, email_letters_accepted: lettersAccepted } = req.body ?? {};
+    if (!accessToken || typeof accessToken !== 'string') {
+      return res.status(400).json({ error: 'Missing access_token' });
+    }
+
+    const { data: authData, error: authError } = await supabase.auth.getUser(accessToken);
+    const authUser = authData?.user;
+    if (authError || !authUser?.id || !authUser?.email) {
+      console.warn('[cabinet] register-profile: invalid access token');
+      return res.status(401).json({ error: 'Invalid access token' });
+    }
+
+    const { data: existing, error: existingError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', authUser.id)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existing) return res.json({ ok: true, existed: true });
+
+    const clean = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+    const nowIso = new Date().toISOString();
+
+    const { error: insertError } = await supabase.from('users').insert({
+      id: authUser.id,
+      channel: 'web',
+      external_id: authUser.id,
+      web_username: clean(name, 100),
+      email: authUser.email.toLowerCase(),
+      tg_username: clean(telegram, 64)?.replace(/^@/, '') ?? null,
+      terms_accepted_at: nowIso,
+      terms_version: '1.0',
+      email_letters_accepted: lettersAccepted === true,
+      created_at: nowIso,
+      last_active_at: nowIso,
+    });
+    // 23505 — строка уже создана параллельным запросом (двойной клик): это не ошибка
+    if (insertError?.code === '23505') return res.json({ ok: true, existed: true });
+    if (insertError) throw insertError;
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[cabinet] /api/auth/register-profile error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/auth/web-login
 // Меняет access_token Supabase Auth на наш JWT.
 // Личность подтверждает Supabase: токен выдаётся только после проверки пароля.
