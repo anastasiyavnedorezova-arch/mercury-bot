@@ -1,0 +1,12 @@
+[Unit]
+Description=Finnik health check (app, db, Telegram, OpenAI)
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=finnik
+WorkingDirectory=/opt/finnik/app
+EnvironmentFile=/etc/finnik-prod.env
+StateDirectory=finnik-health
+TimeoutStartSec=60
+ExecStart=/usr/bin/env node scripts/healthcheck.mjs
