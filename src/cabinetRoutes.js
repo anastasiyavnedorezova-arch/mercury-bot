@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { supabase, supabaseAuth } from './db.js';
+import { supabase } from './db.js';
 import { requireAuth } from './authMiddleware.js';
 import { createWebBotAdapter, getWebChatQueue, clearWebChatQueue, waitForNewMessage } from './webBotAdapter.js';
 import { handleMessage } from './handlers/message.js';
@@ -10,7 +10,6 @@ import { maybeShowWebWelcome } from './handlers/onboarding.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
 import { inTz, monthStartStr, monthEndStr } from './utils/dateTz.js';
 import { notifyAdminAboutFeedback } from './utils/feedbackNotify.js';
-import { sendWelcomeEmail } from './utils/email.js';
 
 const webBot = createWebBotAdapter();
 
@@ -1032,108 +1031,6 @@ router.post('/api/bot/callback', requireAuth, async (req, res) => {
     res.json({ ok: true, messages });
   } catch (err) {
     console.error('[cabinet] /api/bot/callback error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// POST /api/auth/register-profile
-// Создаёт строку в users после регистрации на сайте.
-// Раньше браузер писал в таблицу напрямую с публичным ключом, а политика RLS разрешала
-// вставку любому вошедшему пользователю с любыми значениями полей (можно было заранее
-// занять чужой Telegram-ID). Теперь запись делает сервер: id и email берутся из
-// проверенного токена Supabase, остальные поля проверяются и обрезаются.
-router.post('/api/auth/register-profile', async (req, res) => {
-  try {
-    const { access_token: accessToken, name, telegram, email_letters_accepted: lettersAccepted } = req.body ?? {};
-    if (!accessToken || typeof accessToken !== 'string') {
-      return res.status(400).json({ error: 'Missing access_token' });
-    }
-
-    if (!supabaseAuth) return res.status(503).json({ error: 'Auth provider is not configured' });
-    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(accessToken);
-    const authUser = authData?.user;
-    if (authError || !authUser?.id || !authUser?.email) {
-      console.warn('[cabinet] register-profile: invalid access token');
-      return res.status(401).json({ error: 'Invalid access token' });
-    }
-
-    const { data: existing, error: existingError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', authUser.id)
-      .maybeSingle();
-    if (existingError) throw existingError;
-    if (existing) return res.json({ ok: true, existed: true });
-
-    const clean = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
-    const nowIso = new Date().toISOString();
-
-    const { error: insertError } = await supabase.from('users').insert({
-      id: authUser.id,
-      channel: 'web',
-      external_id: authUser.id,
-      web_username: clean(name, 100),
-      email: authUser.email.toLowerCase(),
-      tg_username: clean(telegram, 64)?.replace(/^@/, '') ?? null,
-      terms_accepted_at: nowIso,
-      terms_version: '1.0',
-      email_letters_accepted: lettersAccepted === true,
-      created_at: nowIso,
-      last_active_at: nowIso,
-    });
-    // 23505 — строка уже создана параллельным запросом (двойной клик): это не ошибка
-    if (insertError?.code === '23505') return res.json({ ok: true, existed: true });
-    if (insertError) throw insertError;
-
-    sendWelcomeEmail({ to: authUser.email, name: clean(name, 100), userId: authUser.id })
-      .then(r => console.log('[email] welcome:', r.ok ? 'sent' : (r.skipped ? 'skipped' : 'failed ' + (r.status ?? r.error))))
-      .catch(() => {});
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('[cabinet] /api/auth/register-profile error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// POST /api/auth/web-login
-// Меняет access_token Supabase Auth на наш JWT.
-// Личность подтверждает Supabase: токен выдаётся только после проверки пароля.
-// Пользователь ищется по id из токена, а НЕ по email из тела запроса: иначе можно
-// получить чужой JWT, зная email (или зарегистрировавшись на чужой email).
-router.post('/api/auth/web-login', async (req, res) => {
-  try {
-    const accessToken = req.body?.access_token;
-    if (!accessToken || typeof accessToken !== 'string') {
-      return res.status(400).json({ error: 'Missing access_token' });
-    }
-
-    if (!supabaseAuth) return res.status(503).json({ error: 'Auth provider is not configured' });
-    const { data: authData, error: authError } = await supabaseAuth.auth.getUser(accessToken);
-    const authUserId = authData?.user?.id;
-    if (authError || !authUserId) {
-      console.warn('[cabinet] web-login: invalid access token');
-      return res.status(401).json({ error: 'Invalid access token' });
-    }
-
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, external_id, channel')
-      .eq('id', authUserId)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    const token = jwt.sign(
-      { userId: user.id, telegramId: user.external_id || null },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
-    );
-
-    res.json({ token });
-  } catch (err) {
-    console.error('[cabinet] /api/auth/web-login error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

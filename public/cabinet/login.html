@@ -443,8 +443,6 @@
 
 <script>
   // ── CONFIG ────────────────────────────────────────────────
-  const SUPABASE_URL      = 'https://ijvkcskzvwluntrsbcsj.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg';
   const urlParams = new URLSearchParams(window.location.search);
   const rawRedirect = urlParams.get('redirect');
   const REDIRECT_TARGET = (rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) ? rawRedirect : '/cabinet/dashboard';
@@ -501,21 +499,6 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
   }
 
-  // ── Supabase call helpers ─────────────────────────────────
-  async function supabasePost(path, body_data, token) {
-    const headers = {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_ANON_KEY
-    };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(SUPABASE_URL + path, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body_data)
-    });
-    return res;
-  }
-
   // ── Recovery fallback ─────────────────────────────────────
   (function recoveryFallback() {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -548,17 +531,6 @@
     }
   })();
 
-  function getStoredToken() {
-    try {
-      const keys = Object.keys(localStorage).filter(k => k.includes('auth-token'));
-      if (keys.length) {
-        const d = JSON.parse(localStorage.getItem(keys[0]));
-        return d?.access_token || '';
-      }
-    } catch {}
-    return '';
-  }
-
   // ══════════════════════════════════
   // SCENARIO 1: Login
   // ══════════════════════════════════
@@ -588,27 +560,16 @@
     btnLogin.textContent = 'Входим…';
 
     try {
-      const res  = await supabasePost('/auth/v1/token?grant_type=password', {
-        email:    loginEmail.value.trim().toLowerCase(),
-        password: loginPassword.value
-      });
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        throw new Error(data.error_description || data.msg || 'Неверный e-mail или пароль');
-      }
-
-      // Меняем токен Supabase на наш JWT: сервер сам проверяет токен
-      const loginRes = await fetch('/api/auth/web-login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: data.access_token })
+        body: JSON.stringify({ email: loginEmail.value.trim().toLowerCase(), password: loginPassword.value })
       });
-      if (!loginRes.ok) {
-        throw new Error('Не удалось войти. Попробуйте ещё раз или напишите нам: finnikbot.help@yandex.com');
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Неверный e-mail или пароль');
       }
-      const loginData = await loginRes.json();
-      localStorage.setItem('mercury_token', loginData.token);
+      localStorage.setItem('mercury_token', data.token);
       showToast('✅ Добро пожаловать!');
       setTimeout(() => window.location.href = DASHBOARD_URL, 1000);
 
@@ -649,8 +610,12 @@
     btn.textContent = 'Отправляем…';
 
     try {
-      const RESET_REDIRECT = 'https://finnikbot.ru/cabinet/reset-password';
-      await supabasePost('/auth/v1/recover?redirect_to=' + encodeURIComponent(RESET_REDIRECT), { email: resetEmail.value.trim().toLowerCase() });
+      const res = await fetch('/api/auth/forgot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail.value.trim().toLowerCase() })
+      });
+      if (!res.ok) throw new Error('server');
       showPanel('reset-success');
     } catch (err) {
       btn.disabled = false;
@@ -684,15 +649,6 @@
     btn.disabled = true;
     btn.textContent = 'Выходим…';
 
-    if (SUPABASE_ANON_KEY !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg') {
-      try {
-        const token = getStoredToken();
-        await fetch(SUPABASE_URL + '/auth/v1/logout', {
-          method: 'POST',
-          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${token}` }
-        });
-      } catch {}
-    }
     // Clear local storage
     Object.keys(localStorage).filter(k => k.includes('auth')).forEach(k => localStorage.removeItem(k));
     closeLogoutModal();

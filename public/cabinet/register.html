@@ -435,8 +435,6 @@
 
 <script>
   // ── Config ────────────────────────────────────────────────
-  const SUPABASE_URL     = 'https://ijvkcskzvwluntrsbcsj.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlqdmtjc2t6dndsdW50cnNiY3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjA0NTQsImV4cCI6MjA5MDQzNjQ1NH0.v0_KK-NQ-MjVTGhbyYDVwZf-WHEmN4qkFATt31YfTSg';
   // ─────────────────────────────────────────────────────────
 
   // ── State ─────────────────────────────────────────────────
@@ -596,50 +594,20 @@
     const telegram = document.getElementById('fieldTelegram').value.trim().replace(/^@/, '');
 
     try {
-      // 1. Sign up via Supabase Auth
-      const authRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+      // Register via own auth
+      const authRes = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY
-        },
-        body: JSON.stringify({ email, password })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name: name || null })
       });
       const authData = await authRes.json();
 
-      if (!authRes.ok || authData.error) {
-        throw new Error(authData.error?.message || authData.msg || 'Ошибка регистрации');
+      if (!authRes.ok) {
+        if (authRes.status === 409) throw new Error('Этот e-mail уже зарегистрирован');
+        throw new Error(authData.error || 'Ошибка регистрации');
       }
 
-      const userId = authData.user?.id;
-
-      // 2. Профиль в таблице users создаёт сервер после проверки токена;
-      //    браузер в базу напрямую не пишет
-      const profileRes = await fetch('/api/auth/register-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          access_token:           authData.access_token,
-          name:                   name || null,
-          telegram:               telegram || null,
-          email_letters_accepted: newsChecked
-        })
-      });
-      if (!profileRes.ok) {
-        throw new Error('Не удалось создать профиль. Попробуйте ещё раз или напишите нам: finnikbot.help@yandex.com');
-      }
-
-      // Меняем токен Supabase на наш JWT: сервер сам проверяет токен
-      const loginRes = await fetch('/api/auth/web-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ access_token: authData.access_token })
-      });
-      if (!loginRes.ok) {
-        throw new Error('Аккаунт создан, но войти автоматически не удалось. Войдите на странице входа.');
-      }
-      const loginData = await loginRes.json();
-      localStorage.setItem('mercury_token', loginData.token);
+      localStorage.setItem('mercury_token', authData.token);
 
       showSuccess();
 

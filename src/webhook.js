@@ -3,6 +3,7 @@ import { supabase } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cabinetRoutes from './cabinetRoutes.js';
+import authRoutes from './authRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,11 +16,12 @@ function monthsWord(n) {
 
 export function startWebhookServer(bot) {
   const app = express();
+  app.set('trust proxy', 1);
   app.use(express.json());
   app.use((req, res, next) => {
     if (req.path.startsWith('/cabinet')) {
       res.setHeader('Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org; frame-src https://oauth.telegram.org; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.supabase.co https://*.supabase.co"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org; frame-src https://oauth.telegram.org; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'"
       );
     }
     next();
@@ -65,6 +67,7 @@ export function startWebhookServer(bot) {
 
   app.use('/fonts', express.static(path.join(__dirname, '../public/fonts'), { maxAge: '365d', immutable: true }));
   app.use(express.static(path.join(__dirname, '../public')));
+  app.use('/api/auth', authRoutes);
   app.use(cabinetRoutes);
 
   app.get('/', (req, res) => {

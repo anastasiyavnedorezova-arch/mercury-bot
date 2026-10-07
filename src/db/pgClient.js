@@ -22,6 +22,7 @@ export const FOREIGN_KEYS = {
   subscriptions: { users: 'user_id' },
   transactions: { categories: 'category_id', goals: 'goal_id', users: 'user_id' },
   users: { users: 'merged_into' },
+  password_resets: { users: 'user_id' },
 };
 const TABLES = new Set(Object.keys(FOREIGN_KEYS));
 

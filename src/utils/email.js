@@ -147,6 +147,42 @@ export async function sendWelcomeEmail({ to, name, userId } = {}) {
   });
 }
 
+/**
+ * Отправляет письмо со ссылкой для сброса пароля.
+ * Никогда не бросает исключение.
+ */
+export async function sendPasswordResetEmail({ to, name, resetUrl } = {}) {
+  const safeName = escapeHtml((name ?? '').slice(0, 100));
+  const greeting = safeName ? `Привет, ${safeName}!` : 'Привет!';
+  const greetingText = safeName ? `Привет, ${(name ?? '').slice(0, 100)}!` : 'Привет!';
+  const safeUrl = escapeHtml(resetUrl ?? '');
+
+  const html = `<p>${greeting}</p>
+<p>Мы получили запрос на сброс пароля для вашего аккаунта Финника.</p>
+<p>Нажмите на ссылку ниже, чтобы задать новый пароль. Ссылка действительна 1 час:</p>
+<p><a href="${safeUrl}">${safeUrl}</a></p>
+<p>Если вы не запрашивали сброс пароля — проигнорируйте это письмо.</p>
+<p>Поддержка Финника</p>`;
+
+  const text = `${greetingText}
+
+Мы получили запрос на сброс пароля для вашего аккаунта Финника.
+
+Перейдите по ссылке ниже, чтобы задать новый пароль. Ссылка действительна 1 час:
+${resetUrl ?? ''}
+
+Если вы не запрашивали сброс пароля — проигнорируйте это письмо.
+
+Поддержка Финника`;
+
+  return sendEmail({
+    to,
+    subject: 'Сброс пароля Финника',
+    html,
+    text,
+  });
+}
+
 // Возвращает статус наличия почтовых переменных (только true/false, без значений).
 export function emailConfigStatus() {
   return {
