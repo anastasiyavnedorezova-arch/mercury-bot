@@ -1,0 +1,15 @@
+[Unit]
+Description=Finnik bot (stage / тестовая среда)
+After=network-online.target postgresql.service
+
+[Service]
+Type=simple
+User=finnik
+WorkingDirectory=/opt/finnik-stage/app
+EnvironmentFile=/etc/finnik-stage.env
+ExecStart=/usr/bin/env node src/bot.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
