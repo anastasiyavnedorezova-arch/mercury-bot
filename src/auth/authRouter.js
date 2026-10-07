@@ -1,237 +1,243 @@
-import { Router } from 'express';
+// Собственная авторизация сайта: регистрация, вход, сброс пароля по e-mail.
+// Заменяет Supabase Auth. Фабрика получает базу и «почтальона» снаружи — так её можно тестировать без сети.
+import express from 'express';
+import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 import {
-  normalizeEmail, isValidEmail, validatePassword,
-  hashPassword, verifyPassword, dummyHash,
-  hashToken, newResetToken, isWebAccount,
-  RESET_TTL_MS,
+  normalizeEmail, isValidEmail, validatePassword, hashPassword, verifyPassword, dummyHash,
+  newResetToken, hashToken, isWebAccount, RESET_TTL_MS,
 } from './authCore.js';
+import { createRateLimiter } from './rateLimit.js';
+import { maskEmail } from '../utils/email.js';
 
-const MSG_BAD_CREDENTIALS = 'Неверный e-mail или пароль';
-const MSG_RESET_SENT      = 'Если такой e-mail зарегистрирован, письмо отправлено';
+const DEFAULT_LIMITS = {
+  loginIp:       { windowMs: 15 * 60_000, max: 30 }, // неудачных входов с одного IP
+  loginEmail:    { windowMs: 15 * 60_000, max: 8 },  // неудачных входов на один e-mail
+  registerIp:    { windowMs: 60 * 60_000, max: 10 },
+  forgotIp:      { windowMs: 60 * 60_000, max: 10 },
+  forgotEmail:   { windowMs: 60 * 60_000, max: 3 },
+  resetIp:       { windowMs: 60 * 60_000, max: 20 },
+};
 
-/**
- * createAuthRouter({ db, mailer, limits, getBaseUrl, getJwtSecret })
- *
- * db          — supabase-compatible QueryBuilder (pgClient or supabase-js)
- * mailer      — { sendWelcomeEmail, sendPasswordResetEmail }
- * limits      — { ipRegister, emailRegister, ipLogin, emailLogin, ipForgot, emailForgot }
- *               each is a hit(key)=>boolean rate-limiter
- * getBaseUrl  — () => string  (e.g. 'https://finnik.ru')
- * getJwtSecret— () => string
- */
-export function createAuthRouter({ db, mailer, limits, getBaseUrl, getJwtSecret }) {
-  const router = Router();
+const clean = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
 
-  // ── POST /api/auth/register ────────────────────────────────────────────────
-  router.post('/register', async (req, res) => {
-    const ip = req.ip;
-    const { email: rawEmail, password, name } = req.body ?? {};
+export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSecret } = {}) {
+  const router = express.Router();
+  const L = Object.fromEntries(
+    Object.entries(DEFAULT_LIMITS).map(([k, v]) => [k, createRateLimiter({ ...v, ...(limits[k] || {}) })])
+  );
+  const baseUrl = () => (getBaseUrl?.() || process.env.APP_BASE_URL || 'https://finnikbot.ru').replace(/\/+$/, '');
+  const jwtSecret = () => (getJwtSecret?.() ?? process.env.JWT_SECRET);
 
-    if (!rawEmail || !password) {
-      return res.status(400).json({ error: 'email и password обязательны' });
-    }
+  router.use('/api/auth', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
 
-    const email = normalizeEmail(rawEmail);
+  function tooMany(res, sec) {
+    res.setHeader('Retry-After', String(sec));
+    return res.status(429).json({
+      error: 'too_many_requests',
+      message: 'Слишком много попыток. Попробуйте через несколько минут.',
+      retry_after: sec,
+    });
+  }
 
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ error: 'Некорректный e-mail' });
-    }
-    if (!validatePassword(password)) {
-      return res.status(400).json({ error: 'Пароль должен быть не менее 8 символов' });
-    }
+  function signToken(user) {
+    const secret = jwtSecret();
+    if (!secret) throw new Error('JWT_SECRET is not set');
+    return jwt.sign({ userId: user.id, telegramId: user.external_id || null }, secret, { expiresIn: '30d' });
+  }
 
-    if (!limits.ipRegister(ip) || !limits.emailRegister(email)) {
-      return res.status(429).json({ error: 'Слишком много попыток, попробуйте позже' });
-    }
-
-    // Check if e-mail already taken
-    const { data: existing } = await db
+  // Все учётные записи с входом по паролю для данного e-mail (обычно одна)
+  async function findWebAccounts(email) {
+    const { data, error } = await db
       .from('users')
-      .select('id')
-      .eq('email', email)
-      .not('password_hash', 'is', null)
-      .maybeSingle();
+      .select('id, external_id, status, password_hash, created_at')
+      .eq('email', email);
+    if (error) throw error;
+    return (data ?? []).filter(isWebAccount).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  }
 
-    if (existing) {
-      return res.status(409).json({ error: 'E-mail уже зарегистрирован' });
-    }
+  // ── Регистрация ───────────────────────────────────────────
+  router.post('/api/auth/register', async (req, res) => {
+    try {
+      const ip = req.ip || 'unknown';
+      const wait = L.registerIp.retryAfterSec(ip);
+      if (wait) return tooMany(res, wait);
+      L.registerIp.record(ip);
 
-    const password_hash = await hashPassword(password);
+      const b = req.body ?? {};
+      const email = normalizeEmail(b.email);
+      if (!email) return res.status(400).json({ error: 'validation', field: 'email', message: 'Обязательное поле' });
+      if (!isValidEmail(email)) return res.status(400).json({ error: 'validation', field: 'email', message: 'Введите корректный e-mail' });
+      const pwErr = validatePassword(b.password);
+      if (pwErr) return res.status(400).json({ error: 'validation', field: 'password', message: pwErr });
+      if (b.terms_accepted !== true) {
+        return res.status(400).json({ error: 'validation', field: 'terms', message: 'Нужно принять условия' });
+      }
 
-    const { data: user, error } = await db
-      .from('users')
-      .insert({
-        email,
-        web_username: name?.trim() || null,
-        external_id: crypto.randomUUID(),
-        password_hash,
-        password_changed_at: new Date().toISOString(),
+      const takenMsg = 'Этот e-mail уже зарегистрирован. Войдите или восстановите пароль.';
+      if ((await findWebAccounts(email)).length) return res.status(409).json({ error: 'email_taken', message: takenMsg });
+
+      const passwordHash = await hashPassword(b.password);
+      const id = crypto.randomUUID();
+      const nowIso = new Date().toISOString();
+      const name = clean(b.name, 100);
+
+      const { error: insertError } = await db.from('users').insert({
+        id,
         channel: 'web',
-      })
-      .select('id, email, web_username')
-      .single();
-
-    if (error) {
-      console.error('[auth] register error:', error.message);
-      return res.status(500).json({ error: 'Ошибка сервера' });
-    }
-
-    const token = jwt.sign(
-      { sub: String(user.id), email: user.email },
-      getJwtSecret(),
-      { expiresIn: '30d' },
-    );
-
-    try {
-      await mailer.sendWelcomeEmail({ to: user.email, name: user.web_username || 'пользователь', userId: String(user.id) });
-    } catch (e) {
-      console.error('[auth] welcome email failed:', e.message);
-    }
-
-    return res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.web_username } });
-  });
-
-  // ── POST /api/auth/login ───────────────────────────────────────────────────
-  router.post('/login', async (req, res) => {
-    const ip = req.ip;
-    const { email: rawEmail, password } = req.body ?? {};
-
-    if (!rawEmail || !password) {
-      return res.status(400).json({ error: 'email и password обязательны' });
-    }
-
-    const email = normalizeEmail(rawEmail);
-
-    if (!limits.ipLogin(ip) || !limits.emailLogin(email)) {
-      return res.status(429).json({ error: 'Слишком много попыток, попробуйте позже' });
-    }
-
-    const { data: user } = await db
-      .from('users')
-      .select('id, email, web_username, password_hash')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (!user || !isWebAccount(user)) {
-      await dummyHash();
-      return res.status(401).json({ error: MSG_BAD_CREDENTIALS });
-    }
-
-    const ok = await verifyPassword(password, user.password_hash);
-    if (!ok) {
-      return res.status(401).json({ error: MSG_BAD_CREDENTIALS });
-    }
-
-    const token = jwt.sign(
-      { sub: String(user.id), email: user.email },
-      getJwtSecret(),
-      { expiresIn: '30d' },
-    );
-
-    return res.json({ token, user: { id: user.id, email: user.email, name: user.web_username } });
-  });
-
-  // ── POST /api/auth/forgot ──────────────────────────────────────────────────
-  router.post('/forgot', async (req, res) => {
-    const ip = req.ip;
-    const { email: rawEmail } = req.body ?? {};
-
-    if (!rawEmail) {
-      return res.status(400).json({ error: 'email обязателен' });
-    }
-
-    const email = normalizeEmail(rawEmail);
-
-    if (!limits.ipForgot(ip) || !limits.emailForgot(email)) {
-      return res.status(429).json({ error: 'Слишком много попыток, попробуйте позже' });
-    }
-
-    // Always return same message to prevent user enumeration
-    const { data: user } = await db
-      .from('users')
-      .select('id, email, web_username')
-      .eq('email', email)
-      .not('password_hash', 'is', null)
-      .maybeSingle();
-
-    if (!user) {
-      return res.json({ message: MSG_RESET_SENT });
-    }
-
-    const { token, tokenHash } = newResetToken();
-    const expiresAt = new Date(Date.now() + RESET_TTL_MS).toISOString();
-
-    const { error } = await db
-      .from('password_resets')
-      .insert({
-        user_id: user.id,
-        token_hash: tokenHash,
-        expires_at: expiresAt,
+        external_id: id,
+        web_username: name,
+        email,
+        password_hash: passwordHash,
+        password_changed_at: nowIso,
+        tg_username: clean(b.telegram, 64)?.replace(/^@/, '') ?? null,
+        terms_accepted_at: nowIso,
+        terms_version: '1.0',
+        email_letters_accepted: b.email_letters_accepted === true,
+        created_at: nowIso,
+        last_active_at: nowIso,
       });
+      // 23505 — тот же e-mail занят параллельным запросом (двойной клик)
+      if (insertError?.code === '23505') return res.status(409).json({ error: 'email_taken', message: takenMsg });
+      if (insertError) throw insertError;
 
-    if (error) {
-      console.error('[auth] insert reset token error:', error.message);
-      return res.json({ message: MSG_RESET_SENT });
+      Promise.resolve(mailer?.sendWelcomeEmail?.({ to: email, name, userId: id }))
+        .then((r) => console.log('[email] welcome:', r?.ok ? 'sent' : (r?.skipped ? 'skipped' : 'failed ' + (r?.status ?? r?.error))))
+        .catch(() => {});
+
+      res.status(201).json({ token: signToken({ id, external_id: id }) });
+    } catch (err) {
+      console.error('[auth] register error:', err.message);
+      res.status(500).json({ error: 'internal', message: 'Не удалось создать аккаунт. Попробуйте ещё раз.' });
     }
-
-    const resetUrl = `${getBaseUrl()}/cabinet/reset-password.html?token=${token}`;
-
-    try {
-      await mailer.sendPasswordResetEmail({ to: user.email, name: user.web_username || 'пользователь', resetUrl });
-    } catch (e) {
-      console.error('[auth] reset email failed:', e.message);
-    }
-
-    return res.json({ message: MSG_RESET_SENT });
   });
 
-  // ── POST /api/auth/reset ───────────────────────────────────────────────────
-  router.post('/reset', async (req, res) => {
-    const { token, password } = req.body ?? {};
+  // ── Вход ──────────────────────────────────────────────────
+  router.post('/api/auth/login', async (req, res) => {
+    try {
+      const ip = req.ip || 'unknown';
+      const b = req.body ?? {};
+      const email = normalizeEmail(b.email);
+      const password = typeof b.password === 'string' ? b.password : '';
+      if (!email || !password) {
+        return res.status(400).json({ error: 'validation', message: 'Укажите e-mail и пароль' });
+      }
 
-    if (!token || !password) {
-      return res.status(400).json({ error: 'token и password обязательны' });
+      const ipKey = ip;
+      const emailKey = email;
+      const wait = Math.max(L.loginIp.retryAfterSec(ipKey), L.loginEmail.retryAfterSec(emailKey));
+      if (wait) return tooMany(res, wait);
+
+      const [user] = await findWebAccounts(email);
+      const ok = await verifyPassword(password, user ? user.password_hash : await dummyHash());
+      if (!user || !ok) {
+        L.loginIp.record(ipKey);
+        L.loginEmail.record(emailKey);
+        return res.status(401).json({ error: 'invalid_credentials', message: 'Неверный e-mail или пароль' });
+      }
+
+      L.loginEmail.clear(emailKey);
+      res.json({ token: signToken(user) });
+    } catch (err) {
+      console.error('[auth] login error:', err.message);
+      res.status(500).json({ error: 'internal', message: 'Не удалось войти. Попробуйте ещё раз.' });
     }
-    if (!validatePassword(password)) {
-      return res.status(400).json({ error: 'Пароль должен быть не менее 8 символов' });
+  });
+
+  // ── Запрос письма для сброса пароля ───────────────────────
+  // Всегда отвечает «ok», чтобы нельзя было узнать, зарегистрирован ли e-mail.
+  router.post('/api/auth/forgot', async (req, res) => {
+    try {
+      const ip = req.ip || 'unknown';
+      const wait = L.forgotIp.retryAfterSec(ip);
+      if (wait) return tooMany(res, wait);
+      L.forgotIp.record(ip);
+
+      const email = normalizeEmail(req.body?.email);
+      if (!isValidEmail(email)) return res.status(400).json({ error: 'validation', field: 'email', message: 'Введите корректный e-mail' });
+
+      // Лимит на один адрес: сверх лимита письмо молча не отправляется
+      if (L.forgotEmail.retryAfterSec(email)) return res.json({ ok: true });
+      L.forgotEmail.record(email);
+
+      const [user] = await findWebAccounts(email);
+      if (user) {
+        const nowIso = new Date().toISOString();
+        // Прежние неиспользованные ссылки перестают работать
+        await db.from('password_resets').update({ used_at: nowIso }).eq('user_id', user.id).is('used_at', null);
+        const { token, tokenHash } = newResetToken();
+        const { error } = await db.from('password_resets').insert({
+          user_id: user.id,
+          token_hash: tokenHash,
+          expires_at: new Date(Date.now() + RESET_TTL_MS).toISOString(),
+        });
+        if (error) throw error;
+        // Токен в адресной строке после «#»: он не попадает в логи серверов и в Referer
+        const link = `${baseUrl()}/cabinet/reset-password#token=${token}`;
+        Promise.resolve(mailer?.sendPasswordResetEmail?.({ to: email, link }))
+          .then((r) => console.log('[email] password reset to', maskEmail(email) + ':', r?.ok ? 'sent' : (r?.skipped ? 'skipped' : 'failed ' + (r?.status ?? r?.error))))
+          .catch(() => {});
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[auth] forgot error:', err.message);
+      res.status(500).json({ error: 'internal', message: 'Не удалось отправить письмо. Попробуйте ещё раз.' });
     }
+  });
 
-    const tokenHash = hashToken(token);
+  // ── Установка нового пароля по ссылке из письма ───────────
+  router.post('/api/auth/reset', async (req, res) => {
+    try {
+      const ip = req.ip || 'unknown';
+      const wait = L.resetIp.retryAfterSec(ip);
+      if (wait) return tooMany(res, wait);
+      L.resetIp.record(ip);
 
-    const { data: reset } = await db
-      .from('password_resets')
-      .select('id, user_id, expires_at, used_at')
-      .eq('token_hash', tokenHash)
-      .maybeSingle();
+      const { token, password } = req.body ?? {};
+      const invalid = () => res.status(400).json({ error: 'invalid_token', message: 'Ссылка недействительна или устарела. Запросите новое письмо.' });
+      if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) return invalid();
+      const pwErr = validatePassword(password);
+      if (pwErr) return res.status(400).json({ error: 'validation', field: 'password', message: pwErr });
 
-    if (!reset) {
-      return res.status(400).json({ error: 'Ссылка недействительна' });
+      const { data: row, error } = await db
+        .from('password_resets')
+        .select('id, user_id, expires_at, used_at')
+        .eq('token_hash', hashToken(token))
+        .maybeSingle();
+      if (error) throw error;
+      if (!row || row.used_at || new Date(row.expires_at).getTime() <= Date.now()) return invalid();
+
+      const nowIso = new Date().toISOString();
+      // Забираем токен «атомарно»: при двойном запросе сработает только один
+      const { data: claimed, error: claimError } = await db
+        .from('password_resets')
+        .update({ used_at: nowIso })
+        .eq('id', row.id)
+        .is('used_at', null)
+        .select('id');
+      if (claimError) throw claimError;
+      if (!claimed?.length) return invalid();
+
+      const { data: user } = await db.from('users').select('id, status, password_hash').eq('id', row.user_id).maybeSingle();
+      if (!user || ['deleted', 'merged'].includes(user.status ?? 'active')) return invalid();
+
+      const passwordHash = await hashPassword(password);
+      const { error: updError } = await db
+        .from('users')
+        .update({ password_hash: passwordHash, password_changed_at: nowIso })
+        .eq('id', row.user_id);
+      if (updError) throw updError;
+
+      // Остальные ссылки этого пользователя больше не нужны
+      await db.from('password_resets').update({ used_at: nowIso }).eq('user_id', row.user_id).is('used_at', null);
+      res.json({ ok: true });
+    } catch (err) {
+      console.error('[auth] reset error:', err.message);
+      res.status(500).json({ error: 'internal', message: 'Не удалось сохранить пароль. Попробуйте ещё раз.' });
     }
-    if (reset.used_at) {
-      return res.status(400).json({ error: 'Ссылка уже использована' });
-    }
-    if (new Date(reset.expires_at) < new Date()) {
-      return res.status(400).json({ error: 'Ссылка устарела' });
-    }
-
-    const password_hash = await hashPassword(password);
-
-    await db
-      .from('users')
-      .update({
-        password_hash,
-        password_changed_at: new Date().toISOString(),
-      })
-      .eq('id', reset.user_id);
-
-    await db
-      .from('password_resets')
-      .update({ used_at: new Date().toISOString() })
-      .eq('id', reset.id);
-
-    return res.json({ message: 'Пароль изменён' });
   });
 
   return router;

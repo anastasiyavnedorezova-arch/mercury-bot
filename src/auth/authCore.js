@@ -1,54 +1,61 @@
+// Базовые функции собственной авторизации: нормализация e-mail, проверка пароля,
+// хеширование (bcrypt), одноразовые токены сброса пароля.
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 export const BCRYPT_COST = 12;
-export const RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
+export const RESET_TTL_MS = 60 * 60 * 1000; // ссылка для сброса пароля живёт 1 час
 
-// ── Email ─────────────────────────────────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/; // то же правило, что на страницах входа и регистрации
 
-export function normalizeEmail(raw) {
-  return raw.trim().toLowerCase();
+export function normalizeEmail(v) {
+  return typeof v === 'string' ? v.trim().toLowerCase() : '';
 }
 
 export function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return typeof email === 'string' && email.length <= 254 && EMAIL_RE.test(email);
 }
 
-// ── Password ──────────────────────────────────────────────────────────────────
-
-export function validatePassword(password) {
-  if (typeof password !== 'string') return false;
-  return password.length >= 8;
+// Возвращает текст ошибки по-русски или null, если пароль подходит.
+// Ограничение 72 байта — у самого bcrypt: всё, что длиннее, он молча обрезает.
+export function validatePassword(pw) {
+  if (typeof pw !== 'string' || !pw) return 'Обязательное поле';
+  if (pw.length < 6) return 'Минимум 6 символов';
+  if (Buffer.byteLength(pw, 'utf8') > 72) return 'Слишком длинный пароль (максимум 72 байта)';
+  return null;
 }
 
-export async function hashPassword(password) {
-  return bcrypt.hash(password, BCRYPT_COST);
+export function hashPassword(pw) {
+  return bcrypt.hash(pw, BCRYPT_COST);
 }
 
-export async function verifyPassword(password, hash) {
-  if (!hash) return false;
-  return bcrypt.compare(password, hash);
+// Работает и с хешами, перенесёнными из Supabase ($2a$10$…)
+export async function verifyPassword(pw, hash) {
+  try {
+    return await bcrypt.compare(pw, hash);
+  } catch {
+    return false;
+  }
 }
 
-// Used when the user is not found — prevents timing-based user enumeration.
+// Хеш для «холостой» проверки, когда пользователь не найден: время ответа не выдаёт, есть ли такой e-mail
+let _dummyHash = null;
 export async function dummyHash() {
-  return bcrypt.compare('', await bcrypt.hash('', 4));
+  if (!_dummyHash) _dummyHash = await bcrypt.hash('finnik-dummy-password', BCRYPT_COST);
+  return _dummyHash;
 }
-
-// ── Reset token ───────────────────────────────────────────────────────────────
 
 export function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
+  return crypto.createHash('sha256').update(String(token)).digest('hex');
 }
 
+// В базе хранится только sha256 токена; сам токен уходит в письмо
 export function newResetToken() {
   const token = crypto.randomBytes(32).toString('hex');
   return { token, tokenHash: hashToken(token) };
 }
 
-// ── Account type ──────────────────────────────────────────────────────────────
-
-/** Returns true if the user row has a web password (i.e. can log in via web). */
-export function isWebAccount(user) {
-  return Boolean(user?.password_hash);
+// Аккаунт с входом по паролю (не удалён и не объединён с другим)
+export function isWebAccount(u) {
+  return !!u?.password_hash && !['deleted', 'merged'].includes(u.status ?? 'active');
 }

@@ -434,9 +434,6 @@
 </div><!-- /reg-card -->
 
 <script>
-  // ── Config ────────────────────────────────────────────────
-  // ─────────────────────────────────────────────────────────
-
   // ── State ─────────────────────────────────────────────────
   let termsChecked  = false;
   let newsChecked   = false;
@@ -594,20 +591,37 @@
     const telegram = document.getElementById('fieldTelegram').value.trim().replace(/^@/, '');
 
     try {
-      // Register via own auth
-      const authRes = await fetch('/api/auth/register', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name: name || null })
+        body: JSON.stringify({
+          email,
+          password,
+          name:                   name || null,
+          telegram:               telegram || null,
+          email_letters_accepted: newsChecked,
+          terms_accepted:         true
+        })
       });
-      const authData = await authRes.json();
+      let data = {};
+      try { data = await res.json(); } catch {}
 
-      if (!authRes.ok) {
-        if (authRes.status === 409) throw new Error('Этот e-mail уже зарегистрирован');
-        throw new Error(authData.error || 'Ошибка регистрации');
+      if (res.status === 429) {
+        const sec = parseInt(res.headers.get('Retry-After') || '', 10);
+        const min = sec ? Math.ceil(sec / 60) : 0;
+        throw new Error(min > 1 ? 'Слишком много попыток. Попробуйте через ' + min + ' мин.' : 'Слишком много попыток. Попробуйте позже.');
+      }
+      if (res.status === 400 && data.field === 'password') {
+        submitBtn.classList.remove('is-loading');
+        submitBtn.textContent = 'Создать аккаунт';
+        setFieldError(fieldPassword, hintPassword, data.message || 'Некорректный пароль');
+        return;
+      }
+      if (!res.ok || !data.token) {
+        throw new Error(data.message || 'Не удалось создать аккаунт. Попробуйте ещё раз или напишите нам: finnikbot.help@yandex.com');
       }
 
-      localStorage.setItem('mercury_token', authData.token);
+      localStorage.setItem('mercury_token', data.token);
 
       showSuccess();
 
@@ -617,7 +631,7 @@
       submitBtn.textContent = 'Создать аккаунт';
       // Show error near email field
       fieldEmail.classList.add('is-error');
-      hintEmail.textContent = err.message || 'Произошла ошибка. Попробуйте ещё раз.';
+      hintEmail.textContent = (err instanceof TypeError) ? 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.' : (err.message || 'Произошла ошибка. Попробуйте ещё раз.');
       hintEmail.classList.add('is-visible');
     }
   });

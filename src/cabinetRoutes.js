@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { isWebAccount } from './auth/authCore.js';
 import { supabase } from './db.js';
 import { requireAuth } from './authMiddleware.js';
 import { createWebBotAdapter, getWebChatQueue, clearWebChatQueue, waitForNewMessage } from './webBotAdapter.js';
@@ -765,11 +766,27 @@ router.put('/api/profile', requireAuth, async (req, res) => {
     const update = {};
     if (web_username !== undefined) update.web_username = web_username?.trim() || null;
     if (email !== undefined) {
-      const trimmedEmail = email?.trim() || null;
+      const trimmedEmail = email?.trim().toLowerCase() || null;
       if (trimmedEmail) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(trimmedEmail)) {
           return res.status(400).json({ error: 'Invalid email format' });
+        }
+        // Среди аккаунтов с входом по паролю e-mail уникален
+        const { data: me } = await supabase
+          .from('users')
+          .select('id, status, password_hash')
+          .eq('id', req.userId)
+          .maybeSingle();
+        if (isWebAccount(me)) {
+          const { data: sameEmail } = await supabase
+            .from('users')
+            .select('id, status, password_hash')
+            .eq('email', trimmedEmail)
+            .neq('id', req.userId);
+          if ((sameEmail ?? []).some(isWebAccount)) {
+            return res.status(409).json({ error: 'email_taken', message: 'Этот e-mail уже используется' });
+          }
         }
       }
       update.email = trimmedEmail;
@@ -778,6 +795,7 @@ router.put('/api/profile', requireAuth, async (req, res) => {
       .from('users')
       .update(update)
       .eq('id', req.userId);
+    if (error?.code === '23505') return res.status(409).json({ error: 'email_taken', message: 'Этот e-mail уже используется' });
     if (error) throw error;
     res.json({ ok: true });
   } catch (err) {

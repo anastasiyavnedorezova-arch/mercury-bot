@@ -19,10 +19,10 @@ export const FOREIGN_KEYS = {
   feedback: { users: 'user_id' },
   goals: { users: 'user_id' },
   notifications: { users: 'user_id' },
+  password_resets: { users: 'user_id' },
   subscriptions: { users: 'user_id' },
   transactions: { categories: 'category_id', goals: 'goal_id', users: 'user_id' },
   users: { users: 'merged_into' },
-  password_resets: { users: 'user_id' },
 };
 const TABLES = new Set(Object.keys(FOREIGN_KEYS));
 

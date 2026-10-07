@@ -499,19 +499,11 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
   }
 
-  // ── Recovery fallback ─────────────────────────────────────
-  (function recoveryFallback() {
+  // ── Ссылки со старого формата восстановления ──────────────
+  (function legacyHashCleanup() {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const type = hash.get('type');
-    const accessToken = hash.get('access_token');
     const errorCode = hash.get('error_code');
     const errorDesc = hash.get('error_description');
-
-    if (type === 'recovery' && accessToken) {
-      // Old-format email link pointing to login — redirect to dedicated page with token
-      window.location.replace('/cabinet/reset-password' + window.location.hash);
-      return;
-    }
 
     if (window.location.hash) {
       history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -530,6 +522,24 @@
       showToast('Пароль изменён — теперь можно войти 🔐', 5000);
     }
   })();
+
+  async function postJson(url, payload) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    let data = {};
+    try { data = await res.json(); } catch {}
+    return { res, data };
+  }
+
+  function waitText(res) {
+    const sec = parseInt(res.headers.get('Retry-After') || '', 10);
+    if (!sec) return 'Слишком много попыток. Попробуйте позже.';
+    const min = Math.ceil(sec / 60);
+    return min <= 1 ? 'Слишком много попыток. Попробуйте через минуту.' : 'Слишком много попыток. Попробуйте через ' + min + ' мин.';
+  }
 
   // ══════════════════════════════════
   // SCENARIO 1: Login
@@ -560,15 +570,16 @@
     btnLogin.textContent = 'Входим…';
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginEmail.value.trim().toLowerCase(), password: loginPassword.value })
+      const { res, data } = await postJson('/api/auth/login', {
+        email:    loginEmail.value.trim().toLowerCase(),
+        password: loginPassword.value
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Неверный e-mail или пароль');
+
+      if (res.status === 429) throw new Error(waitText(res));
+      if (!res.ok || !data.token) {
+        throw new Error(data.message || 'Неверный e-mail или пароль');
       }
+
       localStorage.setItem('mercury_token', data.token);
       showToast('✅ Добро пожаловать!');
       setTimeout(() => window.location.href = DASHBOARD_URL, 1000);
@@ -576,7 +587,8 @@
     } catch (err) {
       btnLogin.classList.remove('is-loading');
       btnLogin.textContent = 'Войти';
-      setErr(loginPassword, loginPasswordHint, err.message || 'Неверный e-mail или пароль');
+      const offline = err instanceof TypeError;
+      setErr(loginPassword, loginPasswordHint, offline ? 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.' : (err.message || 'Неверный e-mail или пароль'));
     }
   });
 
@@ -610,17 +622,14 @@
     btn.textContent = 'Отправляем…';
 
     try {
-      const res = await fetch('/api/auth/forgot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resetEmail.value.trim().toLowerCase() })
-      });
-      if (!res.ok) throw new Error('server');
+      const { res } = await postJson('/api/auth/forgot', { email: resetEmail.value.trim().toLowerCase() });
+      if (res.status === 429) throw new Error(waitText(res));
+      if (!res.ok) throw new Error('Ошибка. Попробуйте ещё раз.');
       showPanel('reset-success');
     } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Отправить письмо';
-      setErr(resetEmail, resetEmailHint, 'Ошибка. Попробуйте ещё раз.');
+      setErr(resetEmail, resetEmailHint, err instanceof TypeError ? 'Нет связи с сервером. Попробуйте ещё раз.' : (err.message || 'Ошибка. Попробуйте ещё раз.'));
     }
   });
 
@@ -650,7 +659,10 @@
     btn.textContent = 'Выходим…';
 
     // Clear local storage
-    Object.keys(localStorage).filter(k => k.includes('auth')).forEach(k => localStorage.removeItem(k));
+    try {
+      localStorage.removeItem('mercury_token');
+      Object.keys(localStorage).filter(k => k.includes('auth')).forEach(k => localStorage.removeItem(k));
+    } catch {}
     closeLogoutModal();
     showToast('👋 Вы вышли из аккаунта');
     setTimeout(() => window.location.href = '/cabinet/login', 1200);

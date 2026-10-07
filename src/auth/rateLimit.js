@@ -1,30 +1,36 @@
-/**
- * createRateLimiter({ windowMs, max, now? })
- * Returns a function `hit(key) => boolean`:
- *   true  — request allowed
- *   false — rate limit exceeded
- *
- * Uses a sliding-window counter stored in memory.
- */
+// Простой ограничитель попыток в памяти процесса (скользящее окно).
+// Достаточно для одного сервера; при перезапуске счётчики обнуляются.
 export function createRateLimiter({ windowMs, max, now = () => Date.now() }) {
-  // key → array of timestamps (ms) within the current window
-  const windows = new Map();
+  const hits = new Map(); // ключ -> массив моментов времени
 
-  return function hit(key) {
-    const ts = now();
-    const cutoff = ts - windowMs;
+  function fresh(key) {
+    const t = now();
+    const arr = (hits.get(key) ?? []).filter((x) => t - x < windowMs);
+    if (arr.length) hits.set(key, arr);
+    else hits.delete(key);
+    return arr;
+  }
 
-    let hits = windows.get(key) ?? [];
-    // Drop timestamps outside the window
-    hits = hits.filter(t => t > cutoff);
+  const timer = setInterval(() => {
+    for (const k of [...hits.keys()]) fresh(k);
+  }, Math.max(windowMs, 60_000));
+  timer.unref?.();
 
-    if (hits.length >= max) {
-      windows.set(key, hits);
-      return false;
-    }
-
-    hits.push(ts);
-    windows.set(key, hits);
-    return true;
+  return {
+    // Сколько секунд ждать; 0 — можно
+    retryAfterSec(key) {
+      const arr = fresh(key);
+      if (arr.length < max) return 0;
+      return Math.max(1, Math.ceil((windowMs - (now() - arr[0])) / 1000));
+    },
+    record(key) {
+      const arr = fresh(key);
+      arr.push(now());
+      hits.set(key, arr);
+    },
+    clear(key) {
+      hits.delete(key);
+    },
+    size: () => hits.size,
   };
 }

@@ -16,6 +16,7 @@ function monthsWord(n) {
 
 export function startWebhookServer(bot) {
   const app = express();
+  // За прокси (nginx / Railway): настоящий IP клиента нужен для ограничения попыток входа
   app.set('trust proxy', 1);
   app.use(express.json());
   app.use((req, res, next) => {
@@ -67,7 +68,7 @@ export function startWebhookServer(bot) {
 
   app.use('/fonts', express.static(path.join(__dirname, '../public/fonts'), { maxAge: '365d', immutable: true }));
   app.use(express.static(path.join(__dirname, '../public')));
-  app.use('/api/auth', authRoutes);
+  app.use(authRoutes);
   app.use(cabinetRoutes);
 
   app.get('/', (req, res) => {
