@@ -48,7 +48,12 @@ export async function checkApp(env = process.env) {
   const name = 'app';
   const port = env.PORT || '3000';
   try {
-    const res = await fetch(`http://127.0.0.1:${port}/cabinet/login`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    // Приложение перенаправляет на https, если нет заголовка от nginx — сообщаем, что запрос «как будто пришёл по https»
+    const res = await fetch(`http://127.0.0.1:${port}/cabinet/login`, {
+      headers: { 'X-Forwarded-Proto': 'https' },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
     if (res.ok) return { name, ok: true };
     return { name, ok: false, detail: `приложение ответило статусом ${res.status}` };
   } catch (err) {

@@ -121,7 +121,11 @@ test('checkOpenAI: GET /models с ключом; 401 и обрыв — сбой, 
 });
 
 test('checkApp и runChecks: SKIP и FORCE_FAIL', async () => {
-  const s = await server((req, res) => { res.end('ok'); });
+  const s = await server((req, res) => {
+    // как боевое приложение: без заголовка nginx — редирект на https
+    if (req.headers['x-forwarded-proto'] !== 'https') { res.statusCode = 301; res.setHeader('location', 'https://127.0.0.1/'); return res.end(); }
+    res.end('ok');
+  });
   try {
     const env = { PORT: String(s.address().port) };
     assert.equal((await checkApp(env)).ok, true);
