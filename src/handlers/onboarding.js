@@ -32,18 +32,18 @@ const STEP1_KEYBOARD = {
 
 const CONSENT_TEXT =
   `Привет! Прежде чем начать — пара формальностей 📋\n\n` +
-  `Используя Финника, ты соглашаешься с условиями:\n\n` +
-  `📄 Политика конфиденциальности\n` +
-  `📄 Пользовательское соглашение  \n` +
-  `📄 Согласие на обработку персональных данных\n\n` +
-  `Финник собирает данные о твоих доходах и расходах для ведения ` +
-  `личного бюджета. Данные хранятся на защищённом сервере и не ` +
-  `передаются третьим лицам.`;
+  `Нажимая «Принимаю и продолжаю», ты:\n` +
+  `• принимаешь условия публичной оферты;\n` +
+  `• даёшь согласие на обработку персональных данных.\n\n` +
+  `Финник хранит данные о твоих доходах и расходах на серверах в России. ` +
+  `Чтобы распознавать твои сообщения, их текст (а также голос и фото, если ты их отправляешь) ` +
+  `передаётся в OpenAI (США). Имя и контакты при этом не передаются. ` +
+  `Подробнее — в документах по кнопке «Читать документы».`;
 
 const DOCS_TEXT =
-  `📄 Политика конфиденциальности: https://telegra.ph/Politika-konfidencialnosti-servisa-Merkuri-03-31\n\n` +
-  `📄 Пользовательское соглашение: https://telegra.ph/Polzovatelskoe-soglashenie-servisa-Merkuri-03-31\n\n` +
-  `📄 Согласие на обработку ПД: https://telegra.ph/Soglasie-na-obrabotku-personalnyh-dannyh-03-31-19`;
+  `📄 Публичная оферта: https://finnikbot.ru/legal/offer\n\n` +
+  `📄 Политика конфиденциальности: https://finnikbot.ru/legal/privacy\n\n` +
+  `📄 Согласие на обработку персональных данных: https://finnikbot.ru/legal/consent`;
 
 const CONSENT_KEYBOARD = {
   reply_markup: {
@@ -137,7 +137,7 @@ export async function handleOnboardingCallback(bot, query) {
   if (action === 'onboarding:accept') {
     await supabase
       .from('users')
-      .update({ terms_accepted_at: new Date().toISOString(), terms_version: '1.0' })
+      .update({ terms_accepted_at: new Date().toISOString(), terms_version: '2.0' })
       .eq('external_id', telegramId);
 
     await bot.sendMessage(chatId, STEP1_TEXT, STEP1_KEYBOARD);

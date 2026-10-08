@@ -73,8 +73,8 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       if (!isValidEmail(email)) return res.status(400).json({ error: 'validation', field: 'email', message: 'Введите корректный e-mail' });
       const pwErr = validatePassword(b.password);
       if (pwErr) return res.status(400).json({ error: 'validation', field: 'password', message: pwErr });
-      if (b.terms_accepted !== true) {
-        return res.status(400).json({ error: 'validation', field: 'terms', message: 'Нужно принять условия' });
+      if (b.terms_accepted !== true || b.consent_pd_accepted !== true) {
+        return res.status(400).json({ error: 'validation', field: 'terms', message: 'Нужно принять условия и дать согласие на обработку данных' });
       }
 
       const takenMsg = 'Этот e-mail уже зарегистрирован. Войдите или восстановите пароль.';
@@ -95,7 +95,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
         password_changed_at: nowIso,
         tg_username: clean(b.telegram, 64)?.replace(/^@/, '') ?? null,
         terms_accepted_at: nowIso,
-        terms_version: '1.0',
+        terms_version: '2.0',
         email_letters_accepted: b.email_letters_accepted === true,
         created_at: nowIso,
         last_active_at: nowIso,

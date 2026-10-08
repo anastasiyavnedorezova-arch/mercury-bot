@@ -42,7 +42,7 @@ async function start(limits = {}) {
 
 let counter = 0;
 const uniq = (p = 'u') => `${p}${Date.now()}${counter++}@Example.ru`;
-const goodReg = (email, extra = {}) => ({ email, password: 'secret1', name: 'Анна', terms_accepted: true, ...extra });
+const goodReg = (email, extra = {}) => ({ email, password: 'secret1', name: 'Анна', terms_accepted: true, consent_pd_accepted: true, ...extra });
 
 test('регистрация: создаёт аккаунт, хеш bcrypt, токен, приветственное письмо', async () => {
   const s = await start();
@@ -87,6 +87,8 @@ test('регистрация: проверки полей, занятый e-mail
       [{ ...goodReg(uniq()), password: 'я'.repeat(40) }, 'password'],   // 80 байт > 72
       [{ ...goodReg(uniq()), terms_accepted: false }, 'terms'],
       [{ ...goodReg(uniq()), terms_accepted: undefined }, 'terms'],
+      [{ ...goodReg(uniq()), consent_pd_accepted: false }, 'terms'],
+      [{ ...goodReg(uniq()), consent_pd_accepted: undefined }, 'terms'],
     ];
     for (const [body, field] of bad) {
       const r = await s.post('/api/auth/register', body);

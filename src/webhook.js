@@ -65,6 +65,9 @@ export function startWebhookServer(bot) {
   app.get('/cabinet/bot',            (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/bot.html')));
   app.get('/cabinet/reset-password', (req, res) => res.sendFile(path.join(__dirname, '../public/cabinet/reset-password.html')));
   app.get('/cabinet',                (req, res) => res.redirect(301, '/cabinet/dashboard'));
+  for (const doc of ['offer', 'privacy', 'consent', 'cookies']) {
+    app.get(`/legal/${doc}`, (req, res) => res.sendFile(path.join(__dirname, `../public/legal/${doc}.html`)));
+  }
 
   app.use('/fonts', express.static(path.join(__dirname, '../public/fonts'), { maxAge: '365d', immutable: true }));
   app.use(express.static(path.join(__dirname, '../public')));

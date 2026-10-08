@@ -1,0 +1,25 @@
+/* Юридические страницы Финника (/legal/*) */
+:root { --lg-text:#1A202C; --lg-muted:#6B7280; --lg-border:#E5E9F0; --lg-bg:#F5F7FA; --lg-accent:#2B7DE9; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--lg-bg); color:var(--lg-text); font-family:'Manrope',system-ui,-apple-system,Segoe UI,sans-serif; font-size:16px; line-height:1.65; }
+a { color:var(--lg-accent); }
+.lg-wrap { max-width:860px; margin:0 auto; padding:0 20px; }
+.lg-header { background:#fff; border-bottom:1px solid var(--lg-border); }
+.lg-header__in { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; padding-top:14px; padding-bottom:14px; }
+.lg-logo img { display:block; }
+.lg-nav { display:flex; gap:6px 16px; flex-wrap:wrap; font-size:14px; }
+.lg-nav a { color:var(--lg-muted); text-decoration:none; font-weight:600; }
+.lg-nav a:hover, .lg-nav a[aria-current="page"] { color:var(--lg-text); }
+.lg-main { padding-top:32px; padding-bottom:48px; }
+.lg-doc { background:#fff; border:1px solid var(--lg-border); border-radius:16px; padding:32px 36px; }
+.lg-doc h1 { font-size:28px; line-height:1.25; margin:0 0 6px; }
+.lg-doc h2 { font-size:19px; line-height:1.35; margin:28px 0 8px; }
+.lg-doc p, .lg-doc li { margin:0 0 10px; }
+.lg-doc ul, .lg-doc ol { margin:0 0 12px; padding-left:22px; }
+.lg-edition { color:var(--lg-muted); font-size:14px; margin-bottom:20px !important; }
+.lg-table { overflow-x:auto; margin:8px 0 14px; }
+.lg-table table { border-collapse:collapse; width:100%; font-size:14px; }
+.lg-table th, .lg-table td { border:1px solid var(--lg-border); padding:8px 10px; text-align:left; vertical-align:top; }
+.lg-table th { background:var(--lg-bg); }
+.lg-footer { padding:0 0 32px; color:var(--lg-muted); font-size:13px; }
+@media (max-width:600px) { .lg-doc { padding:22px 18px; border-radius:12px; } .lg-doc h1 { font-size:23px; } }
