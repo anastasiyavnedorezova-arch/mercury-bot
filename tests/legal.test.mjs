@@ -75,3 +75,12 @@ test('бот: текст согласия честно говорит про Ope
 test('кабинет бота не тянет шрифты с Google', () => {
   assert.ok(!/fonts\.(googleapis|gstatic)\.com/.test(read('public/cabinet/bot.html')));
 });
+
+test('старая почта поддержки убрана со страниц, везде hello@finnikbot.ru', () => {
+  for (const f of ['public/index.html', 'public/cabinet/faq.html', 'public/cabinet/how-to.html', 'public/cabinet/profile.html', 'public/cabinet/register.html']) {
+    const t = read(f);
+    assert.ok(!/finnikbot\.help@yandex|mercury\.finbot@yandex|help@mercuryfinbot/i.test(t), f);
+  }
+  assert.match(read('public/index.html'), /mailto:hello@finnikbot\.ru/);
+  assert.match(read('public/cabinet/profile.html'), /mailto:hello@finnikbot\.ru/);
+});

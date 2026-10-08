@@ -656,7 +656,7 @@
         return;
       }
       if (!res.ok || !data.token) {
-        throw new Error(data.message || 'Не удалось создать аккаунт. Попробуйте ещё раз или напишите нам: finnikbot.help@yandex.com');
+        throw new Error(data.message || 'Не удалось создать аккаунт. Попробуйте ещё раз или напишите нам: hello@finnikbot.ru');
       }
 
       localStorage.setItem('mercury_token', data.token);
