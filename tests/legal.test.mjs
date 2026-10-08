@@ -18,22 +18,20 @@ test('юридические страницы существуют и содер
   }
 });
 
-test('оферта: тарифы, пробный период 30 дней, ручное продление, возврат', () => {
+test('оферта: без цен (они на сайте), пробный период 30 дней, ручное продление, возврат', () => {
   const t = read('public/legal/offer.html');
-  assert.match(t, /399 ₽/);
-  assert.match(t, /1 995 ₽/);
-  assert.match(t, /3 990 ₽/);
+  assert.ok(!/\b399\b|1 995|3 990|₽/.test(t), 'в оферте не должно быть конкретных цен');
+  assert.match(t, /указаны на сайте/);
   assert.match(t, /30 \(тридцать\) календарных дней/);
   assert.match(t, /не продлевается автоматически/);
   assert.match(t, /пропорционально неиспользованному/);
 });
 
-test('политика и согласие: OpenAI (США), Telegram, Россия, 30 дней', () => {
+test('политика и согласие: без названий компаний и стран, но с честным указанием передачи за пределы РФ', () => {
   for (const d of ['privacy', 'consent']) {
     const t = read(`public/legal/${d}.html`);
-    assert.match(t, /OpenAI/, d);
-    assert.match(t, /США/, d);
-    assert.match(t, /Telegram/, d);
+    assert.ok(!/OpenAI|США|Timeweb|Robokassa|Робокасс|RuSender|Яндекс|Hostkey/i.test(t), `${d}: названия компаний или стран`);
+    assert.match(t, /за пределами Российской Федерации/, d);
   }
   assert.match(read('public/legal/privacy.html'), /территории Российской Федерации/);
   assert.match(read('public/legal/privacy.html'), /30 дней/);
@@ -56,6 +54,14 @@ test('старых ссылок telegra.ph нет ни на сайте, ни в 
   }
 });
 
+test('в документах нет буквы ё и ссылок на статьи и номера законов', () => {
+  for (const d of DOCS) {
+    const t = read(`public/legal/${d}.html`);
+    assert.ok(!/[ёЁ]/.test(t), `${d}: есть буква ё`);
+    assert.ok(!/ст\.\s*\d|№\s*\d+-ФЗ|\d+-ФЗ|Закон[а-я]*\s+(РФ|№)/.test(t), `${d}: ссылка на закон`);
+  }
+});
+
 test('регистрация: две отдельные обязательные галочки, согласие уходит на сервер', () => {
   const t = read('public/cabinet/register.html');
   assert.match(t, /id="checkTermsBox"/);
@@ -67,7 +73,8 @@ test('регистрация: две отдельные обязательные
 test('бот: текст согласия честно говорит про OpenAI и новые документы', () => {
   const t = read('src/handlers/onboarding.js');
   assert.ok(!/не\s+передаются третьим лицам/.test(t));
-  assert.match(t, /OpenAI \(США\)/);
+  assert.ok(!/OpenAI|США/.test(t));
+  assert.match(t, /за пределами России/);
   assert.match(t, /finnikbot\.ru\/legal\/offer/);
   assert.match(t, /finnikbot\.ru\/legal\/consent/);
 });
