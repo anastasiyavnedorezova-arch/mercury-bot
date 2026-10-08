@@ -2,13 +2,13 @@ import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { inTz } from '../utils/dateTz.js';
+import { grantSubscription } from '../utils/grantSubscription.js';
 
 async function getUserId(telegramId) {
   const { data } = await supabase
     .from('users')
     .select('id')
     .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
     .single();
   return data?.id ?? null;
 }
@@ -107,9 +107,9 @@ export async function showSubscription(bot, chatId, telegramId) {
 }
 
 const PLANS = {
-  buy_1month:   { label: '1 месяц — 499 ₽',                   link: () => process.env.PAYMENT_LINK_1MONTH,   check: 'check_payment_1month' },
-  buy_6months:  { label: '6 месяцев — 2 490 ₽ · скидка 17%', link: () => process.env.PAYMENT_LINK_6MONTHS,  check: 'check_payment_6months' },
-  buy_12months: { label: '12 месяцев — 4 490 ₽ · скидка 25%',link: () => process.env.PAYMENT_LINK_12MONTHS, check: 'check_payment_12months' },
+  buy_1month:   { label: '1 месяц — 399 ₽',                   link: () => process.env.PAYMENT_LINK_1MONTH,   check: 'check_payment_1month' },
+  buy_6months:  { label: '6 месяцев — 1 995 ₽ · +1 месяц в подарок', link: () => process.env.PAYMENT_LINK_6MONTHS,  check: 'check_payment_6months' },
+  buy_12months: { label: '12 месяцев — 3 990 ₽ · +2 месяца в подарок', link: () => process.env.PAYMENT_LINK_12MONTHS, check: 'check_payment_12months' },
 };
 
 async function showPaymentLink(bot, chatId, telegramId, planKey, email) {
@@ -158,8 +158,7 @@ export async function handleSubscriptionEmailState(bot, msg) {
   await supabase
     .from('users')
     .update({ email })
-    .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram');
+    .eq('external_id', String(telegramId));
 
   await showPaymentLink(bot, chatId, telegramId, selectedPeriod, email);
   return true;
@@ -185,9 +184,9 @@ export async function handleSubscriptionCallback(bot, query) {
       {
         reply_markup: {
           inline_keyboard: [
-            [{ text: '1 месяц — 499 ₽', callback_data: 'buy_1month' }],
-            [{ text: '6 месяцев — 2 490 ₽ · скидка 17%', callback_data: 'buy_6months' }],
-            [{ text: '12 месяцев — 4 490 ₽ · скидка 25%', callback_data: 'buy_12months' }],
+            [{ text: '1 месяц — 399 ₽', callback_data: 'buy_1month' }],
+            [{ text: '6 месяцев — 1 995 ₽ · +1 месяц в подарок', callback_data: 'buy_6months' }],
+            [{ text: '12 месяцев — 3 990 ₽ · +2 месяца в подарок', callback_data: 'buy_12months' }],
           ],
         },
       }
@@ -241,26 +240,18 @@ export async function activateSubscription(bot, targetExternalId, months) {
 
   if (!user) return { ok: false, reason: 'user not found' };
 
-  const now = new Date();
-  const endsAt = new Date(now);
-  endsAt.setMonth(endsAt.getMonth() + months);
-
-  await supabase
-    .from('subscriptions')
-    .upsert(
-      {
-        user_id: user.id,
-        status: 'active',
-        starts_at: now.toISOString(),
-        ends_at: endsAt.toISOString(),
-        period_months: months,
-      },
-      { onConflict: 'user_id' }
-    );
+  let endsAt;
+  try {
+    ({ endsAt } = await grantSubscription(user.id, months));
+  } catch (e) {
+    console.error('[subscription] activate failed:', e.message);
+    return { ok: false, reason: 'db error' };
+  }
 
   await bot.sendMessage(
     targetExternalId,
     '🎉 Подписка активирована!\n\n' +
+    `📅 Действует до: ${formatDate(endsAt.toISOString())}\n\n` +
     'Теперь тебе доступны все функции Финника.\n' +
     'Спасибо что выбрал(а) нас 💛',
     {

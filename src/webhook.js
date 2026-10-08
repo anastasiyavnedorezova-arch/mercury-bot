@@ -4,6 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cabinetRoutes from './cabinetRoutes.js';
 import authRoutes from './authRoutes.js';
+import { monthsForAmount } from './utils/plans.js';
+import { grantSubscription } from './utils/grantSubscription.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,9 +100,7 @@ export function startWebhookServer(bot) {
         payment.metadata?.customerNumber ??
         null;
 
-      let months = 1;
-      if (amount >= 4490) months = 12;
-      else if (amount >= 2490) months = 6;
+      const months = monthsForAmount(amount) || 1;
 
       console.log('[webhook] Payment succeeded:', paymentId,
         'amount:', amount, 'email:', customerEmail, 'months:', months);
@@ -147,18 +147,9 @@ export function startWebhookServer(bot) {
 
       const { id: userId, external_id: telegramId } = users[0];
 
-      const startsAt = new Date();
-      const endsAt = new Date();
-      endsAt.setMonth(endsAt.getMonth() + months);
-
-      await supabase.from('subscriptions').insert({
-        user_id: userId,
-        status: 'active',
-        period_months: months,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        payment_id: paymentId,
-        amount_rub: Math.round(amount),
+      const { endsAt } = await grantSubscription(userId, months, {
+        paymentId,
+        amountRub: Math.round(amount),
       });
 
       console.log('[webhook] Subscription created for user:', userId);

@@ -65,7 +65,6 @@ async function getUserId(telegramId) {
     .from('users')
     .select('id')
     .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
     .single();
   return data?.id ?? null;
 }

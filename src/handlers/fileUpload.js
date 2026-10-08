@@ -170,7 +170,6 @@ export async function handleFileUpload(bot, msg, fileType) {
     .from('users')
     .select('id')
     .eq('external_id', String(telegramId))
-    .eq('channel', 'telegram')
     .single();
 
   if (!userData?.id) {

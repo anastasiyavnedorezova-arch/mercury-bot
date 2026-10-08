@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/bot.js",
     "migrate": "node migrate.js",
-    "test": "node --test tests/pgClient.test.mjs tests/auth.test.mjs tests/health.test.mjs tests/legal.test.mjs"
+    "test": "node --test tests/pgClient.test.mjs tests/auth.test.mjs tests/health.test.mjs tests/legal.test.mjs tests/plans.test.mjs"
   },
   "keywords": [],
   "author": "",
