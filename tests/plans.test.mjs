@@ -58,6 +58,21 @@ test('цены в тексте бота, кабинета и лендинга с
   assert.ok(!read('src/webhook.js').match(/4490|2490/), 'в webhook остались старые пороги');
 });
 
+test('кнопки бота: 399 ₽ / 1 995 ₽ (скидка 20%) / 3 990 ₽ (скидка 20%)', () => {
+  const bot = read('src/handlers/subscription.js');
+  assert.ok(bot.includes("text: '1 месяц — 399 ₽'"));
+  assert.ok(bot.includes("text: '6 месяцев — 1 995 ₽ (скидка 20%)'"));
+  assert.ok(bot.includes("text: '12 месяцев — 3 990 ₽ (скидка 20%)'"));
+});
+
+test('кабинет: карточки тарифов в том же формате, что на лендинге (оба окна)', () => {
+  const profile = read('public/cabinet/profile.html');
+  assert.equal((profile.match(/class="modal-plan2( |")/g) || []).length, 6);
+  assert.equal((profile.match(/>К оплате</g) || []).length, 6);
+  assert.ok(!profile.includes('class="plan-card"'));
+  assert.ok(profile.includes('.modal-plan2{'));
+});
+
 test('веб-чат: поиск пользователя по external_id не привязан к каналу telegram', () => {
   for (const f of ['budget', 'categories', 'fileUpload', 'goal', 'transaction', 'history', 'analytics', 'subscription']) {
     const src = read(`src/handlers/${f}.js`);

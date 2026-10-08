@@ -108,8 +108,8 @@ export async function showSubscription(bot, chatId, telegramId) {
 
 const PLANS = {
   buy_1month:   { label: '1 месяц — 399 ₽',                   link: () => process.env.PAYMENT_LINK_1MONTH,   check: 'check_payment_1month' },
-  buy_6months:  { label: '6 месяцев — 1 995 ₽ · +1 месяц в подарок', link: () => process.env.PAYMENT_LINK_6MONTHS,  check: 'check_payment_6months' },
-  buy_12months: { label: '12 месяцев — 3 990 ₽ · +2 месяца в подарок', link: () => process.env.PAYMENT_LINK_12MONTHS, check: 'check_payment_12months' },
+  buy_6months:  { label: '6 месяцев — 1 995 ₽ (скидка 20%)', link: () => process.env.PAYMENT_LINK_6MONTHS,  check: 'check_payment_6months' },
+  buy_12months: { label: '12 месяцев — 3 990 ₽ (скидка 20%)', link: () => process.env.PAYMENT_LINK_12MONTHS, check: 'check_payment_12months' },
 };
 
 async function showPaymentLink(bot, chatId, telegramId, planKey, email) {
@@ -185,8 +185,8 @@ export async function handleSubscriptionCallback(bot, query) {
         reply_markup: {
           inline_keyboard: [
             [{ text: '1 месяц — 399 ₽', callback_data: 'buy_1month' }],
-            [{ text: '6 месяцев — 1 995 ₽ · +1 месяц в подарок', callback_data: 'buy_6months' }],
-            [{ text: '12 месяцев — 3 990 ₽ · +2 месяца в подарок', callback_data: 'buy_12months' }],
+            [{ text: '6 месяцев — 1 995 ₽ (скидка 20%)', callback_data: 'buy_6months' }],
+            [{ text: '12 месяцев — 3 990 ₽ (скидка 20%)', callback_data: 'buy_12months' }],
           ],
         },
       }

@@ -393,6 +393,26 @@
 .pay-btn{height:36px;padding:8px 18px;background:var(--color-brand-primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background 180ms ease}
 .pay-btn:hover{background:var(--color-brand-primary-hover)}
 
+/* tariff cards (same look as landing) */
+.modal-plans2{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:20px}
+.modal-plan2{padding:16px 20px;background:#fff;border-radius:20px;border:1px solid #E2E8F0;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:12px}
+.modal-plan2--highlight{background:#F5F7FA;border-color:#CBD5E1}
+.modal-plan2__head{display:flex;flex-direction:column;gap:4px}
+.modal-plan2__label{font-size:12px;font-weight:500;line-height:16px;color:#6B7280}
+.modal-plan2__row{display:flex;align-items:center;gap:4px}
+.modal-plan2__check{flex-shrink:0}
+.modal-plan2__text{font-size:12px;font-weight:500;line-height:16px;color:#2D3748}
+.modal-plan2__text strong{font-weight:700}
+.modal-plan2__bottom{display:flex;justify-content:space-between;align-items:flex-end}
+.modal-plan2__price{font-size:20px;font-weight:600;line-height:27px;letter-spacing:.4px;color:#2D3748}
+.modal-plan2__prices{display:flex;align-items:baseline;gap:4px}
+.modal-plan2__old-price{font-size:16px;font-weight:400;line-height:24px;color:#9CA3AF;text-decoration:line-through}
+.modal-plan2__new-price{font-size:20px;font-weight:600;line-height:27px;letter-spacing:.4px;color:#E5484D}
+.modal-plan2__btn{padding:6px 14px;background:#1E2A38;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;line-height:20px;letter-spacing:.14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;transition:opacity 150ms}
+.modal-plan2__btn:hover{opacity:.85}
+.modal-plan2__btn--accent{background:#4C9AFF}
+@media(max-width:768px){.modal-plan2{padding:14px 16px}.modal-plan2__price,.modal-plan2__new-price{font-size:18px;line-height:26px}}
+
 /* ============================================================ RESPONSIVE */
 @media(max-width:1100px){.profile-top-grid{grid-template-columns:1fr 1fr}}
 
@@ -636,41 +656,71 @@
       ✓ Бюджет на месяц и Контроль сальдо<br>
       ✓ Предупреждения о риске превышения бюджета
     </div>
-    <div class="sub-plans">
-      <div class="plan-card">
-        <div class="plan-info">
-          <span class="plan-period">1 месяц</span>
-          <div class="plan-price-row"><span class="plan-new-price">399 руб.</span></div>
-        </div>
-        <button class="pay-btn" onclick="closeModal('modalSubscribe')">Оплатить</button>
-      </div>
-      <div class="plan-card">
-        <div class="plan-info">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span class="plan-period">6 месяцев</span>
-            <span class="plan-discount"><span class="plan-discount-dot"></span>+1 месяц в подарок</span>
+    <div class="modal-plans2">
+    
+            <!-- 1 месяц -->
+            <div class="modal-plan2">
+              <div class="modal-plan2__head">
+                <span class="modal-plan2__label">1 месяц доступа</span>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Полный доступ на <strong>1 месяц</strong> (30 календарных дней)</span>
+                </div>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Для сохранения доступа необходимо оплачивать тариф самостоятельно каждый месяц</span>
+                </div>
+              </div>
+              <div class="modal-plan2__bottom">
+                <span class="modal-plan2__price">399 руб.</span>
+                <button type="button" class="modal-plan2__btn" onclick="closeModal('modalSubscribe')">К оплате</button>
+              </div>
+            </div>
+    
+            <!-- 6 месяцев -->
+            <div class="modal-plan2 modal-plan2--highlight">
+              <div class="modal-plan2__head">
+                <span class="modal-plan2__label">6 месяцев доступа</span>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Полный доступ на <strong>5 месяцев</strong></span>
+                </div>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">+1 месяц в подарок <strong>бесплатно! 🎁</strong></span>
+                </div>
+              </div>
+              <div class="modal-plan2__bottom">
+                <div class="modal-plan2__prices">
+                  <span class="modal-plan2__old-price">2 394 руб.</span>
+                  <span class="modal-plan2__new-price">1 995 руб.</span>
+                </div>
+                <button type="button" class="modal-plan2__btn modal-plan2__btn--accent" onclick="closeModal('modalSubscribe')">К оплате</button>
+              </div>
+            </div>
+    
+            <!-- 12 месяцев -->
+            <div class="modal-plan2">
+              <div class="modal-plan2__head">
+                <span class="modal-plan2__label">1 год доступа</span>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Полный доступ на <strong>10 месяцев</strong></span>
+                </div>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">+2 месяца в подарок <strong>бесплатно! 🎁🎁</strong></span>
+                </div>
+              </div>
+              <div class="modal-plan2__bottom">
+                <div class="modal-plan2__prices">
+                  <span class="modal-plan2__old-price">4 788 руб.</span>
+                  <span class="modal-plan2__new-price">3 990 руб.</span>
+                </div>
+                <button type="button" class="modal-plan2__btn" onclick="closeModal('modalSubscribe')">К оплате</button>
+              </div>
+            </div>
           </div>
-          <div class="plan-price-row">
-            <span class="plan-old-price">2 394 руб.</span>
-            <span class="plan-new-price" style="color:#E5484D">1 995 руб.</span>
-          </div>
-        </div>
-        <button class="pay-btn" onclick="closeModal('modalSubscribe')">Оплатить</button>
-      </div>
-      <div class="plan-card">
-        <div class="plan-info">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span class="plan-period">12 месяцев</span>
-            <span class="plan-discount"><span class="plan-discount-dot"></span>+2 месяца в подарок</span>
-          </div>
-          <div class="plan-price-row">
-            <span class="plan-old-price">4 788 руб.</span>
-            <span class="plan-new-price" style="color:#E5484D">3 990 руб.</span>
-          </div>
-        </div>
-        <button class="pay-btn" onclick="closeModal('modalSubscribe')">Оплатить</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -679,41 +729,71 @@
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('modalRenew')">✕</button>
     <h2 class="modal-title">Выберите тариф</h2>
-    <div class="sub-plans">
-      <div class="plan-card">
-        <div class="plan-info">
-          <span class="plan-period">1 месяц</span>
-          <div class="plan-price-row"><span class="plan-new-price">399 руб.</span></div>
-        </div>
-        <button class="pay-btn" onclick="closeModal('modalRenew')">Оплатить</button>
-      </div>
-      <div class="plan-card">
-        <div class="plan-info">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span class="plan-period">6 месяцев</span>
-            <span class="plan-discount"><span class="plan-discount-dot"></span>+1 месяц в подарок</span>
+    <div class="modal-plans2">
+    
+            <!-- 1 месяц -->
+            <div class="modal-plan2">
+              <div class="modal-plan2__head">
+                <span class="modal-plan2__label">1 месяц доступа</span>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Полный доступ на <strong>1 месяц</strong> (30 календарных дней)</span>
+                </div>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Для сохранения доступа необходимо оплачивать тариф самостоятельно каждый месяц</span>
+                </div>
+              </div>
+              <div class="modal-plan2__bottom">
+                <span class="modal-plan2__price">399 руб.</span>
+                <button type="button" class="modal-plan2__btn" onclick="closeModal('modalRenew')">К оплате</button>
+              </div>
+            </div>
+    
+            <!-- 6 месяцев -->
+            <div class="modal-plan2 modal-plan2--highlight">
+              <div class="modal-plan2__head">
+                <span class="modal-plan2__label">6 месяцев доступа</span>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Полный доступ на <strong>5 месяцев</strong></span>
+                </div>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">+1 месяц в подарок <strong>бесплатно! 🎁</strong></span>
+                </div>
+              </div>
+              <div class="modal-plan2__bottom">
+                <div class="modal-plan2__prices">
+                  <span class="modal-plan2__old-price">2 394 руб.</span>
+                  <span class="modal-plan2__new-price">1 995 руб.</span>
+                </div>
+                <button type="button" class="modal-plan2__btn modal-plan2__btn--accent" onclick="closeModal('modalRenew')">К оплате</button>
+              </div>
+            </div>
+    
+            <!-- 12 месяцев -->
+            <div class="modal-plan2">
+              <div class="modal-plan2__head">
+                <span class="modal-plan2__label">1 год доступа</span>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">Полный доступ на <strong>10 месяцев</strong></span>
+                </div>
+                <div class="modal-plan2__row">
+                  <svg class="modal-plan2__check" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5L8 14.5L16 6" stroke="#1E2A38" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span class="modal-plan2__text">+2 месяца в подарок <strong>бесплатно! 🎁🎁</strong></span>
+                </div>
+              </div>
+              <div class="modal-plan2__bottom">
+                <div class="modal-plan2__prices">
+                  <span class="modal-plan2__old-price">4 788 руб.</span>
+                  <span class="modal-plan2__new-price">3 990 руб.</span>
+                </div>
+                <button type="button" class="modal-plan2__btn" onclick="closeModal('modalRenew')">К оплате</button>
+              </div>
+            </div>
           </div>
-          <div class="plan-price-row">
-            <span class="plan-old-price">2 394 руб.</span>
-            <span class="plan-new-price" style="color:#E5484D">1 995 руб.</span>
-          </div>
-        </div>
-        <button class="pay-btn" onclick="closeModal('modalRenew')">Оплатить</button>
-      </div>
-      <div class="plan-card">
-        <div class="plan-info">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <span class="plan-period">12 месяцев</span>
-            <span class="plan-discount"><span class="plan-discount-dot"></span>+2 месяца в подарок</span>
-          </div>
-          <div class="plan-price-row">
-            <span class="plan-old-price">4 788 руб.</span>
-            <span class="plan-new-price" style="color:#E5484D">3 990 руб.</span>
-          </div>
-        </div>
-        <button class="pay-btn" onclick="closeModal('modalRenew')">Оплатить</button>
-      </div>
-    </div>
   </div>
 </div>
 
