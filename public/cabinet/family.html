@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Финник — Мои цели</title>
+  <title>Финник — Семейный бюджет</title>
   <link rel="icon" type="image/svg+xml" href="/images/favicon-finnik.svg">
   <link rel="icon" type="image/png" sizes="48x48" href="/images/favicon-48.png">
   <link rel="manifest" href="/cabinet/manifest.json">
@@ -55,7 +55,7 @@
         @keyframes sh { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     
         /* ══════ LAYOUT ══════ */
-        .page-layout { display: flex; min-height: calc(100vh - 75px); }
+        .page-layout { display: flex; min-height: calc(100vh - 75px); width: 100%; overflow: hidden; }
     
         /* ══════ SIDEBAR ══════ */
         .lk-sidebar {
@@ -168,13 +168,13 @@
         .logout-modal__btn:hover { opacity: .88; }
         .logout-modal__btn--dark { background: #1E2A38; color: #fff; }
         .logout-modal__btn--sec { background: #F3F4F6; color: #2D3748; }
+    .nav-text-link.is-active { color: #4C9AFF; font-weight: 600; }
 
     /* ══════ CSS VARS ══════ */
         :root {
           --color-brand-primary: #4C9AFF;
-          --color-brand-primary-hover: #2563EB;
-          --color-brand-accent-green: #2FBF71;
-          --color-brand-accent-green-hover: #28A862;
+          --color-brand-primary-hover: #3B82F6;
+          --color-brand-primary-active: #2563EB;
           --color-brand-main: #1E2A38;
           --color-white: #FFFFFF;
           --color-bg-main: #F5F7FA;
@@ -184,185 +184,111 @@
           --color-text-main: #2D3748;
           --color-text-second: #6B7280;
           --color-text-disabled: #9CA3AF;
-          --color-success-bg: #E6F7EF;
-          --color-success-text: #1F7A4C;
-          --color-error-bg: #FDECEC;
-          --color-error-text: #9B2C2C;
-          --color-info-bg: #EFF6FF;
-          --color-info-text: #1E40AF;
-          --color-warning-bg: #FFF3CD;
-          --color-warning-text: #92400E;
+          --color-error-main: #E5484D;
+          --color-error-bg: #FEF2F2;
+          --color-error-text: #E5484D;
           --radius-sm: 8px;
           --radius-md: 12px;
-          --radius-modal: 24px;
+          --radius-card: 20px;
           --radius-pill: 999px;
-          --shadow-card: 0 2px 8px rgba(0,0,0,0.08);
-          --shadow-md: 0 8px 24px rgba(15,23,42,0.08);
-          --shadow-lg: 0 16px 40px rgba(15,23,42,0.12);
+          --shadow-card: 0 2px 8px rgba(0,0,0,.08);
         }
     
-        /* ══════ BUTTONS ══════ */
-        .btn {
-          display: inline-flex; align-items: center; justify-content: center;
-          gap: 6px; font-family: 'Manrope', sans-serif; font-size: 14px;
-          font-weight: 600; letter-spacing: 0.01em; border-radius: var(--radius-md);
-          border: 1.5px solid transparent; cursor: pointer; white-space: nowrap;
-          transition: all 200ms ease; padding: 8px 18px; line-height: 20px;
+        /* ══════ FEEDBACK FORM ══════ */
+        @media (min-width: 769px) {
+          .feedback-card { width: 500px; max-width: 100%; }
         }
-        .btn-sm { padding: 5px 12px; font-size: 13px; }
-        .btn-primary { background: var(--color-brand-primary); color: #fff; border-color: var(--color-brand-primary); }
-        .btn-primary:hover { background: var(--color-brand-primary-hover); border-color: var(--color-brand-primary-hover); }
-        .btn-secondary { background: #fff; color: var(--color-text-main); border-color: var(--color-border-hard); }
-        .btn-secondary:hover { border-color: var(--color-brand-primary); color: var(--color-brand-primary); }
-        .btn-dark { background: var(--color-brand-main); color: #fff; border-color: var(--color-brand-main); border-radius: var(--radius-sm); }
-        .btn-dark:hover { opacity: .88; }
-        .btn-mini-dark { background: var(--color-brand-main); color: #fff; border-color: var(--color-brand-main); border-radius: var(--radius-sm); font-size: 13px; padding: 5px 12px; }
-        .btn-mini-dark:hover { opacity: .88; }
-        .btn-danger-text { background: #fff; color: var(--color-error-text); border: 1px solid var(--color-border); border-radius: var(--radius-sm); font-size: 13px; padding: 5px 12px; }
-        .btn-danger-text:hover { background: var(--color-error-bg); }
-        .btn-disabled { background: var(--color-bg-alt) !important; color: var(--color-text-disabled) !important; border-color: var(--color-bg-alt) !important; pointer-events: none; border-radius: var(--radius-sm); }
-        .btn-accent { background: var(--color-brand-accent-green); color: #fff; border-color: var(--color-brand-accent-green); }
-        .btn-accent:hover { background: var(--color-brand-accent-green-hover); }
+        .feedback-card {
+          background: var(--color-white);
+          border: 1px solid var(--color-border);
+          border-radius: 24px;
+          box-shadow: var(--shadow-card);
+          padding: 32px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .form-fields { display: flex; flex-direction: column; gap: 16px; }
+        .field-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-input {
+          width: 100%; padding: 10px 14px;
+          font-family: 'Manrope', sans-serif; font-size: 16px; font-weight: 400; line-height: 24px;
+          color: var(--color-text-main); background: var(--color-white);
+          border: 1px solid var(--color-border-hard); border-radius: var(--radius-md);
+          outline: none; transition: border-color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+          -webkit-appearance: none;
+        }
+        .form-input::placeholder { color: var(--color-text-disabled); }
+        .form-input:focus { border-color: var(--color-brand-primary); box-shadow: 0 0 0 3px rgba(76,154,255,.15); }
+        textarea.form-input { height: 220px; resize: none; display: block; }
+        .form-input.has-error { border-color: var(--color-error-main); background: var(--color-error-bg); }
+        .form-input.has-error:focus { border-color: var(--color-error-main); box-shadow: 0 0 0 3px rgba(229,72,77,.12); }
+        .form-input:disabled { background: var(--color-bg-alt); border-color: var(--color-bg-alt); color: var(--color-text-disabled); cursor: default; }
+        .field-error { display: none; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--color-error-text); }
+        .field-error.visible { display: block; }
+        .form-actions { display: flex; justify-content: flex-end; }
+        .submit-btn {
+          height: 40px; padding: 10px 20px;
+          background: var(--color-brand-primary); color: #fff;
+          border: none; border-radius: 10px;
+          font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600; line-height: 20px;
+          cursor: pointer; transition: background 180ms ease, transform 100ms ease; white-space: nowrap;
+        }
+        .submit-btn:hover:not(:disabled) { background: var(--color-brand-primary-hover); }
+        .submit-btn:active:not(:disabled) { background: var(--color-brand-primary-active); transform: scale(.98); }
+        .submit-btn:disabled { background: var(--color-bg-alt); color: var(--color-text-disabled); cursor: default; }
+        .success-message { display: none; font-size: 15px; font-weight: 400; line-height: 22px; color: var(--color-brand-primary); }
+        .success-message.visible { display: block; }
+        .new-request-btn {
+          display: none; width: 100%; height: 40px; padding: 10px 20px;
+          background: var(--color-brand-primary); color: #fff;
+          border: none; border-radius: 10px;
+          font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600; line-height: 20px;
+          cursor: pointer; transition: background 180ms ease;
+          justify-content: center; align-items: center;
+        }
+        .new-request-btn:hover { background: var(--color-brand-primary-hover); }
+        .new-request-btn.visible { display: flex; }
     
-        /* ══════ GOALS GRID ══════ */
-        .goals-grid {
-          display: flex; flex-wrap: wrap; gap: 20px; align-content: flex-start;
-        }
-    
-        /* ══════ GOAL CARD ══════ */
-        .goal-card {
-          width: 320px; background: #fff; border: 1px solid var(--color-border);
-          border-radius: 22px; padding: 22px; box-shadow: var(--shadow-card);
-          display: flex; flex-direction: column; gap: 18px;
-          position: relative; overflow: hidden;
-          transition: box-shadow 200ms ease, transform 200ms ease;
-        }
-        .goal-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        .goal-card.faded { opacity: 0.35; pointer-events: none; }
-        .goal-name { font-size: 20px; font-weight: 600; line-height: 28px; color: var(--color-text-main); letter-spacing: -0.01em; }
-        .goal-meta { display: flex; flex-direction: column; gap: 2px; }
-        .goal-meta-label { font-size: 11px; font-weight: 500; color: var(--color-text-disabled); text-transform: uppercase; letter-spacing: 0.04em; }
-        .goal-meta-value { font-size: 14px; font-weight: 700; color: var(--color-text-main); }
-        .goal-sum-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .goal-sum-value { font-size: 14px; font-weight: 700; color: var(--color-text-main); }
-        .badges-row { display: flex; gap: 4px; flex-wrap: wrap; }
-        .badge { padding: 2px 8px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 500; }
-        .badge-info { background: var(--color-info-bg); color: var(--color-info-text); }
-        .badge-success { background: var(--color-success-bg); color: var(--color-success-text); }
-        .goal-monthly-section { display: flex; flex-direction: column; gap: 2px; }
-        .goal-monthly-label { font-size: 11px; font-weight: 500; color: var(--color-text-disabled); text-transform: uppercase; letter-spacing: 0.04em; }
-        .goal-monthly-value { font-size: 22px; font-weight: 700; color: var(--color-text-main); letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
-        .goal-progress-section { display: flex; flex-direction: column; gap: 6px; }
-        .goal-progress-label { font-size: 12px; font-weight: 500; color: var(--color-text-second); }
-        .progress-track { width: 100%; height: 20px; background: #E6F7EF; border-radius: 4px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #2FBF71; border-radius: 4px; transition: width 600ms cubic-bezier(0.4,0,0.2,1); }
-        .goal-progress-amount { font-size: 20px; font-weight: 700; color: var(--color-success-text); font-variant-numeric: tabular-nums; }
-        .card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: auto; }
-    
-        /* ══════ BOT GOAL CARD ══════ */
-        .bot-goal-card {
-          width: 320px; background: #fff; border: 1px solid var(--color-border);
-          border-radius: 22px; padding: 22px; box-shadow: var(--shadow-card);
-          display: flex; flex-direction: column; justify-content: space-between; gap: 20px;
-          transition: box-shadow 200ms ease, transform 200ms ease;
-        }
-        .bot-goal-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        .bot-message-area { display: flex; flex-direction: column; gap: 14px; }
-        .bot-avatar { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .bot-time { font-size: 11px; font-weight: 500; color: var(--color-text-main); opacity: 0.5; margin-bottom: 6px; }
-        .bot-bubble { background: var(--color-bg-alt); border-radius: 16px 16px 16px 4px; padding: 8px 12px; font-size: 14px; line-height: 20px; color: var(--color-text-main); }
-        .bot-bubble + .bot-bubble { margin-top: 6px; }
-        .bot-card-action { display: flex; justify-content: flex-end; }
-    
-        /* ══════ EXPIRED BANNER ══════ */
-        .expired-banner {
-          width: 100%; display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 8px;
-          padding: 16px 20px; background: var(--color-warning-bg);
-          border-radius: 16px; border: 1px solid #FDE68A;
-          align-items: center; justify-content: space-between;
-        }
-        .expired-text { font-size: 15px; line-height: 1.6; color: var(--color-text-main); flex: 1; min-width: 200px; }
-        .expired-text strong { font-weight: 700; }
-    
-        /* ══════ MODAL ══════ */
-        .modal-overlay {
-          position: fixed; inset: 0; background: rgba(15,23,42,0.48);
-          display: flex; align-items: center; justify-content: center;
-          z-index: 1000; padding: 16px; animation: fadeIn 200ms ease;
-        }
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-        .modal {
-          background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-modal);
-          padding: 28px; max-width: 480px; width: 100%; box-shadow: var(--shadow-lg);
-          animation: slideUp 250ms cubic-bezier(0.34,1.56,0.64,1);
-          display: flex; flex-direction: column; gap: 16px; position: relative;
-        }
-        @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        .modal-close-btn {
-          position: absolute; top: 16px; right: 16px;
-          width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-          border-radius: 8px; background: none; border: none; cursor: pointer; font-size: 18px; color: var(--color-text-second);
-          transition: background 150ms;
-        }
-        .modal-close-btn:hover { background: var(--color-bg-alt); }
-        .modal-title { font-size: 22px; font-weight: 700; color: var(--color-text-main); line-height: 1.3; padding-right: 32px; }
-        .modal-body { font-size: 15px; color: var(--color-text-second); line-height: 1.6; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
-        .modal-radio-list { display: flex; flex-direction: column; gap: 8px; }
-        .modal-radio-item {
-          display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-          background: #fff; border: 1px solid var(--color-border); border-radius: 10px;
-          cursor: pointer; transition: border-color 150ms, background 150ms;
-        }
-        .modal-radio-item:hover { background: var(--color-bg-main); }
-        .modal-radio-item.selected { border-color: var(--color-brand-primary); background: var(--color-info-bg); }
-        .modal-radio-item.selected .radio-label { color: var(--color-brand-primary); font-weight: 700; }
-        .radio-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--color-border-hard); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 150ms; }
-        .modal-radio-item.selected .radio-circle { border-color: var(--color-brand-primary); }
-        .radio-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-brand-primary); opacity: 0; transition: opacity 150ms; }
-        .modal-radio-item.selected .radio-dot { opacity: 1; }
-        .radio-label { font-size: 15px; color: var(--color-text-main); }
-    
-        /* ══════ RESPONSIVE GOALS ══════ */
+        /* ══════ RESPONSIVE ══════ */
         @media (max-width: 900px) {
           .page-content { padding: 28px 20px 120px; }
         }
         @media (max-width: 768px) {
           .lk-sidebar { display: none !important; }
-          .lk-logo--desktop { display: none; }
-          .lk-logo--mobile { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; overflow: hidden; }
-          .main-content { padding: 20px 16px 80px; }
-          .page-title { font-size: 22px; margin-bottom: 0; padding-bottom: 0; }
-          .page-content { gap: 24px; }
-          .lk-header { padding: 8px 12px; gap: 10px; height: 60px; }
+          .lk-burger { display: flex !important; }
+          .lk-header__actions { display: none !important; }
+          .lk-logo--desktop { display: none !important; }
+          .lk-logo--mobile { display: flex !important; align-items: center; justify-content: center; width: 44px; height: 44px; overflow: hidden; }
+          .lk-header { height: 60px; padding: 8px 12px; }
           .lk-logo--mobile img { height: 44px; width: 44px; object-fit: contain; }
           .lk-header__username { font-size: 13px; line-height: 18px; height: 20px; display: flex; align-items: center; }
           .lk-header__sub-text { font-size: 12px; line-height: 16px; }
           .lk-badge { padding: 2px 4px 3px; font-size: 10px; line-height: 13px; letter-spacing: 0.06px; }
           .lk-header__user { gap: 1px; }
-          .lk-logo-text { font-size: 14px; }
-          .lk-subscription { font-size: 11px; }
-          .lk-header__actions { display: none !important; }
-          .lk-burger { display: flex !important; }
-          .goals-grid { gap: 12px; }
-          .goal-card, .bot-goal-card { width: 100%; box-sizing: border-box; }
-          .expired-banner { flex-direction: column; gap: 0; }
-          .expired-block { padding: 12px 0; align-items: center; text-align: center; }
-          .expired-block .btn { align-self: stretch; justify-content: center; width: 100%; }
-          .card-actions { flex-direction: row; justify-content: flex-end; }
-          .modal { padding: 20px; border-radius: 20px; max-width: calc(100vw - 32px); }
-          .modal-choose { padding: 20px; border-radius: 20px; gap: 20px; }
-          .modal-title { font-size: 20px; line-height: 28px; }
-          .modal-radio-item { padding: 8px 12px; }
-          .modal-actions-choose { flex-direction: column; gap: 8px; align-items: stretch; }
-          .modal-actions-choose button { width: 100%; justify-content: center; border-radius: 10px; }
-          .modal-footer-delete { flex-direction: column !important; gap: 8px !important; }
-          .modal-footer-delete button { width: 100% !important; justify-content: center; }
-          .goal-name { font-size: 16px; }
-          .goal-monthly-value { font-size: 18px; }
-          .goal-progress-amount { font-size: 17px; }
+          .page-title { font-size: 22px; }
+          .page-layout { width: 100%; }
+          .page-content {
+            width: 100% !important;
+            padding: 20px 20px 80px !important;
+            box-sizing: border-box !important;
+          }
+          .feedback-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 20px !important;
+            border-radius: 20px !important;
+          }
         }
-  </style>
+  
+        .stub-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 40px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; max-width: 640px; width: 100%; }
+        .stub-card__img { width: 100%; max-width: 360px; height: auto; display: block; }
+        .stub-card__title { font-size: 24px; font-weight: 700; line-height: 32px; color: #2D3748; margin-top: 8px; }
+        .stub-card__text { font-size: 16px; font-weight: 500; line-height: 24px; color: #6B7280; }
+        .nav-item.is-active .nav-item__name { color: #4C9AFF; font-weight: 600; }
+        @media (max-width: 768px) { .stub-card { padding: 28px 16px; border-radius: 20px; } .stub-card__title { font-size: 20px; line-height: 28px; } .stub-card__img { max-width: 260px; } }
+    </style>
 </head>
 <body>
 
@@ -387,16 +313,20 @@
   </button>
 </header>
 
+
 <!-- PAGE -->
 <div class="page-layout">
 
-  <aside class="lk-sidebar" id="lkSidebar">
+<div class="page-layout">
+
+  <!-- SIDEBAR -->
+    <aside class="lk-sidebar" id="lkSidebar">
     <nav class="lk-sidebar__nav">
       <a href="/cabinet/dashboard"  class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMS42NjY2MyA1LjE3NTUyQzEuNjY2NjMgMy41MjE0NyAxLjY2NjYzIDIuNjk0NDQgMi4yMTU4IDIuMTgwNkMyLjc2NDk4IDEuNjY2NzUgMy42NDg4NiAxLjY2Njc1IDUuNDE2NjMgMS42NjY3NUM3LjE4NDM5IDEuNjY2NzUgOC4wNjgyOCAxLjY2Njc1IDguNjE3NDUgMi4xODA2QzkuMTY2NjMgMi42OTQ0NCA5LjE2NjYzIDMuNTIxNDcgOS4xNjY2MyA1LjE3NTUyVjE0LjgyNDZDOS4xNjY2MyAxNi40Nzg3IDkuMTY2NjMgMTcuMzA1NyA4LjYxNzQ1IDE3LjgxOTZDOC4wNjgyOCAxOC4zMzM0IDcuMTg0MzkgMTguMzMzNCA1LjQxNjYzIDE4LjMzMzRDMy42NDg4NiAxOC4zMzM0IDIuNzY0OTggMTguMzMzNCAyLjIxNTggMTcuODE5NkMxLjY2NjYzIDE3LjMwNTcgMS42NjY2MyAxNi40Nzg3IDEuNjY2NjMgMTQuODI0NlY1LjE3NTUyWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNMTAuODMzNCAxMi44MzM0QzEwLjgzMzQgMTEuMTA0OSAxMC44MzM0IDEwLjI0MDcgMTEuMzgyNSA5LjcwMzcyQzExLjkzMTcgOS4xNjY3NSAxMi44MTU2IDkuMTY2NzUgMTQuNTgzNCA5LjE2Njc1QzE2LjM1MTEgOS4xNjY3NSAxNy4yMzUgOS4xNjY3NSAxNy43ODQyIDkuNzAzNzJDMTguMzMzNCAxMC4yNDA3IDE4LjMzMzQgMTEuMTA0OSAxOC4zMzM0IDEyLjgzMzRWMTQuNjY2N0MxOC4zMzM0IDE2LjM5NTIgMTguMzMzNCAxNy4yNTk1IDE3Ljc4NDIgMTcuNzk2NEMxNy4yMzUgMTguMzMzNCAxNi4zNTExIDE4LjMzMzQgMTQuNTgzNCAxOC4zMzM0QzEyLjgxNTYgMTguMzMzNCAxMS45MzE3IDE4LjMzMzQgMTEuMzgyNSAxNy43OTY0QzEwLjgzMzQgMTcuMjU5NSAxMC44MzM0IDE2LjM5NTIgMTAuODMzNCAxNC42NjY3VjEyLjgzMzRaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik0xMC44MzM0IDQuNTgzNDFDMTAuODMzNCAzLjY3NzQyIDEwLjgzMzQgMy4yMjQ0MiAxMC45NzYxIDIuODY3MDlDMTEuMTY2NCAyLjM5MDY0IDExLjUzMTQgMi4wMTIxMSAxMS45OTA4IDEuODE0NzZDMTIuMzM1NCAxLjY2Njc1IDEyLjc3MjIgMS42NjY3NSAxMy42NDU5IDEuNjY2NzVIMTUuNTIwOUMxNi4zOTQ1IDEuNjY2NzUgMTYuODMxMyAxLjY2Njc1IDE3LjE3NTkgMS44MTQ3NkMxNy42MzUzIDIuMDEyMTEgMTguMDAwMyAyLjM5MDY0IDE4LjE5MDYgMi44NjcwOUMxOC4zMzM0IDMuMjI0NDIgMTguMzMzNCAzLjY3NzQyIDE4LjMzMzQgNC41ODM0MUMxOC4zMzM0IDUuNDg5NDEgMTguMzMzNCA1Ljk0MjQxIDE4LjE5MDYgNi4yOTk3NEMxOC4wMDAzIDYuNzc2MTkgMTcuNjM1MyA3LjE1NDcyIDE3LjE3NTkgNy4zNTIwN0MxNi44MzEzIDcuNTAwMDggMTYuMzk0NSA3LjUwMDA4IDE1LjUyMDkgNy41MDAwOEgxMy42NDU5QzEyLjc3MjIgNy41MDAwOCAxMi4zMzU0IDcuNTAwMDggMTEuOTkwOCA3LjM1MjA3QzExLjUzMTQgNy4xNTQ3MiAxMS4xNjY0IDYuNzc2MTkgMTAuOTc2MSA2LjI5OTc0QzEwLjgzMzQgNS45NDI0MSAxMC44MzM0IDUuNDg5NDEgMTAuODMzNCA0LjU4MzQxWiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K"  alt=""/></span><span class="nav-item__label">Дашборд</span></a>
       <a href="/cabinet/accounting"           class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS42NjY3IDE3LjA4MzRWMy41NDE3NUMxMS42NjY3IDIuOTM0ODIgMTEuNjY1NCAyLjU0MjUgMTEuNjI2NiAyLjI1MzQ0QzExLjU5MDEgMS45ODIzNSAxMS41MzEzIDEuODk3MzggMTEuNDgzNyAxLjg0OTgxQzExLjQzNjEgMS44MDIyMyAxMS4zNTExIDEuNzQzMzkgMTEuMDgwMSAxLjcwNjk0QzEwLjc5MSAxLjY2ODA4IDEwLjM5ODcgMS42NjY3NSA5Ljc5MTc1IDEuNjY2NzVDOS4xODQ4MiAxLjY2Njc1IDguNzkyNSAxLjY2ODA4IDguNTAzNDQgMS43MDY5NEM4LjIzMjM1IDEuNzQzMzkgOC4xNDczOCAxLjgwMjIzIDguMDk5ODEgMS44NDk4MUM4LjA1MjIzIDEuODk3MzggNy45OTMzOSAxLjk4MjM1IDcuOTU2OTQgMi4yNTM0NEM3LjkxODA3IDIuNTQyNSA3LjkxNjc1IDIuOTM0ODIgNy45MTY3NSAzLjU0MTc1VjE3LjA4MzRIMTEuNjY2N1oiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggb3BhY2l0eT0iMC43IiBkPSJNNi42NjY3NSA3LjI5MTc1QzYuNjY2NzUgNi45NDY1NyA2LjM4NjkzIDYuNjY2NzUgNi4wNDE3NSA2LjY2Njc1SDMuNTQxNzVDMy4xOTY1NyA2LjY2Njc1IDIuOTE2NzUgNi45NDY1NyAyLjkxNjc1IDcuMjkxNzVWMTcuMDgzNEg2LjY2Njc1VjcuMjkxNzVaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIG9wYWNpdHk9IjAuNyIgZD0iTTE2LjY2NjcgMTEuNDU4M0MxNi42NjY3IDExLjExMzEgMTYuMzg2OSAxMC44MzMzIDE2LjA0MTcgMTAuODMzM0gxMy41NDE3QzEzLjE5NjYgMTAuODMzMyAxMi45MTY3IDExLjExMzEgMTIuOTE2NyAxMS40NTgzVjE3LjA4MzNIMTYuNjY2N1YxMS40NTgzWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBvcGFjaXR5PSIwLjUiIGQ9Ik0xLjQ1ODI1IDE3LjA4MzNDMS4xMTMwNyAxNy4wODMzIDAuODMzMjUyIDE3LjM2MzEgMC44MzMyNTIgMTcuNzA4M0MwLjgzMzI1MiAxOC4wNTM0IDEuMTEzMDcgMTguMzMzMyAxLjQ1ODI1IDE4LjMzMzNIMTguMTI0OUMxOC40NzAxIDE4LjMzMzMgMTguNzQ5OSAxOC4wNTM0IDE4Ljc0OTkgMTcuNzA4M0MxOC43NDk5IDE3LjM2MzEgMTguNDcwMSAxNy4wODMzIDE4LjEyNDkgMTcuMDgzM0gxNy45MTY2SDE2LjY2NjZIMTIuOTE2NkgxMS42NjY2SDcuOTE2NThINi42NjY1OEgyLjkxNjU5SDEuNjY2NTlIMS40NTgyNVoiIGZpbGw9IiNDQkQ1RTEiLz4KPC9zdmc+Cg=="  alt=""/></span><span class="nav-item__label">Учет по месяцам</span></a>
       <a href="/cabinet/history"           class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgb3BhY2l0eT0iMC41Ij4KPHBhdGggZD0iTTE4LjMzMyAxMC42ODEyTDE3Ljk5MjYgMTAuMzQwOEMxNy4yNjAzIDkuNjA4NTMgMTYuMDczMiA5LjYwODUzIDE1LjM0MDkgMTAuMzQwOEwxNC42NzMxIDExLjAwODZDMTQuNDA2NiAxMC4yOTc2IDEzLjcyMDggOS43OTE1OSAxMi45MTY3IDkuNzkxNTlDMTEuODgxMiA5Ljc5MTU5IDExLjA0MTcgMTAuNjMxMSAxMS4wNDE3IDExLjY2NjZWMTMuMTM2NUMxMC42MzM1IDEzLjE4MTggMTAuMjM3MyAxMy4zNjEgOS45MjQyNiAxMy42NzQxQzkuMTkyMDIgMTQuNDA2MyA5LjE5MjAyIDE1LjU5MzUgOS45MjQyNiAxNi4zMjU3TDEwLjI2NTEgMTYuNjY2Nkg4LjMzMzQxQzUuMTkwNzIgMTYuNjY2NiAzLjYxOTM3IDE2LjY2NjYgMi42NDMwNiAxNS42OTAzQzEuNjY2NzUgMTQuNzE0IDEuNjY2NzUgMTMuMTQyNiAxLjY2Njc1IDkuOTk5OTJDMS42NjY3NSA5LjYzMTY0IDEuNjY4MzIgOC42NTk5NCAxLjY2OTg5IDguMzMzMjVIMTguMzMzNEMxOC4zMzUgOC42NTk5NCAxOC4zMzM0IDkuNjMxNjQgMTguMzMzNCA5Ljk5OTkyQzE4LjMzMzQgMTAuMjM1NyAxOC4zMzM0IDEwLjQ2MjcgMTguMzMzIDEwLjY4MTJaIiBmaWxsPSIjQ0JENUUxIi8+CjwvZz4KPHBhdGggZD0iTTQuMzc1IDEzLjMzMzNDNC4zNzUgMTIuOTg4MSA0LjY1NDgyIDEyLjcwODMgNSAxMi43MDgzSDguMzMzMzNDOC42Nzg1MSAxMi43MDgzIDguOTU4MzMgMTIuOTg4MSA4Ljk1ODMzIDEzLjMzMzNDOC45NTgzMyAxMy42Nzg0IDguNjc4NTEgMTMuOTU4MyA4LjMzMzMzIDEzLjk1ODNINUM0LjY1NDgyIDEzLjk1ODMgNC4zNzUgMTMuNjc4NCA0LjM3NSAxMy4zMzMzWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNOC4zMjkxMiAzLjMzMzI1SDExLjY3MUMxNC44MjE4IDMuMzMzMjUgMTYuMzk3MiAzLjMzMzI1IDE3LjM3NjEgNC4yNjMwN0MxOC4wODA4IDQuOTMyNTUgMTguMjc4MiA1Ljg5NTgxIDE4LjMzMzQgNy40OTk5MlY4LjMzMzI1SDEuNjY2NzVWNy40OTk5MkMxLjcyMiA1Ljg5NTgxIDEuOTE5MzMgNC45MzI1NSAyLjYyNDA5IDQuMjYzMDdDMy42MDI5MiAzLjMzMzI1IDUuMTc4MzIgMy4zMzMyNSA4LjMyOTEyIDMuMzMzMjVaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik0xNi4yMjQ3IDExLjIyNDhDMTYuNDY4OCAxMC45ODA3IDE2Ljg2NDUgMTAuOTgwNyAxNy4xMDg2IDExLjIyNDhMMTguNzc1MyAxMi44OTE1QzE5LjAxOTQgMTMuMTM1NSAxOS4wMTk0IDEzLjUzMTMgMTguNzc1MyAxMy43NzU0QzE4LjUzMTIgMTQuMDE5NCAxOC4xMzU1IDE0LjAxOTQgMTcuODkxNCAxMy43NzU0TDE3LjI5MTcgMTMuMTc1NlYxNi42NjY3QzE3LjI5MTcgMTcuMDExOSAxNy4wMTE4IDE3LjI5MTcgMTYuNjY2NyAxNy4yOTE3QzE2LjMyMTUgMTcuMjkxNyAxNi4wNDE3IDE3LjAxMTkgMTYuMDQxNyAxNi42NjY3VjEzLjE3NTZMMTUuNDQxOSAxMy43NzU0QzE1LjE5NzkgMTQuMDE5NCAxNC44MDIxIDE0LjAxOTQgMTQuNTU4MSAxMy43NzU0QzE0LjMxNCAxMy41MzEzIDE0LjMxNCAxMy4xMzU1IDE0LjU1ODEgMTIuODkxNUwxNi4yMjQ3IDExLjIyNDhaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTIuOTE2NyAxMS4wNDE3QzEzLjI2MTggMTEuMDQxNyAxMy41NDE3IDExLjMyMTYgMTMuNTQxNyAxMS42NjY3VjE1LjE1NzlMMTQuMTQxNCAxNC41NTgxQzE0LjM4NTUgMTQuMzE0MSAxNC43ODEyIDE0LjMxNDEgMTUuMDI1MyAxNC41NTgxQzE1LjI2OTQgMTQuODAyMiAxNS4yNjk0IDE1LjE5NzkgMTUuMDI1MyAxNS40NDJMMTMuMzU4NiAxNy4xMDg3QzEzLjExNDUgMTcuMzUyOCAxMi43MTg4IDE3LjM1MjggMTIuNDc0NyAxNy4xMDg3TDEwLjgwODEgMTUuNDQyQzEwLjU2NCAxNS4xOTc5IDEwLjU2NCAxNC44MDIyIDEwLjgwODEgMTQuNTU4MUMxMS4wNTIxIDE0LjMxNDEgMTEuNDQ3OSAxNC4zMTQxIDExLjY5MTkgMTQuNTU4MUwxMi4yOTE3IDE1LjE1NzlWMTEuNjY2N0MxMi4yOTE3IDExLjMyMTYgMTIuNTcxNSAxMS4wNDE3IDEyLjkxNjcgMTEuMDQxN1oiIGZpbGw9IiNDQkQ1RTEiLz4KPC9zdmc+Cg=="  alt=""/></span><span class="nav-item__label">История транзакций</span></a>
       <a href="/cabinet/categories"           class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMy40MDI0MSA5LjkxMTgxQzMuNzY4MTcgNy45NjEwOCAzLjk1MTA2IDYuOTg1NzEgNC42NDUzNyA2LjQwOTQ4QzUuMzM5NjggNS44MzMyNSA2LjMzMjA0IDUuODMzMjUgOC4zMTY3NyA1LjgzMzI1SDExLjY4NDJDMTMuNjY4OSA1LjgzMzI1IDE0LjY2MTMgNS44MzMyNSAxNS4zNTU2IDYuNDA5NDhDMTYuMDQ5OSA2Ljk4NTcxIDE2LjIzMjggNy45NjEwNyAxNi41OTg1IDkuOTExODFMMTcuMjIzNSAxMy4yNDUxQzE3LjczNzkgMTUuOTg4MiAxNy45OTUgMTcuMzU5OCAxNy4yNDUzIDE4LjI2MzJDMTYuNDk1NSAxOS4xNjY2IDE1LjEwMDEgMTkuMTY2NiAxMi4zMDkyIDE5LjE2NjZINy42OTE3N0M0LjkwMDg5IDE5LjE2NjYgMy41MDU0NSAxOS4xNjY2IDIuNzU1NjggMTguMjYzMkMyLjAwNTkyIDE3LjM1OTggMi4yNjMwOCAxNS45ODgyIDIuNzc3NDEgMTMuMjQ1MUwzLjQwMjQxIDkuOTExODFaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik04LjEyNSA0Ljk4NzUzQzguMTI1IDMuOTUyIDguOTY0NDcgMy4xMTI1MyAxMCAzLjExMjUzQzExLjAzNTUgMy4xMTI1MyAxMS44NzUgMy45NTIgMTEuODc1IDQuOTg3NTNWNS44MjA4N0MxMi4zNDY3IDUuODIxMDIgMTIuNzU5OSA1LjgyMjMyIDEzLjEyNDkgNS44MzMyN0MxMy4xMjUgNS44MjkxNSAxMy4xMjUgNS44MjUwMSAxMy4xMjUgNS44MjA4N1Y0Ljk4NzUzQzEzLjEyNSAzLjI2MTY1IDExLjcyNTkgMS44NjI1MyAxMCAxLjg2MjUzQzguMjc0MTEgMS44NjI1MyA2Ljg3NSAzLjI2MTY1IDYuODc1IDQuOTg3NTNWNS44MjA4N0M2Ljg3NSA1LjgyNTAyIDYuODc1MDQgNS44MjkxNiA2Ljg3NTEyIDUuODMzMjlDNy4yNDAxMSA1LjgyMjMzIDcuNjUzMzEgNS44MjEwNCA4LjEyNSA1LjgyMDg5VjQuOTg3NTNaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik04LjIzMTc4IDEzLjEyNDlDOC40ODk0NyAxMy44NTQgOS4xODQ4NCAxNC4zNzQ4IDEwLjAwMDIgMTQuMzc0OEMxMC44MTU3IDE0LjM3NDggMTEuNTExIDEzLjg1NCAxMS43Njg3IDEzLjEyNDlDMTEuODgzNyAxMi43OTk1IDEyLjI0MDggMTIuNjI4OSAxMi41NjYzIDEyLjc0MzlDMTIuODkxNyAxMi44NTg5IDEzLjA2MjMgMTMuMjE2IDEyLjk0NzMgMTMuNTQxNUMxMi41MTg2IDE0Ljc1NDQgMTEuMzYxOSAxNS42MjQ4IDEwLjAwMDIgMTUuNjI0OEM4LjYzODYzIDE1LjYyNDggNy40ODE5MyAxNC43NTQ0IDcuMDUzMjMgMTMuNTQxNUM2LjkzODIgMTMuMjE2IDcuMTA4NzggMTIuODU4OSA3LjQzNDIzIDEyLjc0MzlDNy43NTk2NyAxMi42Mjg5IDguMTE2NzUgMTIuNzk5NSA4LjIzMTc4IDEzLjEyNDlaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo="  alt=""/></span><span class="nav-item__label">Категории</span></a>
-      <a href="/cabinet/goals" class="nav-item is-active"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTYuNDMwNCAxNi45Njg2QzE3LjYxOTIgMTYuMzIwNCAxOC4zMzMzIDE1LjQ4OTMgMTguMzMzMyAxNC41ODMzQzE4LjMzMzMgMTMuNjIyOCAxNy41MzA5IDEyLjc0NjcgMTYuMjExNCAxMi4wODMzQzE0LjY4NTUgMTEuMzE2MSAxMi40NjggMTAuODMzMyA5Ljk5OTk2IDEwLjgzMzNDNy41MzE5IDEwLjgzMzMgNS4zMTQ0NCAxMS4zMTYxIDMuNzg4NTUgMTIuMDgzM0MyLjQ2OSAxMi43NDY3IDEuNjY2NjMgMTMuNjIyOCAxLjY2NjYzIDE0LjU4MzNDMS42NjY2MyAxNS41NDM3IDIuNDY5IDE2LjQxOTggMy43ODg1NSAxNy4wODMzQzUuMzE0NDQgMTcuODUwNCA3LjUzMTkgMTguMzMzMyA5Ljk5OTk2IDE4LjMzMzNDMTIuNTg4OCAxOC4zMzMzIDE0LjkwMTkgMTcuODAyIDE2LjQzMDQgMTYuOTY4NloiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00LjE2NjYzIDcuMDk1NjFDNC4xNjY2MyA0LjA5NzMzIDYuNzc4MyAxLjY2Njc1IDkuOTk5OTYgMS42NjY3NUMxMy4yMjE2IDEuNjY2NzUgMTUuODMzMyA0LjA5NzMzIDE1LjgzMzMgNy4wOTU2MUMxNS44MzMzIDEwLjA3MDQgMTMuOTcxNSAxMy41NDE3IDExLjA2NjcgMTQuNzgzQzEwLjM4OTUgMTUuMDcyNCA5LjYxMDQgMTUuMDcyNCA4LjkzMzI0IDE0Ljc4M0M2LjAyODQyIDEzLjU0MTcgNC4xNjY2MyAxMC4wNzA0IDQuMTY2NjMgNy4wOTU2MVpNOS45OTk5NiA5LjE2Njc1QzEwLjkyMDQgOS4xNjY3NSAxMS42NjY2IDguNDIwNTYgMTEuNjY2NiA3LjUwMDA4QzExLjY2NjYgNi41Nzk2MSAxMC45MjA0IDUuODMzNDEgOS45OTk5NiA1LjgzMzQxQzkuMDc5NDggNS44MzM0MSA4LjMzMzI5IDYuNTc5NjEgOC4zMzMyOSA3LjUwMDA4QzguMzMzMjkgOC40MjA1NiA5LjA3OTQ4IDkuMTY2NzUgOS45OTk5NiA5LjE2Njc1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K"  alt=""/></span><span class="nav-item__label">Мои цели</span></a>
+      <a href="/cabinet/goals"           class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTYuNDMwNCAxNi45Njg2QzE3LjYxOTIgMTYuMzIwNCAxOC4zMzMzIDE1LjQ4OTMgMTguMzMzMyAxNC41ODMzQzE4LjMzMzMgMTMuNjIyOCAxNy41MzA5IDEyLjc0NjcgMTYuMjExNCAxMi4wODMzQzE0LjY4NTUgMTEuMzE2MSAxMi40NjggMTAuODMzMyA5Ljk5OTk2IDEwLjgzMzNDNy41MzE5IDEwLjgzMzMgNS4zMTQ0NCAxMS4zMTYxIDMuNzg4NTUgMTIuMDgzM0MyLjQ2OSAxMi43NDY3IDEuNjY2NjMgMTMuNjIyOCAxLjY2NjYzIDE0LjU4MzNDMS42NjY2MyAxNS41NDM3IDIuNDY5IDE2LjQxOTggMy43ODg1NSAxNy4wODMzQzUuMzE0NDQgMTcuODUwNCA3LjUzMTkgMTguMzMzMyA5Ljk5OTk2IDE4LjMzMzNDMTIuNTg4OCAxOC4zMzMzIDE0LjkwMTkgMTcuODAyIDE2LjQzMDQgMTYuOTY4NloiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00LjE2NjYzIDcuMDk1NjFDNC4xNjY2MyA0LjA5NzMzIDYuNzc4MyAxLjY2Njc1IDkuOTk5OTYgMS42NjY3NUMxMy4yMjE2IDEuNjY2NzUgMTUuODMzMyA0LjA5NzMzIDE1LjgzMzMgNy4wOTU2MUMxNS44MzMzIDEwLjA3MDQgMTMuOTcxNSAxMy41NDE3IDExLjA2NjcgMTQuNzgzQzEwLjM4OTUgMTUuMDcyNCA5LjYxMDQgMTUuMDcyNCA4LjkzMzI0IDE0Ljc4M0M2LjAyODQyIDEzLjU0MTcgNC4xNjY2MyAxMC4wNzA0IDQuMTY2NjMgNy4wOTU2MVpNOS45OTk5NiA5LjE2Njc1QzEwLjkyMDQgOS4xNjY3NSAxMS42NjY2IDguNDIwNTYgMTEuNjY2NiA3LjUwMDA4QzExLjY2NjYgNi41Nzk2MSAxMC45MjA0IDUuODMzNDEgOS45OTk5NiA1LjgzMzQxQzkuMDc5NDggNS44MzM0MSA4LjMzMzI5IDYuNTc5NjEgOC4zMzMyOSA3LjUwMDA4QzguMzMzMjkgOC40MjA1NiA5LjA3OTQ4IDkuMTY2NzUgOS45OTk5NiA5LjE2Njc1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K"  alt=""/></span><span class="nav-item__label">Мои цели</span></a>
       <a href="/cabinet/budget"           class="nav-item"><span class="nav-item__icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.07642 8.01193C4.07642 7.67661 4.34612 7.40479 4.67883 7.40479H7.89168C8.22438 7.40479 8.49409 7.67661 8.49409 8.01193C8.49409 8.34724 8.22438 8.61907 7.89168 8.61907H4.67883C4.34612 8.61907 4.07642 8.34724 4.07642 8.01193Z" fill="#CBD5E1"/><path fill-rule="evenodd" clip-rule="evenodd" d="M17.6571 8.33639C17.6052 8.33321 17.5487 8.33323 17.4902 8.33326L17.4756 8.33326H15.1792C13.2864 8.33326 11.6667 9.77997 11.6667 11.6666C11.6667 13.5532 13.2864 14.9999 15.1792 14.9999H17.4756L17.4902 14.9999C17.5487 14.9999 17.6052 15 17.6571 14.9968C18.4259 14.9496 19.1059 14.3654 19.1631 13.5494C19.1668 13.4959 19.1668 13.4383 19.1667 13.3848L19.1667 13.3703V9.96289L19.1667 9.94838C19.1668 9.89492 19.1668 9.83724 19.1631 9.78373C19.1059 8.96774 18.4259 8.38353 17.6571 8.33639ZM14.9756 12.5555C15.4629 12.5555 15.8579 12.1575 15.8579 11.6666C15.8579 11.1757 15.4629 10.7777 14.9756 10.7777C14.4883 10.7777 14.0932 11.1757 14.0932 11.6666C14.0932 12.1575 14.4883 12.5555 14.9756 12.5555Z" fill="#CBD5E1"/><path opacity="0.5" d="M17.6163 8.33468C17.6162 7.35084 17.5805 6.29547 16.9516 5.5389C16.8908 5.46586 16.8262 5.39495 16.7574 5.32612C16.1337 4.70248 15.343 4.42572 14.3659 4.29436C13.4166 4.16673 12.2036 4.16674 10.6721 4.16675H8.9114C7.37994 4.16674 6.1669 4.16673 5.21756 4.29436C4.24054 4.42572 3.44975 4.70248 2.82612 5.32612C2.20248 5.94975 1.92572 6.74055 1.79436 7.71756C1.66673 8.66691 1.66674 9.87993 1.66675 11.4114V11.5054C1.66674 13.0369 1.66673 14.2499 1.79436 15.1993C1.92572 16.1763 2.20248 16.9671 2.82612 17.5907C3.44975 18.2143 4.24054 18.4911 5.21756 18.6225C6.1669 18.7501 7.37992 18.7501 8.91137 18.7501H10.6721C12.2035 18.7501 13.4166 18.7501 14.3659 18.6225C15.343 18.4911 16.1337 18.2143 16.7574 17.5907C16.9278 17.4203 17.0725 17.2371 17.1956 17.0406C17.571 16.441 17.6163 15.7062 17.6163 14.9988C17.5761 15.0001 17.5337 15.0001 17.4902 15.0001L15.1792 15.0001C13.2864 15.0001 11.6667 13.5534 11.6667 11.6667C11.6667 9.78014 13.2864 8.33342 15.1792 8.33342L17.4902 8.33342C17.5337 8.3334 17.5761 8.33339 17.6163 8.33468Z" fill="#CBD5E1"/><path d="M8.41778 2.14351L6.66657 3.32719L5.22217 4.29372C6.1708 4.16673 7.38233 4.16674 8.91122 4.16675H10.6719C12.2034 4.16674 13.4164 4.16673 14.3658 4.29436C14.5567 4.32004 14.7406 4.35126 14.9174 4.38955L13.3332 3.33341L11.5728 2.14351C10.6323 1.50783 9.35825 1.50783 8.41778 2.14351Z" fill="#CBD5E1"/></svg></span><span class="nav-item__label">Мой бюджет</span></a>
       <a href="/cabinet/analytics"           class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNNS4xODUwMyAzLjgzNDI5QzUuNTU1NSAzLjU4Njc1IDUuOTQ0NDkgMy4zNzIwNSA2LjM0NzU0IDMuMTkxNTVDNy40OTA3NyAyLjY3OTU3IDguMDYyMzkgMi40MjM1OCA4LjgyMjg0IDIuOTE2MjVDOS41ODMzIDMuNDA4OTIgOS41ODMzIDQuMjE3MDkgOS41ODMzIDUuODMzNDJWNy4wODM0MkM5LjU4MzMgOC42NTQ3NyA5LjU4MzMgOS40NDA0NCAxMC4wNzE1IDkuOTI4NkMxMC41NTk2IDEwLjQxNjggMTEuMzQ1MyAxMC40MTY4IDEyLjkxNjYgMTAuNDE2OEgxNC4xNjY2QzE1Ljc4MyAxMC40MTY4IDE2LjU5MTEgMTAuNDE2OCAxNy4wODM4IDExLjE3NzJDMTcuNTc2NSAxMS45Mzc3IDE3LjMyMDUgMTIuNTA5MyAxNi44MDg1IDEzLjY1MjVDMTYuNjI4IDE0LjA1NTYgMTYuNDEzMyAxNC40NDQ1IDE2LjE2NTggMTQuODE1QzE1LjI5NTkgMTYuMTE2OSAxNC4wNTk1IDE3LjEzMTYgMTIuNjEyOSAxNy43MzA4QzExLjE2NjMgMTguMzMgOS41NzQ1MSAxOC40ODY4IDguMDM4ODMgMTguMTgxM0M2LjUwMzE1IDE3Ljg3NTggNS4wOTI1MyAxNy4xMjE4IDMuOTg1MzcgMTYuMDE0N0MyLjg3ODIgMTQuOTA3NSAyLjEyNDIxIDEzLjQ5NjkgMS44MTg3NSAxMS45NjEyQzEuNTEzMjggMTAuNDI1NSAxLjY3MDA2IDguODMzNzYgMi4yNjkyNSA3LjM4NzE4QzIuODY4NDQgNS45NDA1OSAzLjg4MzE0IDQuNzA0MTggNS4xODUwMyAzLjgzNDI5WiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNMTcuODcxNyA1Ljg5MDc2QzE3LjE5NTEgNC4xNzM1MSAxNS44MjY0IDIuODA0NzQgMTQuMTA5MSAyLjEyODI0QzEyLjgyNDUgMS42MjIxNiAxMS42NjY2IDIuNzg1ODkgMTEuNjY2NiA0LjE2NjZWNy40OTk5M0MxMS42NjY2IDcuOTYwMTcgMTIuMDM5NyA4LjMzMzI3IDEyLjUgOC4zMzMyN0gxNS44MzMzQzE3LjIxNCA4LjMzMzI3IDE4LjM3NzcgNy4xNzUzOCAxNy44NzE3IDUuODkwNzZaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo="  alt=""/></span><span class="nav-item__label">Аналитика</span></a>
       <a href="/cabinet/family"           class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik05LjM3NDk2IDEuNjY2NzVDOS4zNzQ5NiAxLjMyMTU3IDkuNjU0NzggMS4wNDE3NSA5Ljk5OTk2IDEuMDQxNzVDMTQuOTQ3NSAxLjA0MTc1IDE4Ljk1ODMgNS4wNTI1MyAxOC45NTgzIDEwLjAwMDFDMTguOTU4MyAxNC45NDc2IDE0Ljk0NzUgMTguOTU4NCA5Ljk5OTk2IDE4Ljk1ODRDNS4wNTI0MSAxOC45NTg0IDEuMDQxNjMgMTQuOTQ3NiAxLjA0MTYzIDEwLjAwMDFDMS4wNDE2MyA5LjY1NDkgMS4zMjE0NSA5LjM3NTA4IDEuNjY2NjMgOS4zNzUwOEMyLjAxMTggOS4zNzUwOCAyLjI5MTYzIDkuNjU0OSAyLjI5MTYzIDEwLjAwMDFDMi4yOTE2MyAxNC4yNTczIDUuNzQyNzYgMTcuNzA4NCA5Ljk5OTk2IDE3LjcwODRDMTQuMjU3MiAxNy43MDg0IDE3LjcwODMgMTQuMjU3MyAxNy43MDgzIDEwLjAwMDFDMTcuNzA4MyA1Ljc0Mjg5IDE0LjI1NzIgMi4yOTE3NSA5Ljk5OTk2IDIuMjkxNzVDOS42NTQ3OCAyLjI5MTc1IDkuMzc0OTYgMi4wMTE5MyA5LjM3NDk2IDEuNjY2NzVaTTkuOTk5OTYgNi44NzUwOEMxMC4zNDUxIDYuODc1MDggMTAuNjI1IDcuMTU0OSAxMC42MjUgNy41MDAwOFYxMC4yMDg0SDEzLjMzMzNDMTMuNjc4NSAxMC4yMDg0IDEzLjk1ODMgMTAuNDg4MiAxMy45NTgzIDEwLjgzMzRDMTMuOTU4MyAxMS4xNzg2IDEzLjY3ODUgMTEuNDU4NCAxMy4zMzMzIDExLjQ1ODRIOS45OTk5NkM5LjY1NDc4IDExLjQ1ODQgOS4zNzQ5NiAxMS4xNzg2IDkuMzc0OTYgMTAuODMzNFY3LjUwMDA4QzkuMzc0OTYgNy4xNTQ5IDkuNjU0NzggNi44NzUwOCA5Ljk5OTk2IDYuODc1MDhaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNNy41ODI5NCAxLjk5ODAzQzcuNzA3MjQgMi4zMjAwNSA3LjU0Njk3IDIuNjgxODcgNy4yMjQ5NSAyLjgwNjE3QzcuMTA3MDkgMi44NTE2NyA2Ljk5MDYyIDIuODk5OTggNi44NzU2MiAyLjk1MTA0QzYuNTYwMTQgMy4wOTEwOSA2LjE5MDg1IDIuOTQ4ODggNi4wNTA3OSAyLjYzMzM5QzUuOTEwNzMgMi4zMTc5MSA2LjA1Mjk1IDEuOTQ4NjEgNi4zNjg0MyAxLjgwODU2QzYuNTAyMTkgMS43NDkxOCA2LjYzNzY3IDEuNjkyOTcgNi43NzQ4IDEuNjQwMDRDNy4wOTY4MSAxLjUxNTc0IDcuNDU4NjMgMS42NzYwMSA3LjU4Mjk0IDEuOTk4MDNaTTQuNzA2MzggMy41MzM2NEM0Ljk0NDQzIDMuNzgzNTkgNC45MzQ3OCA0LjE3OTIgNC42ODQ4MiA0LjQxNzI2QzQuNTkzNDMgNC41MDQyOSA0LjUwNDE3IDQuNTkzNTUgNC40MTcxMyA0LjY4NDk0QzQuMTc5MDggNC45MzQ5IDMuNzgzNDcgNC45NDQ1NSAzLjUzMzUxIDQuNzA2NUMzLjI4MzU1IDQuNDY4NDUgMy4yNzM5IDQuMDcyODQgMy41MTE5NSAzLjgyMjg4QzMuNjEzMDEgMy43MTY3NyAzLjcxNjY1IDMuNjEzMTMgMy44MjI3NiAzLjUxMjA4QzQuMDcyNzIgMy4yNzQwMiA0LjQ2ODMzIDMuMjgzNjggNC43MDYzOCAzLjUzMzY0Wk0yLjYzMzI3IDYuMDUwOTFDMi45NDg3NiA2LjE5MDk3IDMuMDkwOTcgNi41NjAyNiAyLjk1MDkxIDYuODc1NzVDMi44OTk4NiA2Ljk5MDc0IDIuODUxNTUgNy4xMDcyMSAyLjgwNjA1IDcuMjI1MDdDMi42ODE3NCA3LjU0NzA5IDIuMzE5OTMgNy43MDczNyAxLjk5NzkxIDcuNTgzMDZDMS42NzU4OSA3LjQ1ODc2IDEuNTE1NjEgNy4wOTY5NCAxLjYzOTkyIDYuNzc0OTJDMS42OTI4NSA2LjYzNzggMS43NDkwNiA2LjUwMjMxIDEuODA4NDMgNi4zNjg1NkMxLjk0ODQ5IDYuMDUzMDcgMi4zMTc3OCA1LjkxMDg1IDIuNjMzMjcgNi4wNTA5MVoiIGZpbGw9IiNDQkQ1RTEiLz4KPC9zdmc+Cg=="  alt=""/></span><span class="nav-item__lw"><span class="nav-item__name">Семейный доступ</span><span class="nav-item__soon">Скоро!</span></span></a>
@@ -418,13 +348,18 @@
     </div>
   </aside>
 
+
   <!-- MAIN -->
   <main class="page-content">
-    <h1 class="page-title">Мои цели</h1>
-    <div id="goalsContainer"></div>
+    <h1 class="page-title">Семейный бюджет</h1>
+    <div class="stub-card">
+      <img class="stub-card__img" src="/images/finnik-works.webp" alt="Финник в каске" width="900" height="748"/>
+      <div class="stub-card__title">Раздел в работе</div>
+      <div class="stub-card__text">Скоро будет доступным!</div>
+    </div>
   </main>
 
-</div><!-- /.page-layout -->
+</div>
 
 <!-- MOBILE OVERLAY + DRAWER -->
 <div class="lk-overlay" id="lkOverlay"></div>
@@ -443,7 +378,7 @@
     <a href="/cabinet/accounting" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMS42NjY3IDE3LjA4MzRWMy41NDE3NUMxMS42NjY3IDIuOTM0ODIgMTEuNjY1NCAyLjU0MjUgMTEuNjI2NiAyLjI1MzQ0QzExLjU5MDEgMS45ODIzNSAxMS41MzEzIDEuODk3MzggMTEuNDgzNyAxLjg0OTgxQzExLjQzNjEgMS44MDIyMyAxMS4zNTExIDEuNzQzMzkgMTEuMDgwMSAxLjcwNjk0QzEwLjc5MSAxLjY2ODA4IDEwLjM5ODcgMS42NjY3NSA5Ljc5MTc1IDEuNjY2NzVDOS4xODQ4MiAxLjY2Njc1IDguNzkyNSAxLjY2ODA4IDguNTAzNDQgMS43MDY5NEM4LjIzMjM1IDEuNzQzMzkgOC4xNDczOCAxLjgwMjIzIDguMDk5ODEgMS44NDk4MUM4LjA1MjIzIDEuODk3MzggNy45OTMzOSAxLjk4MjM1IDcuOTU2OTQgMi4yNTM0NEM3LjkxODA3IDIuNTQyNSA3LjkxNjc1IDIuOTM0ODIgNy45MTY3NSAzLjU0MTc1VjE3LjA4MzRIMTEuNjY2N1oiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggb3BhY2l0eT0iMC43IiBkPSJNNi42NjY3NSA3LjI5MTc1QzYuNjY2NzUgNi45NDY1NyA2LjM4NjkzIDYuNjY2NzUgNi4wNDE3NSA2LjY2Njc1SDMuNTQxNzVDMy4xOTY1NyA2LjY2Njc1IDIuOTE2NzUgNi45NDY1NyAyLjkxNjc1IDcuMjkxNzVWMTcuMDgzNEg2LjY2Njc1VjcuMjkxNzVaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIG9wYWNpdHk9IjAuNyIgZD0iTTE2LjY2NjcgMTEuNDU4M0MxNi42NjY3IDExLjExMzEgMTYuMzg2OSAxMC44MzMzIDE2LjA0MTcgMTAuODMzM0gxMy41NDE3QzEzLjE5NjYgMTAuODMzMyAxMi45MTY3IDExLjExMzEgMTIuOTE2NyAxMS40NTgzVjE3LjA4MzNIMTYuNjY2N1YxMS40NTgzWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBvcGFjaXR5PSIwLjUiIGQ9Ik0xLjQ1ODI1IDE3LjA4MzNDMS4xMTMwNyAxNy4wODMzIDAuODMzMjUyIDE3LjM2MzEgMC44MzMyNTIgMTcuNzA4M0MwLjgzMzI1MiAxOC4wNTM0IDEuMTEzMDcgMTguMzMzMyAxLjQ1ODI1IDE4LjMzMzNIMTguMTI0OUMxOC40NzAxIDE4LjMzMzMgMTguNzQ5OSAxOC4wNTM0IDE4Ljc0OTkgMTcuNzA4M0MxOC43NDk5IDE3LjM2MzEgMTguNDcwMSAxNy4wODMzIDE4LjEyNDkgMTcuMDgzM0gxNy45MTY2SDE2LjY2NjZIMTIuOTE2NkgxMS42NjY2SDcuOTE2NThINi42NjY1OEgyLjkxNjU5SDEuNjY2NTlIMS40NTgyNVoiIGZpbGw9IiNDQkQ1RTEiLz4KPC9zdmc+Cg==" alt=""/></span><span class="nav-item__label">Учет по месяцам</span></a>
     <a href="/cabinet/history" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgb3BhY2l0eT0iMC41Ij4KPHBhdGggZD0iTTE4LjMzMyAxMC42ODEyTDE3Ljk5MjYgMTAuMzQwOEMxNy4yNjAzIDkuNjA4NTMgMTYuMDczMiA5LjYwODUzIDE1LjM0MDkgMTAuMzQwOEwxNC42NzMxIDExLjAwODZDMTQuNDA2NiAxMC4yOTc2IDEzLjcyMDggOS43OTE1OSAxMi45MTY3IDkuNzkxNTlDMTEuODgxMiA5Ljc5MTU5IDExLjA0MTcgMTAuNjMxMSAxMS4wNDE3IDExLjY2NjZWMTMuMTM2NUMxMC42MzM1IDEzLjE4MTggMTAuMjM3MyAxMy4zNjEgOS45MjQyNiAxMy42NzQxQzkuMTkyMDIgMTQuNDA2MyA5LjE5MjAyIDE1LjU5MzUgOS45MjQyNiAxNi4zMjU3TDEwLjI2NTEgMTYuNjY2Nkg4LjMzMzQxQzUuMTkwNzIgMTYuNjY2NiAzLjYxOTM3IDE2LjY2NjYgMi42NDMwNiAxNS42OTAzQzEuNjY2NzUgMTQuNzE0IDEuNjY2NzUgMTMuMTQyNiAxLjY2Njc1IDkuOTk5OTJDMS42NjY3NSA5LjYzMTY0IDEuNjY4MzIgOC42NTk5NCAxLjY2OTg5IDguMzMzMjVIMTguMzMzNEMxOC4zMzUgOC42NTk5NCAxOC4zMzM0IDkuNjMxNjQgMTguMzMzNCA5Ljk5OTkyQzE4LjMzMzQgMTAuMjM1NyAxOC4zMzM0IDEwLjQ2MjcgMTguMzMzIDEwLjY4MTJaIiBmaWxsPSIjQ0JENUUxIi8+CjwvZz4KPHBhdGggZD0iTTQuMzc1IDEzLjMzMzNDNC4zNzUgMTIuOTg4MSA0LjY1NDgyIDEyLjcwODMgNSAxMi43MDgzSDguMzMzMzNDOC42Nzg1MSAxMi43MDgzIDguOTU4MzMgMTIuOTg4MSA4Ljk1ODMzIDEzLjMzMzNDOC45NTgzMyAxMy42Nzg0IDguNjc4NTEgMTMuOTU4MyA4LjMzMzMzIDEzLjk1ODNINUM0LjY1NDgyIDEzLjk1ODMgNC4zNzUgMTMuNjc4NCA0LjM3NSAxMy4zMzMzWiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNOC4zMjkxMiAzLjMzMzI1SDExLjY3MUMxNC44MjE4IDMuMzMzMjUgMTYuMzk3MiAzLjMzMzI1IDE3LjM3NjEgNC4yNjMwN0MxOC4wODA4IDQuOTMyNTUgMTguMjc4MiA1Ljg5NTgxIDE4LjMzMzQgNy40OTk5MlY4LjMzMzI1SDEuNjY2NzVWNy40OTk5MkMxLjcyMiA1Ljg5NTgxIDEuOTE5MzMgNC45MzI1NSAyLjYyNDA5IDQuMjYzMDdDMy42MDI5MiAzLjMzMzI1IDUuMTc4MzIgMy4zMzMyNSA4LjMyOTEyIDMuMzMzMjVaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik0xNi4yMjQ3IDExLjIyNDhDMTYuNDY4OCAxMC45ODA3IDE2Ljg2NDUgMTAuOTgwNyAxNy4xMDg2IDExLjIyNDhMMTguNzc1MyAxMi44OTE1QzE5LjAxOTQgMTMuMTM1NSAxOS4wMTk0IDEzLjUzMTMgMTguNzc1MyAxMy43NzU0QzE4LjUzMTIgMTQuMDE5NCAxOC4xMzU1IDE0LjAxOTQgMTcuODkxNCAxMy43NzU0TDE3LjI5MTcgMTMuMTc1NlYxNi42NjY3QzE3LjI5MTcgMTcuMDExOSAxNy4wMTE4IDE3LjI5MTcgMTYuNjY2NyAxNy4yOTE3QzE2LjMyMTUgMTcuMjkxNyAxNi4wNDE3IDE3LjAxMTkgMTYuMDQxNyAxNi42NjY3VjEzLjE3NTZMMTUuNDQxOSAxMy43NzU0QzE1LjE5NzkgMTQuMDE5NCAxNC44MDIxIDE0LjAxOTQgMTQuNTU4MSAxMy43NzU0QzE0LjMxNCAxMy41MzEzIDE0LjMxNCAxMy4xMzU1IDE0LjU1ODEgMTIuODkxNUwxNi4yMjQ3IDExLjIyNDhaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTIuOTE2NyAxMS4wNDE3QzEzLjI2MTggMTEuMDQxNyAxMy41NDE3IDExLjMyMTYgMTMuNTQxNyAxMS42NjY3VjE1LjE1NzlMMTQuMTQxNCAxNC41NTgxQzE0LjM4NTUgMTQuMzE0MSAxNC43ODEyIDE0LjMxNDEgMTUuMDI1MyAxNC41NTgxQzE1LjI2OTQgMTQuODAyMiAxNS4yNjk0IDE1LjE5NzkgMTUuMDI1MyAxNS40NDJMMTMuMzU4NiAxNy4xMDg3QzEzLjExNDUgMTcuMzUyOCAxMi43MTg4IDE3LjM1MjggMTIuNDc0NyAxNy4xMDg3TDEwLjgwODEgMTUuNDQyQzEwLjU2NCAxNS4xOTc5IDEwLjU2NCAxNC44MDIyIDEwLjgwODEgMTQuNTU4MUMxMS4wNTIxIDE0LjMxNDEgMTEuNDQ3OSAxNC4zMTQxIDExLjY5MTkgMTQuNTU4MUwxMi4yOTE3IDE1LjE1NzlWMTEuNjY2N0MxMi4yOTE3IDExLjMyMTYgMTIuNTcxNSAxMS4wNDE3IDEyLjkxNjcgMTEuMDQxN1oiIGZpbGw9IiNDQkQ1RTEiLz4KPC9zdmc+Cg==" alt=""/></span><span class="nav-item__label">История транзакций</span></a>
     <a href="/cabinet/categories" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMy40MDI0MSA5LjkxMTgxQzMuNzY4MTcgNy45NjEwOCAzLjk1MTA2IDYuOTg1NzEgNC42NDUzNyA2LjQwOTQ4QzUuMzM5NjggNS44MzMyNSA2LjMzMjA0IDUuODMzMjUgOC4zMTY3NyA1LjgzMzI1SDExLjY4NDJDMTMuNjY4OSA1LjgzMzI1IDE0LjY2MTMgNS44MzMyNSAxNS4zNTU2IDYuNDA5NDhDMTYuMDQ5OSA2Ljk4NTcxIDE2LjIzMjggNy45NjEwNyAxNi41OTg1IDkuOTExODFMMTcuMjIzNSAxMy4yNDUxQzE3LjczNzkgMTUuOTg4MiAxNy45OTUgMTcuMzU5OCAxNy4yNDUzIDE4LjI2MzJDMTYuNDk1NSAxOS4xNjY2IDE1LjEwMDEgMTkuMTY2NiAxMi4zMDkyIDE5LjE2NjZINy42OTE3N0M0LjkwMDg5IDE5LjE2NjYgMy41MDU0NSAxOS4xNjY2IDIuNzU1NjggMTguMjYzMkMyLjAwNTkyIDE3LjM1OTggMi4yNjMwOCAxNS45ODgyIDIuNzc3NDEgMTMuMjQ1MUwzLjQwMjQxIDkuOTExODFaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik04LjEyNSA0Ljk4NzUzQzguMTI1IDMuOTUyIDguOTY0NDcgMy4xMTI1MyAxMCAzLjExMjUzQzExLjAzNTUgMy4xMTI1MyAxMS44NzUgMy45NTIgMTEuODc1IDQuOTg3NTNWNS44MjA4N0MxMi4zNDY3IDUuODIxMDIgMTIuNzU5OSA1LjgyMjMyIDEzLjEyNDkgNS44MzMyN0MxMy4xMjUgNS44MjkxNSAxMy4xMjUgNS44MjUwMSAxMy4xMjUgNS44MjA4N1Y0Ljk4NzUzQzEzLjEyNSAzLjI2MTY1IDExLjcyNTkgMS44NjI1MyAxMCAxLjg2MjUzQzguMjc0MTEgMS44NjI1MyA2Ljg3NSAzLjI2MTY1IDYuODc1IDQuOTg3NTNWNS44MjA4N0M2Ljg3NSA1LjgyNTAyIDYuODc1MDQgNS44MjkxNiA2Ljg3NTEyIDUuODMzMjlDNy4yNDAxMSA1LjgyMjMzIDcuNjUzMzEgNS44MjEwNCA4LjEyNSA1LjgyMDg5VjQuOTg3NTNaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGQ9Ik04LjIzMTc4IDEzLjEyNDlDOC40ODk0NyAxMy44NTQgOS4xODQ4NCAxNC4zNzQ4IDEwLjAwMDIgMTQuMzc0OEMxMC44MTU3IDE0LjM3NDggMTEuNTExIDEzLjg1NCAxMS43Njg3IDEzLjEyNDlDMTEuODgzNyAxMi43OTk1IDEyLjI0MDggMTIuNjI4OSAxMi41NjYzIDEyLjc0MzlDMTIuODkxNyAxMi44NTg5IDEzLjA2MjMgMTMuMjE2IDEyLjk0NzMgMTMuNTQxNUMxMi41MTg2IDE0Ljc1NDQgMTEuMzYxOSAxNS42MjQ4IDEwLjAwMDIgMTUuNjI0OEM4LjYzODYzIDE1LjYyNDggNy40ODE5MyAxNC43NTQ0IDcuMDUzMjMgMTMuNTQxNUM2LjkzODIgMTMuMjE2IDcuMTA4NzggMTIuODU4OSA3LjQzNDIzIDEyLjc0MzlDNy43NTk2NyAxMi42Mjg5IDguMTE2NzUgMTIuNzk5NSA4LjIzMTc4IDEzLjEyNDlaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=" alt=""/></span><span class="nav-item__label">Категории</span></a>
-    <a href="/cabinet/goals" class="nav-item is-active"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTYuNDMwNCAxNi45Njg2QzE3LjYxOTIgMTYuMzIwNCAxOC4zMzMzIDE1LjQ4OTMgMTguMzMzMyAxNC41ODMzQzE4LjMzMzMgMTMuNjIyOCAxNy41MzA5IDEyLjc0NjcgMTYuMjExNCAxMi4wODMzQzE0LjY4NTUgMTEuMzE2MSAxMi40NjggMTAuODMzMyA5Ljk5OTk2IDEwLjgzMzNDNy41MzE5IDEwLjgzMzMgNS4zMTQ0NCAxMS4zMTYxIDMuNzg4NTUgMTIuMDgzM0MyLjQ2OSAxMi43NDY3IDEuNjY2NjMgMTMuNjIyOCAxLjY2NjYzIDE0LjU4MzNDMS42NjY2MyAxNS41NDM3IDIuNDY5IDE2LjQxOTggMy43ODg1NSAxNy4wODMzQzUuMzE0NDQgMTcuODUwNCA3LjUzMTkgMTguMzMzMyA5Ljk5OTk2IDE4LjMzMzNDMTIuNTg4OCAxOC4zMzMzIDE0LjkwMTkgMTcuODAyIDE2LjQzMDQgMTYuOTY4NloiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00LjE2NjYzIDcuMDk1NjFDNC4xNjY2MyA0LjA5NzMzIDYuNzc4MyAxLjY2Njc1IDkuOTk5OTYgMS42NjY3NUMxMy4yMjE2IDEuNjY2NzUgMTUuODMzMyA0LjA5NzMzIDE1LjgzMzMgNy4wOTU2MUMxNS44MzMzIDEwLjA3MDQgMTMuOTcxNSAxMy41NDE3IDExLjA2NjcgMTQuNzgzQzEwLjM4OTUgMTUuMDcyNCA5LjYxMDQgMTUuMDcyNCA4LjkzMzI0IDE0Ljc4M0M2LjAyODQyIDEzLjU0MTcgNC4xNjY2MyAxMC4wNzA0IDQuMTY2NjMgNy4wOTU2MVpNOS45OTk5NiA5LjE2Njc1QzEwLjkyMDQgOS4xNjY3NSAxMS42NjY2IDguNDIwNTYgMTEuNjY2NiA3LjUwMDA4QzExLjY2NjYgNi41Nzk2MSAxMC45MjA0IDUuODMzNDEgOS45OTk5NiA1LjgzMzQxQzkuMDc5NDggNS44MzM0MSA4LjMzMzI5IDYuNTc5NjEgOC4zMzMyOSA3LjUwMDA4QzguMzMzMjkgOC40MjA1NiA5LjA3OTQ4IDkuMTY2NzUgOS45OTk5NiA5LjE2Njc1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Мои цели</span></a>
+    <a href="/cabinet/goals" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTYuNDMwNCAxNi45Njg2QzE3LjYxOTIgMTYuMzIwNCAxOC4zMzMzIDE1LjQ4OTMgMTguMzMzMyAxNC41ODMzQzE4LjMzMzMgMTMuNjIyOCAxNy41MzA5IDEyLjc0NjcgMTYuMjExNCAxMi4wODMzQzE0LjY4NTUgMTEuMzE2MSAxMi40NjggMTAuODMzMyA5Ljk5OTk2IDEwLjgzMzNDNy41MzE5IDEwLjgzMzMgNS4zMTQ0NCAxMS4zMTYxIDMuNzg4NTUgMTIuMDgzM0MyLjQ2OSAxMi43NDY3IDEuNjY2NjMgMTMuNjIyOCAxLjY2NjYzIDE0LjU4MzNDMS42NjY2MyAxNS41NDM3IDIuNDY5IDE2LjQxOTggMy43ODg1NSAxNy4wODMzQzUuMzE0NDQgMTcuODUwNCA3LjUzMTkgMTguMzMzMyA5Ljk5OTk2IDE4LjMzMzNDMTIuNTg4OCAxOC4zMzMzIDE0LjkwMTkgMTcuODAyIDE2LjQzMDQgMTYuOTY4NloiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik00LjE2NjYzIDcuMDk1NjFDNC4xNjY2MyA0LjA5NzMzIDYuNzc4MyAxLjY2Njc1IDkuOTk5OTYgMS42NjY3NUMxMy4yMjE2IDEuNjY2NzUgMTUuODMzMyA0LjA5NzMzIDE1LjgzMzMgNy4wOTU2MUMxNS44MzMzIDEwLjA3MDQgMTMuOTcxNSAxMy41NDE3IDExLjA2NjcgMTQuNzgzQzEwLjM4OTUgMTUuMDcyNCA5LjYxMDQgMTUuMDcyNCA4LjkzMzI0IDE0Ljc4M0M2LjAyODQyIDEzLjU0MTcgNC4xNjY2MyAxMC4wNzA0IDQuMTY2NjMgNy4wOTU2MVpNOS45OTk5NiA5LjE2Njc1QzEwLjkyMDQgOS4xNjY3NSAxMS42NjY2IDguNDIwNTYgMTEuNjY2NiA3LjUwMDA4QzExLjY2NjYgNi41Nzk2MSAxMC45MjA0IDUuODMzNDEgOS45OTk5NiA1LjgzMzQxQzkuMDc5NDggNS44MzM0MSA4LjMzMzI5IDYuNTc5NjEgOC4zMzMyOSA3LjUwMDA4QzguMzMzMjkgOC40MjA1NiA5LjA3OTQ4IDkuMTY2NzUgOS45OTk5NiA5LjE2Njc1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K" alt=""/></span><span class="nav-item__label">Мои цели</span></a>
     <a href="/cabinet/budget"           class="nav-item"><span class="nav-item__icon"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.07642 8.01193C4.07642 7.67661 4.34612 7.40479 4.67883 7.40479H7.89168C8.22438 7.40479 8.49409 7.67661 8.49409 8.01193C8.49409 8.34724 8.22438 8.61907 7.89168 8.61907H4.67883C4.34612 8.61907 4.07642 8.34724 4.07642 8.01193Z" fill="#CBD5E1"/><path fill-rule="evenodd" clip-rule="evenodd" d="M17.6571 8.33639C17.6052 8.33321 17.5487 8.33323 17.4902 8.33326L17.4756 8.33326H15.1792C13.2864 8.33326 11.6667 9.77997 11.6667 11.6666C11.6667 13.5532 13.2864 14.9999 15.1792 14.9999H17.4756L17.4902 14.9999C17.5487 14.9999 17.6052 15 17.6571 14.9968C18.4259 14.9496 19.1059 14.3654 19.1631 13.5494C19.1668 13.4959 19.1668 13.4383 19.1667 13.3848L19.1667 13.3703V9.96289L19.1667 9.94838C19.1668 9.89492 19.1668 9.83724 19.1631 9.78373C19.1059 8.96774 18.4259 8.38353 17.6571 8.33639ZM14.9756 12.5555C15.4629 12.5555 15.8579 12.1575 15.8579 11.6666C15.8579 11.1757 15.4629 10.7777 14.9756 10.7777C14.4883 10.7777 14.0932 11.1757 14.0932 11.6666C14.0932 12.1575 14.4883 12.5555 14.9756 12.5555Z" fill="#CBD5E1"/><path opacity="0.5" d="M17.6163 8.33468C17.6162 7.35084 17.5805 6.29547 16.9516 5.5389C16.8908 5.46586 16.8262 5.39495 16.7574 5.32612C16.1337 4.70248 15.343 4.42572 14.3659 4.29436C13.4166 4.16673 12.2036 4.16674 10.6721 4.16675H8.9114C7.37994 4.16674 6.1669 4.16673 5.21756 4.29436C4.24054 4.42572 3.44975 4.70248 2.82612 5.32612C2.20248 5.94975 1.92572 6.74055 1.79436 7.71756C1.66673 8.66691 1.66674 9.87993 1.66675 11.4114V11.5054C1.66674 13.0369 1.66673 14.2499 1.79436 15.1993C1.92572 16.1763 2.20248 16.9671 2.82612 17.5907C3.44975 18.2143 4.24054 18.4911 5.21756 18.6225C6.1669 18.7501 7.37992 18.7501 8.91137 18.7501H10.6721C12.2035 18.7501 13.4166 18.7501 14.3659 18.6225C15.343 18.4911 16.1337 18.2143 16.7574 17.5907C16.9278 17.4203 17.0725 17.2371 17.1956 17.0406C17.571 16.441 17.6163 15.7062 17.6163 14.9988C17.5761 15.0001 17.5337 15.0001 17.4902 15.0001L15.1792 15.0001C13.2864 15.0001 11.6667 13.5534 11.6667 11.6667C11.6667 9.78014 13.2864 8.33342 15.1792 8.33342L17.4902 8.33342C17.5337 8.3334 17.5761 8.33339 17.6163 8.33468Z" fill="#CBD5E1"/><path d="M8.41778 2.14351L6.66657 3.32719L5.22217 4.29372C6.1708 4.16673 7.38233 4.16674 8.91122 4.16675H10.6719C12.2034 4.16674 13.4164 4.16673 14.3658 4.29436C14.5567 4.32004 14.7406 4.35126 14.9174 4.38955L13.3332 3.33341L11.5728 2.14351C10.6323 1.50783 9.35825 1.50783 8.41778 2.14351Z" fill="#CBD5E1"/></svg></span><span class="nav-item__label">Мой бюджет</span></a>
     <a href="/cabinet/analytics" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNNS4xODUwMyAzLjgzNDI5QzUuNTU1NSAzLjU4Njc1IDUuOTQ0NDkgMy4zNzIwNSA2LjM0NzU0IDMuMTkxNTVDNy40OTA3NyAyLjY3OTU3IDguMDYyMzkgMi40MjM1OCA4LjgyMjg0IDIuOTE2MjVDOS41ODMzIDMuNDA4OTIgOS41ODMzIDQuMjE3MDkgOS41ODMzIDUuODMzNDJWNy4wODM0MkM5LjU4MzMgOC42NTQ3NyA5LjU4MzMgOS40NDA0NCAxMC4wNzE1IDkuOTI4NkMxMC41NTk2IDEwLjQxNjggMTEuMzQ1MyAxMC40MTY4IDEyLjkxNjYgMTAuNDE2OEgxNC4xNjY2QzE1Ljc4MyAxMC40MTY4IDE2LjU5MTEgMTAuNDE2OCAxNy4wODM4IDExLjE3NzJDMTcuNTc2NSAxMS45Mzc3IDE3LjMyMDUgMTIuNTA5MyAxNi44MDg1IDEzLjY1MjVDMTYuNjI4IDE0LjA1NTYgMTYuNDEzMyAxNC40NDQ1IDE2LjE2NTggMTQuODE1QzE1LjI5NTkgMTYuMTE2OSAxNC4wNTk1IDE3LjEzMTYgMTIuNjEyOSAxNy43MzA4QzExLjE2NjMgMTguMzMgOS41NzQ1MSAxOC40ODY4IDguMDM4ODMgMTguMTgxM0M2LjUwMzE1IDE3Ljg3NTggNS4wOTI1MyAxNy4xMjE4IDMuOTg1MzcgMTYuMDE0N0MyLjg3ODIgMTQuOTA3NSAyLjEyNDIxIDEzLjQ5NjkgMS44MTg3NSAxMS45NjEyQzEuNTEzMjggMTAuNDI1NSAxLjY3MDA2IDguODMzNzYgMi4yNjkyNSA3LjM4NzE4QzIuODY4NDQgNS45NDA1OSAzLjg4MzE0IDQuNzA0MTggNS4xODUwMyAzLjgzNDI5WiIgZmlsbD0iI0NCRDVFMSIvPgo8cGF0aCBkPSJNMTcuODcxNyA1Ljg5MDc2QzE3LjE5NTEgNC4xNzM1MSAxNS44MjY0IDIuODA0NzQgMTQuMTA5MSAyLjEyODI0QzEyLjgyNDUgMS42MjIxNiAxMS42NjY2IDIuNzg1ODkgMTEuNjY2NiA0LjE2NjZWNy40OTk5M0MxMS42NjY2IDcuOTYwMTcgMTIuMDM5NyA4LjMzMzI3IDEyLjUgOC4zMzMyN0gxNS44MzMzQzE3LjIxNCA4LjMzMzI3IDE4LjM3NzcgNy4xNzUzOCAxNy44NzE3IDUuODkwNzZaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=" alt=""/></span><span class="nav-item__label">Аналитика</span></a>
     <a href="/cabinet/family" class="nav-item"><span class="nav-item__icon"><img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik05LjM3NDk2IDEuNjY2NzVDOS4zNzQ5NiAxLjMyMTU3IDkuNjU0NzggMS4wNDE3NSA5Ljk5OTk2IDEuMDQxNzVDMTQuOTQ3NSAxLjA0MTc1IDE4Ljk1ODMgNS4wNTI1MyAxOC45NTgzIDEwLjAwMDFDMTguOTU4MyAxNC45NDc2IDE0Ljk0NzUgMTguOTU4NCA5Ljk5OTk2IDE4Ljk1ODRDNS4wNTI0MSAxOC45NTg0IDEuMDQxNjMgMTQuOTQ3NiAxLjA0MTYzIDEwLjAwMDFDMS4wNDE2MyA5LjY1NDkgMS4zMjE0NSA5LjM3NTA4IDEuNjY2NjMgOS4zNzUwOEMyLjAxMTggOS4zNzUwOCAyLjI5MTYzIDkuNjU0OSAyLjI5MTYzIDEwLjAwMDFDMi4yOTE2MyAxNC4yNTczIDUuNzQyNzYgMTcuNzA4NCA5Ljk5OTk2IDE3LjcwODRDMTQuMjU3MiAxNy43MDg0IDE3LjcwODMgMTQuMjU3MyAxNy43MDgzIDEwLjAwMDFDMTcuNzA4MyA1Ljc0Mjg5IDE0LjI1NzIgMi4yOTE3NSA5Ljk5OTk2IDIuMjkxNzVDOS42NTQ3OCAyLjI5MTc1IDkuMzc0OTYgMi4wMTE5MyA5LjM3NDk2IDEuNjY2NzVaTTkuOTk5OTYgNi44NzUwOEMxMC4zNDUxIDYuODc1MDggMTAuNjI1IDcuMTU0OSAxMC42MjUgNy41MDAwOFYxMC4yMDg0SDEzLjMzMzNDMTMuNjc4NSAxMC4yMDg0IDEzLjk1ODMgMTAuNDg4MiAxMy45NTgzIDEwLjgzMzRDMTMuOTU4MyAxMS4xNzg2IDEzLjY3ODUgMTEuNDU4NCAxMy4zMzMzIDExLjQ1ODRIOS45OTk5NkM5LjY1NDc4IDExLjQ1ODQgOS4zNzQ5NiAxMS4xNzg2IDkuMzc0OTYgMTAuODMzNFY3LjUwMDA4QzkuMzc0OTYgNy4xNTQ5IDkuNjU0NzggNi44NzUwOCA5Ljk5OTk2IDYuODc1MDhaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNNy41ODI5NCAxLjk5ODAzQzcuNzA3MjQgMi4zMjAwNSA3LjU0Njk3IDIuNjgxODcgNy4yMjQ5NSAyLjgwNjE3QzcuMTA3MDkgMi44NTE2NyA2Ljk5MDYyIDIuODk5OTggNi44NzU2MiAyLjk1MTA0QzYuNTYwMTQgMy4wOTEwOSA2LjE5MDg1IDIuOTQ4ODggNi4wNTA3OSAyLjYzMzM5QzUuOTEwNzMgMi4zMTc5MSA2LjA1Mjk1IDEuOTQ4NjEgNi4zNjg0MyAxLjgwODU2QzYuNTAyMTkgMS43NDkxOCA2LjYzNzY3IDEuNjkyOTcgNi43NzQ4IDEuNjQwMDRDNy4wOTY4MSAxLjUxNTc0IDcuNDU4NjMgMS42NzYwMSA3LjU4Mjk0IDEuOTk4MDNaTTQuNzA2MzggMy41MzM2NEM0Ljk0NDQzIDMuNzgzNTkgNC45MzQ3OCA0LjE3OTIgNC42ODQ4MiA0LjQxNzI2QzQuNTkzNDMgNC41MDQyOSA0LjUwNDE3IDQuNTkzNTUgNC40MTcxMyA0LjY4NDk0QzQuMTc5MDggNC45MzQ5IDMuNzgzNDcgNC45NDQ1NSAzLjUzMzUxIDQuNzA2NUMzLjI4MzU1IDQuNDY4NDUgMy4yNzM5IDQuMDcyODQgMy41MTE5NSAzLjgyMjg4QzMuNjEzMDEgMy43MTY3NyAzLjcxNjY1IDMuNjEzMTMgMy44MjI3NiAzLjUxMjA4QzQuMDcyNzIgMy4yNzQwMiA0LjQ2ODMzIDMuMjgzNjggNC43MDYzOCAzLjUzMzY0Wk0yLjYzMzI3IDYuMDUwOTFDMi45NDg3NiA2LjE5MDk3IDMuMDkwOTcgNi41NjAyNiAyLjk1MDkxIDYuODc1NzVDMi44OTk4NiA2Ljk5MDc0IDIuODUxNTUgNy4xMDcyMSAyLjgwNjA1IDcuMjI1MDdDMi42ODE3NCA3LjU0NzA5IDIuMzE5OTMgNy43MDczNyAxLjk5NzkxIDcuNTgzMDZDMS42NzU4OSA3LjQ1ODc2IDEuNTE1NjEgNy4wOTY5NCAxLjYzOTkyIDYuNzc0OTJDMS42OTI4NSA2LjYzNzggMS43NDkwNiA2LjUwMjMxIDEuODA4NDMgNi4zNjg1NkMxLjk0ODQ5IDYuMDUzMDcgMi4zMTc3OCA1LjkxMDg1IDIuNjMzMjcgNi4wNTA5MVoiIGZpbGw9IiNDQkQ1RTEiLz4KPC9zdmc+Cg==" alt=""/></span><span class="nav-item__lw"><span class="nav-item__name">Семейный доступ</span><span class="nav-item__soon">Скоро!</span></span></a>
@@ -466,330 +401,15 @@
 </div>
 
 
-<!-- MODAL: Добавить цель (информационная) -->
-<div class="modal-overlay" id="modalAddGoal" style="display:none;">
-  <div class="modal">
-    <button class="modal-close-btn" onclick="closeModal('modalAddGoal')">&#10005;</button>
-    <div class="modal-title">Финансовая цель</div>
-    <div class="modal-body">
-      Финансовые цели создаются и настраиваются через бота.<br><br>
-      Запусти бота и выбери раздел <strong>«Мои цели»</strong>, чтобы отредактировать или добавить новую цель.
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('modalAddGoal')">Закрыть</button>
-      <a href="#" class="btn btn-primary btn-sm" data-bot-widget-trigger>Открыть бота</a>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Удалить цель -->
-<div class="modal-overlay" id="modal-delete-goal" style="display:none;">
-  <div class="modal">
-    <button class="modal-close-btn" onclick="window.closeModal('modal-delete-goal')">&#10005;</button>
-    <div class="modal-title">Удалить цель</div>
-    <div class="modal-body" id="modal-delete-goal-body">Вы уверены, что хотите удалить эту цель?</div>
-    <div class="modal-actions modal-footer-delete" style="justify-content:flex-end;">
-      <button class="btn btn-secondary btn-sm" onclick="window.closeModal('modal-delete-goal')">Отмена</button>
-      <button class="btn btn-danger-text btn-sm btn-delete-primary" onclick="window.confirmDeleteGoal()">Удалить</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL: Выбрать цель (expired, несколько целей) -->
-<div class="modal-overlay" id="modalChooseGoal" style="display:none;">
-  <div class="modal" style="max-width:500px;">
-    <button class="modal-close-btn" onclick="closeModal('modalChooseGoal')">&#10005;</button>
-    <div class="modal-title">Выберите одну цель</div>
-    <div class="modal-body">Подписка закончилась. Выберите одну цель, которую хотите видеть.</div>
-    <div class="modal-radio-list" id="chooseGoalList"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('modalChooseGoal')">Отмена</button>
-      <button class="btn btn-primary btn-sm" id="btnConfirmChoose" onclick="confirmChooseGoal()">Подтвердить</button>
-    </div>
-  </div>
-</div>
-
-
 <script type="module">
-  import { initLayout, loadUser, getToken, authHeaders, renderHeader, initLogoutModal } from './layout.js';
+  import { initLayout, loadUser, initLogoutModal } from './layout.js';
   import { initBotWidgetTrigger } from './bot-widget.js';
   document.addEventListener('DOMContentLoaded', function() {
-    initLayout('goals');
+    initLayout('family');
     initLogoutModal();
     initBotWidgetTrigger();
     loadUser();
-
-  // ── Helpers ──────────────────────────────────────────────
-  function fmtD(iso) { var d = new Date(iso); return [String(d.getDate()).padStart(2,'0'), String(d.getMonth()+1).padStart(2,'0'), d.getFullYear()].join('-'); }
-  function daysLeft(iso) { return Math.max(0, Math.ceil((new Date(iso) - new Date()) / 86400000)); }
-  function plural(n) { return n%10===1&&n%100!==11 ? 'день' : [2,3,4].includes(n%10)&&![12,13,14].includes(n%100) ? 'дня' : 'дней'; }
-  function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-  function fmtNum(n) { return Math.round(n).toLocaleString('ru-RU'); }
-
-  var RU_MONTHS_NOM = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
-  function fmtGoalDate(iso) {
-    if (!iso) return '—';
-    var d = new Date(iso + (iso.length === 7 ? '-01' : ''));
-    return RU_MONTHS_NOM[d.getMonth()] + ' ' + d.getFullYear();
-  }
-  function monthsUntil(iso) {
-    if (!iso) return 1;
-    var target = new Date(iso + (iso.length === 7 ? '-01' : ''));
-    var now = new Date();
-    return Math.max(1, (target.getFullYear() - now.getFullYear()) * 12 + (target.getMonth() - now.getMonth()));
-  }
-
-  // ── Modals ───────────────────────────────────────────────
-  function openModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'flex'; }
-  function closeModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
-  function closeAllModals() {
-    ['modalAddGoal','modal-delete-goal','modalChooseGoal'].forEach(closeModal);
-  }
-
-  // ── Delete goal modal ────────────────────────────────────
-  var _deleteGoalId = null;
-
-  function openDeleteGoalModal(goalId, goalName) {
-    _deleteGoalId = goalId;
-    var body = document.getElementById('modal-delete-goal-body');
-    if (body) body.innerHTML = 'Вы уверены, что хотите удалить цель <strong>«' + escH(goalName) + '»</strong>? Это действие нельзя отменить.';
-    openModal('modal-delete-goal');
-  }
-
-  async function confirmDeleteGoal() {
-    if (!_deleteGoalId) return;
-    var btn = document.querySelector('#modal-delete-goal .btn-delete-primary');
-    if (btn) { btn.disabled = true; btn.textContent = 'Удаление...'; }
-    try {
-      var res = await fetch('/api/goals/' + _deleteGoalId, {
-        method: 'DELETE',
-        headers: authHeaders()
-      });
-      if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      closeModal('modal-delete-goal');
-      _deleteGoalId = null;
-      await loadPage();
-    } catch(e) {
-      console.error('[goals] delete error:', e);
-      if (btn) { btn.disabled = false; btn.textContent = 'Удалить'; }
-      alert('Ошибка при удалении. Попробуйте ещё раз.');
-    }
-  }
-
-  // ── Render functions ─────────────────────────────────────
-  function renderNoGoals(container) {
-    container.innerHTML = '<div class="goals-grid">' + renderBotCard('no_goals') + '</div>';
-  }
-
-  function renderActiveGoals(container, goals) {
-    var html = '<div class="goals-grid">';
-    goals.forEach(function(g) { html += renderGoalCard(g, false); });
-    var scenario = goals.length >= 1 ? 'one_goal_active' : 'no_goals';
-    html += renderBotCard(scenario);
-    html += '</div>';
-    container.innerHTML = html;
-  }
-
-  function renderExpiredSingle(container, goals, goalToShow) {
-    var html = expiredBanner() + '<div class="goals-grid">';
-    goals.forEach(function(g) { html += renderGoalCard(g, g.id !== goalToShow.id); });
-    html += '</div>';
-    container.innerHTML = html;
-  }
-
-  function renderExpiredMultiple(container, goals) {
-    var html = expiredBanner() + '<div class="goals-grid">';
-    goals.forEach(function(g) { html += renderGoalCard(g, true); });
-    html += '</div>';
-    container.innerHTML = html;
-    buildChooseModal();
-    openModal('modalChooseGoal');
-  }
-
-  // ── Card helpers ─────────────────────────────────────────
-  function expiredBanner() {
-    return '<div class="expired-banner">' +
-      '<div class="expired-text"><strong>У вас закончилась подписка.</strong> Для доступа ко всем целям оплатите подписку.</div>' +
-      '<a href="#" class="btn btn-accent btn-sm" onclick="event.preventDefault(); window.openBotWidget();">Оплатить подписку</a>' +
-    '</div>';
-  }
-
-  function renderGoalCard(g, faded) {
-    var target = parseFloat(g.future_value) || parseFloat(g.target_amount) || 0;
-    var saved = parseFloat(g.initial_saved) || 0;
-    var pct = target > 0 ? Math.min(100, Math.round(saved / target * 100)) : 0;
-    var months = monthsUntil(g.target_date);
-    var monthly = g.monthly_payment ? parseFloat(g.monthly_payment) : Math.max(0, (target - saved) / months);
-    var hasInflation = parseFloat(g.inflation_rate) > 0;
-    var hasYield = parseFloat(g.yield_rate) > 0;
-    var badges = '';
-    if (hasInflation) badges += '<span class="badge badge-info">+ инфляция</span>';
-    if (hasYield) badges += '<span class="badge badge-success">+ доходность</span>';
-    var gId = String(g.id).replace(/'/g,"&#39;");
-    var gName = escH(g.name).replace(/'/g,"&#39;");
-
-    return '<div class="goal-card' + (faded ? ' faded' : '') + '">' +
-      '<div class="goal-name">' + escH(g.name) + '</div>' +
-      '<div class="goal-meta">' +
-        '<div class="goal-meta-label">Когда:</div>' +
-        '<div class="goal-meta-value">' + fmtGoalDate(g.target_date) + '</div>' +
-      '</div>' +
-      '<div class="goal-meta">' +
-        '<div class="goal-meta-label" style="margin-bottom:4px">Расчётная цель накоплений:</div>' +
-        '<div class="goal-sum-row">' +
-          '<div class="goal-sum-value">' + fmtNum(target) + ' ₽</div>' +
-          (badges ? '<div class="badges-row">' + badges + '</div>' : '') +
-        '</div>' +
-      '</div>' +
-      '<div class="goal-monthly-section">' +
-        '<div class="goal-monthly-label">Нужно откладывать:</div>' +
-        '<div class="goal-monthly-value">' + fmtNum(monthly) + ' ₽/мес</div>' +
-      '</div>' +
-      '<div class="goal-progress-section">' +
-        '<div class="goal-progress-label">Твой прогресс:</div>' +
-        '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%"></div></div>' +
-        '<div class="goal-progress-amount">' + fmtNum(saved) + ' ₽ (' + pct + '%)</div>' +
-      '</div>' +
-      '<div class="card-actions">' +
-        '<button class="btn btn-danger-text btn-sm" onclick="window.openDeleteGoalModal(\'' + gId + '\',\'' + gName + '\')">Удалить</button>' +
-        '<button class="btn btn-mini-dark btn-sm" onclick="window.openModal(\'modalAddGoal\');">Редактировать</button>' +
-      '</div>' +
-    '</div>';
-  }
-
-  function renderBotCard(scenario) {
-    var bubbles;
-    if (scenario === 'one_goal_active') {
-      bubbles =
-        '<div class="bot-bubble">Ты молодец! Цели поставлены, а значит — достижимы! 💪</div>' +
-        '<div class="bot-bubble">Если хочешь, можем поставить ещё одну цель 🤗</div>';
-    } else {
-      // 'no_goals' и любой нераспознанный сценарий — прежнее поведение
-      bubbles = '<div class="bot-bubble">Упс! Похоже, у тебя ещё нет установленных финансовых целей. Давай сделаем? 🤗</div>';
-    }
-    return '<div class="bot-goal-card">' +
-      '<div class="bot-message-area">' +
-        '<div class="bot-avatar">' +
-          '<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI1LjAwMDUgMTAuMTY0MUMzNC41MjMxIDEwLjE2NDMgNDIuMjQyNiAxNi44MDY2IDQyLjI0MjcgMjVDNDIuMjQyNyAzMy4xOTM1IDM0LjUyMzEgMzkuODM1NyAyNS4wMDA1IDM5LjgzNTlDMjEuNjk1NSAzOS44MzU5IDE4LjYwNzIgMzkuMDM1NyAxNS45ODM5IDM3LjY0ODRDMTQuODM1OSAzOC42NTA3IDEzLjM0MjkgMzkuMjU4NCAxMS44MTg4IDM5LjMxOTNDMTIuNjA1IDM4LjI5NjkgMTMuMDU0MSAzNy4wMjE1IDEzLjA5NjIgMzUuNzMzNEM5LjgwNjgzIDMzLjAzMTggNy43NTczMiAyOS4yMjE4IDcuNzU3MzIgMjVDNy43NTczNiAxNi44MDY1IDE1LjQ3NzggMTAuMTY0MSAyNS4wMDA1IDEwLjE2NDFaTTguMjQ5NTEgMTkuMTI3QzcuMzc4MzcgMjAuOTkyNCA2LjkzNzAyIDIyLjk2NjggNi45MzcwMSAyNUM2LjkzNzAxIDI3LjAzNSA3LjM3ODE1IDI5LjAwODUgOC4yNDk1MSAzMC44NzNDNS45MjE1OCAzMC4xMDc2IDQuMjI3MDUgMjguNTkyMyA0LjIyNzA1IDI1QzQuMjI3MDggMjEuNTkyNiA1LjkyMTQgMTkuODkyNCA4LjI0OTUxIDE5LjEyN1pNNDEuNzUwNSAxOS4xMjdDNDQuMDc4NCAxOS44OTI1IDQ1Ljc3MjkgMjEuNTkyNyA0NS43NzI5IDI1QzQ1Ljc3MjkgMjguNTkyMyA0NC4wNzg1IDMwLjEwNzYgNDEuNzUwNSAzMC44NzNDNDIuNjIxOSAyOS4wMDg1IDQzLjA2MyAyNy4wMzUgNDMuMDYzIDI1QzQzLjA2MyAyMi45NjY5IDQyLjYyMTYgMjAuOTkyNCA0MS43NTA1IDE5LjEyN1pNMzUuNzE2MyAyMC41NzAzQzM1LjA3NTIgMTkuODYwMSAzNC4xODY5IDIwLjU3MDMgMzMuMjMgMjAuNTcwM0gxNi43N0MxNS44MjQ0IDIwLjU3MDMgMTQuOTE5MiAxOS44NyAxNC4yODM3IDIwLjU3MDNDMTIuNDg0MyAyMi41NTMxIDExLjQxMTYgMjIuMjg5MiAxMS40MTE2IDI1QzExLjQxMTYgMjcuNzEwOSAxMi40ODQ0IDI3Ljc2OTEgMTQuMjgzNyAyOS43NTJDMTQuOTE5MiAzMC40NTIxIDE2LjA3NzUgMzAuMzI5MSAxNy4wMjI5IDMwLjMyOTFIMzMuNTM2NkMzNC40ODIgMzAuMzI5MSAzNS4wODA5IDMxLjAyOTEgMzUuNzE2MyAzMC4zMjkxQzM3LjUxNTYgMjguMzQ2MiAzOC41ODg0IDI3LjcxMDkgMzguNTg4NCAyNUMzOC41ODg0IDIyLjMwMDQgMzcuNTAyNCAyMi41NDkyIDM1LjcxNjMgMjAuNTcwM1oiIGZpbGw9IiMyRkJGNzEiLz4KPHBhdGggZD0iTTM1LjEyMzkgMzEuMTkwOUgxNC45MTUxQzEyLjA3NjggMzEuMTkwOSA5Ljc3NTg4IDI4Ljg5IDkuNzc1ODggMjYuMDUxN1YyNC40NTM3QzkuNzc1ODggMjEuNjE1NCAxMi4wNzY4IDE5LjMxNDUgMTQuOTE1MSAxOS4zMTQ1SDM1LjEyMzlDMzcuOTYyMiAxOS4zMTQ1IDQwLjI2MzEgMjEuNjE1NCA0MC4yNjMxIDI0LjQ1MzdWMjYuMDUxN0M0MC4yNjMxIDI4Ljg5IDM3Ljk2MjIgMzEuMTkwOSAzNS4xMjM5IDMxLjE5MDlaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjYuNjQxOCAyNi40OTQ5QzI2Ljk2MzQgMjYuNDk0OSAyNy4xOTk1IDI2LjgwMjUgMjcuMTA4OSAyNy4xMTA3QzI2Ljg0MjggMjguMDE3MiAyNi4wMDUyIDI4LjY3OTIgMjUuMDEyMyAyOC42NzkyQzI0LjAyIDI4LjY3OTIgMjMuMTgyMyAyOC4wMTcyIDIyLjkxNjIgMjcuMTEwN0MyMi44MjU3IDI2LjgwMjUgMjMuMDYyMiAyNi40OTQ5IDIzLjM4MzMgMjYuNDk0OUgyNi42NDE4WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMTguMjg2MSAyNS40MDIxQzE4LjI4NjEgMjYuNjA4NSAxNy4zMDggMjcuNTg2NCAxNi4xMDE5IDI3LjU4NjRDMTQuODk1MyAyNy41ODY0IDEzLjkxNzIgMjYuNjA4NSAxMy45MTcyIDI1LjQwMjFDMTMuOTE3MiAyNC4xOTU3IDE0Ljg5NTMgMjMuMjE3NyAxNi4xMDE5IDIzLjIxNzdDMTcuMzA4IDIzLjIxNzcgMTguMjg2MSAyNC4xOTU3IDE4LjI4NjEgMjUuNDAyMVoiIGZpbGw9IiMxRTJBMzgiLz4KPHBhdGggZD0iTTE2LjYzOTIgMjUuNzY3NkMxNi43NzM1IDI1Ljc2NzYgMTYuODgyMyAyNS44NzY2IDE2Ljg4MjMgMjYuMDEwN0MxNi44ODIzIDI2LjE0NSAxNi43NzM2IDI2LjI1MzkgMTYuNjM5MiAyNi4yNTM5QzE2LjUwNDkgMjYuMjUzNyAxNi4zOTcgMjYuMTQ0OSAxNi4zOTcgMjYuMDEwN0MxNi4zOTcgMjUuODc2NyAxNi41MDUgMjUuNzY3OCAxNi42MzkyIDI1Ljc2NzZaTTE1LjUxOSAyNC4xNjExQzE1LjkwOTYgMjQuMTYxMiAxNi4yMjYxIDI0LjQ3NzcgMTYuMjI2MSAyNC44NjgyQzE2LjIyNiAyNS4yNTg1IDE1LjkwOTYgMjUuNTc1MSAxNS41MTkgMjUuNTc1MkMxNS4xMjg1IDI1LjU3NTIgMTQuODEyMSAyNS4yNTg1IDE0LjgxMiAyNC44NjgyQzE0LjgxMiAyNC40Nzc3IDE1LjEyODUgMjQuMTYxMSAxNS41MTkgMjQuMTYxMVoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0xNC41OTQ0IDI3Ljk1MTdDMTQuNDY3MiAyNy45NTE3IDE0LjM0NDEgMjcuODg0OSAxNC4yNzcxIDI3Ljc2NjRDMTQuMTc4IDI3LjU5MTQgMTQuMjQwNCAyNy4zNjg4IDE0LjQxNTYgMjcuMjY5N0MxNC40NDMyIDI3LjI1NCAxNS4xMDY3IDI2Ljg4NTEgMTYuMTAxOSAyNi44ODUxQzE3LjA5NjcgMjYuODg1MSAxNy43NjAyIDI3LjI1NCAxNy43ODgzIDI3LjI2OTdDMTcuOTYzIDI3LjM2ODggMTguMDI0NiAyNy41OTA5IDE3LjkyNTkgMjcuNzY2QzE3LjgyNjggMjcuOTQwNSAxNy42MDU5IDI4LjAwMjQgMTcuNDMwOCAyNy45MDQ0QzE3LjQxOTkgMjcuODk4NSAxNi44OTA4IDI3LjYxMzQgMTYuMTAxOSAyNy42MTM0QzE1LjMwODYgMjcuNjEzNCAxNC43NzgxIDI3LjkwMTYgMTQuNzcyNyAyNy45MDQ1QzE0LjcxNjEgMjcuOTM2NSAxNC42NTQ2IDI3Ljk1MTcgMTQuNTk0NCAyNy45NTE3WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMzYuMTA4NCAyNS40MDI2QzM2LjEwODQgMjYuNjA4OSAzNS4xMzAzIDI3LjU4NjkgMzMuOTIzOSAyNy41ODY5QzMyLjcxNzUgMjcuNTg2OSAzMS43Mzk1IDI2LjYwODkgMzEuNzM5NSAyNS40MDI2QzMxLjczOTUgMjQuMTk2MiAzMi43MTc1IDIzLjIxODIgMzMuOTIzOSAyMy4yMTgyQzM1LjEzMDMgMjMuMjE4MiAzNi4xMDg0IDI0LjE5NjIgMzYuMTA4NCAyNS40MDI2WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMzQuNDYxOSAyNS43Njc2QzM0LjU5NTUgMjUuNzY3NiAzNC43MDUgMjUuODc2NiAzNC43MDUxIDI2LjAxMDdDMzQuNzA1MSAyNi4xNDUgMzQuNTk1NSAyNi4yNTM5IDM0LjQ2MTkgMjYuMjUzOUMzNC4zMjc1IDI2LjI1MzcgMzQuMjE4OCAyNi4xNDQ4IDM0LjIxODggMjYuMDEwN0MzNC4yMTg4IDI1Ljg3NjggMzQuMzI3NSAyNS43Njc4IDM0LjQ2MTkgMjUuNzY3NlpNMzMuMzQxOCAyNC4xNjExQzMzLjczMTcgMjQuMTYxMyAzNC4wNDg4IDI0LjQ3NzggMzQuMDQ4OCAyNC44NjgyQzM0LjA0ODggMjUuMjU4NCAzMy43MzE3IDI1LjU3NSAzMy4zNDE4IDI1LjU3NTJDMzIuOTUxMiAyNS41NzUyIDMyLjYzNDggMjUuMjU4NSAzMi42MzQ4IDI0Ljg2ODJDMzIuNjM0OCAyNC40Nzc3IDMyLjk1MTIgMjQuMTYxMSAzMy4zNDE4IDI0LjE2MTFaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMzIuNDE2NSAyNy45NTE3QzMyLjI4OTggMjcuOTUxNyAzMi4xNjY3IDI3Ljg4NSAzMi4wOTk3IDI3Ljc2NjRDMzIuMDAwOCAyNy41OTE0IDMyLjA2MzIgMjcuMzY4OCAzMi4yMzgzIDI3LjI2OTdDMzIuMjY2MSAyNy4yNTQgMzIuOTI5NSAyNi44ODUxIDMzLjkyNDEgMjYuODg1MUMzNC45MTk3IDI2Ljg4NTEgMzUuNTgzMSAyNy4yNTQgMzUuNjEwNCAyNy4yNjk3QzM1Ljc4NiAyNy4zNjg4IDM1Ljg0NzMgMjcuNTkwOSAzNS43NDg0IDI3Ljc2NkMzNS42NDk1IDI3Ljk0MDYgMzUuNDI4IDI4LjAwMjMgMzUuMjUzNCAyNy45MDQ0QzM1LjI0MjYgMjcuODk4NSAzNC43MTM2IDI3LjYxMzQgMzMuOTI0MSAyNy42MTM0QzMzLjEzMDkgMjcuNjEzNCAzMi42MDA0IDI3LjkwMTUgMzIuNTk1MiAyNy45MDQ1QzMyLjUzOTEgMjcuOTM2NSAzMi40NzczIDI3Ljk1MTcgMzIuNDE2NSAyNy45NTE3WiIgZmlsbD0iIzFFMkEzOCIvPgo8cGF0aCBkPSJNMjUuMzEzNiAxMy4zNTg3QzI1LjM1ODggMTQuMjk1MiAyNi4wNjkxIDE1LjA1ODkgMjcuMTA1MyAxNS4zMjQ1QzI1Ljk5NDkgMTUuNTcxMSAyNS4wNjUzIDE2LjMyMDMgMjQuNzQ5IDE3LjI1MzVDMjQuNzAzOCAxNi4zMTcgMjMuOTkzNCAxNS41NTM0IDIyLjk1NzIgMTUuMjg3OCIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cg==" alt="Финник" width="44" height="44"/>' +
-        '</div>' +
-        '<div class="bot-time">Финник · сейчас</div>' +
-        bubbles +
-      '</div>' +
-      '<div class="bot-card-action">' +
-        '<button class="btn btn-dark btn-sm" onclick="window.openModal(\'modalAddGoal\')">+ Добавить цель</button>' +
-      '</div>' +
-    '</div>';
-  }
-
-  // ── Choose goal modal ────────────────────────────────────
-  var chosenGoalId = null;
-
-  function buildChooseModal() {
-    var list = document.getElementById('chooseGoalList');
-    list.innerHTML = '';
-    allGoals.forEach(function(g) {
-      var item = document.createElement('div');
-      item.className = 'modal-radio-item';
-      item.dataset.id = g.id;
-      item.innerHTML =
-        '<div class="radio-circle"><div class="radio-dot"></div></div>' +
-        '<span class="radio-label">' + escH(g.name) + '</span>';
-      item.addEventListener('click', function() {
-        document.querySelectorAll('#chooseGoalList .modal-radio-item').forEach(function(el) { el.classList.remove('selected'); });
-        item.classList.add('selected');
-        chosenGoalId = g.id;
-        document.getElementById('btnConfirmChoose').disabled = false;
-      });
-      list.appendChild(item);
-    });
-    document.getElementById('btnConfirmChoose').disabled = true;
-    chosenGoalId = null;
-  }
-
-  function confirmChooseGoal() {
-    if (!chosenGoalId) return;
-    localStorage.setItem('mercury_chosen_goal', String(chosenGoalId));
-    closeModal('modalChooseGoal');
-    var cont = document.getElementById('goalsContainer');
-    renderPage(cont, allGoals, subStatus);
-  }
-
-  // ── Main load function ───────────────────────────────────
-  var allGoals = [];
-  var subStatus = null;
-  var container = null;
-
-  function renderPage(cont, goals, status) {
-    var isActive = status === 'active' || status === 'trial';
-
-    if (goals.length === 0) {
-      renderNoGoals(cont);
-      return;
-    }
-
-    if (isActive) {
-      renderActiveGoals(cont, goals);
-      return;
-    }
-
-    // Expired
-    var stored = localStorage.getItem('mercury_chosen_goal');
-    if (goals.length > 1 && !stored) {
-      renderExpiredMultiple(cont, goals);
-      return;
-    }
-
-    var goalToShow = goals.length === 1
-      ? goals[0]
-      : (goals.find(function(g) { return String(g.id) === stored; }) || goals[0]);
-    renderExpiredSingle(cont, goals, goalToShow);
-  }
-
-  async function loadPage() {
-    container = document.getElementById('goalsContainer');
-    container.innerHTML = '<div style="color:#9CA3AF;font-size:14px;">Загрузка...</div>';
-    try {
-      var token = getToken();
-      if (!token) { window.location.replace('/cabinet/login'); return; }
-      var [meRes, goalsRes] = await Promise.all([
-        fetch('/api/me', { headers: authHeaders() }),
-        fetch('/api/goals', { headers: authHeaders() })
-      ]);
-      if (meRes.status === 401 || goalsRes.status === 401) {
-        window.location.replace('/cabinet/login'); return;
-      }
-      var meData = await meRes.json();
-      var goalsData = await goalsRes.json();
-      subStatus = meData.subscription ? meData.subscription.status : null;
-      allGoals = (goalsData.data || []).filter(function(g) { return g.status === 'active'; });
-      renderHeader({ username: meData.username || 'Пользователь', subscription: meData.subscription || null });
-      renderPage(container, allGoals, subStatus);
-    } catch(e) {
-      if (container) container.innerHTML = '<div style="color:#EF4444;font-size:14px;">Ошибка загрузки данных.</div>';
-      console.error('[goals] load error:', e);
-    }
-  }
-
-  // ── Expose globals ───────────────────────────────────────
-  window.openModal           = openModal;
-  window.closeModal          = closeModal;
-  window.closeAllModals      = closeAllModals;
-  window.openDeleteGoalModal = openDeleteGoalModal;
-  window.confirmDeleteGoal   = confirmDeleteGoal;
-  window.confirmChooseGoal   = confirmChooseGoal;
-
-  // Close modals on overlay click
-  ['modalAddGoal','modal-delete-goal','modalChooseGoal'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.addEventListener('click', function(e) {
-      if (e.target === el) closeModal(id);
-    });
   });
-
-  loadPage();
-
-  }); // DOMContentLoaded
 </script>
 </body>
 </html>
