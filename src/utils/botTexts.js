@@ -99,9 +99,35 @@ export function buildMultiConfirmationText(items) {
   const head = `Записал ${n} ${plural(n, 'запись', 'записи', 'записей')} ✅`;
   const dates = [...new Set(items.map((i) => i.transaction_date))];
   if (dates.length === 1) {
-    return `${head}\n${items.map(entryLine).join('\n')}\n📅 ${formatRuDate(dates[0])}`;
+    return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)}`).join('\n')}\n📅 ${formatRuDate(dates[0])}`;
   }
-  return `${head}\n${items.map((i) => `${entryLine(i)} · ${formatRuDate(i.transaction_date)}`).join('\n')}`;
+  return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)} · ${formatRuDate(i.transaction_date)}`).join('\n')}`;
+}
+
+// Кнопки «Исправить / Удалить» для каждой записи из сообщения с несколькими записями.
+// ids[k] — id записи в базе для items[k] (null, если запись не сохранилась — для неё кнопок нет).
+const MULTI_BUTTONS_LIMIT = 10;
+
+export function buildMultiKeyboard(ids) {
+  const rows = [];
+  ids.slice(0, MULTI_BUTTONS_LIMIT).forEach((id, k) => {
+    if (!id) return;
+    rows.push([
+      { text: `✏️ Исправить ${k + 1}`, callback_data: `tx:edit:${id}` },
+      { text: `🗑 Удалить ${k + 1}`, callback_data: `tx:delete:${id}` },
+    ]);
+  });
+  rows.push([{ text: '☰ Главное меню', callback_data: 'menu:main' }]);
+  return { reply_markup: { inline_keyboard: rows } };
+}
+
+// Текст для распознавания, когда бот ждал категорию для ранее присланной суммы.
+// Ответ без цифр («одежда») — это описание к сумме: склеиваем. Ответ с цифрами
+// («4700 справка для Насти») — уже полная запись: сумму из ожидания не добавляем,
+// иначе одна трата превращается в две.
+export function textForPendingAmount(reply, pendingAmount) {
+  const text = String(reply ?? '').trim();
+  return /\d/.test(text) ? text : `${text} ${pendingAmount}`;
 }
 
 // ── Тексты ошибок и уточнений ────────────────────────────────────────────

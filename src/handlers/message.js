@@ -14,7 +14,7 @@ import { handleSubscriptionEmailState } from './subscription.js';
 import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
-import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, TEXTS } from '../utils/botTexts.js';
+import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
 import { todayStr } from '../utils/dateTz.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -229,8 +229,10 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
 
   if (Array.isArray(parsed)) {
     let savedCount = 0;
+    const ids = [];
     for (const item of parsed) {
       const id = await saveTransaction(userId, item, rawMessage);
+      ids.push(id);
       if (id !== null) savedCount++;
     }
     if (savedCount === 0) {
@@ -241,7 +243,7 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
       return;
     }
     const text = buildMultiConfirmationText(parsed);
-    await bot.sendMessage(chatId, text, MENU_KEYBOARD);
+    await bot.sendMessage(chatId, text, buildMultiKeyboard(ids));
   } else {
     const txId = await saveTransaction(userId, parsed, rawMessage);
     if (txId === null) {
@@ -499,7 +501,7 @@ export async function handleMessage(bot, msg) {
   if (state?.awaitingCategory && state.pendingAmount !== undefined) {
     // Сценарий А — ответ: пользователь написал категорию для отложенной суммы
     userStates.delete(telegramId);
-    effectiveText = `${text} ${state.pendingAmount}`;
+    effectiveText = textForPendingAmount(text, state.pendingAmount);
     // pass through to LLM
 
   } else if (state?.awaitingAmount && state.pendingCategory) {

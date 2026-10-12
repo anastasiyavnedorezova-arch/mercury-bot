@@ -184,11 +184,11 @@ export async function handleFileUpload(bot, msg, fileType) {
     await bot.sendMessage(
       chatId,
       '📊 Загрузка банковских выписок доступна в платной подписке.\n\n' +
-        'Попробуй 7 дней бесплатно!',
+        'Оформи подписку — и я смогу разбирать скриншоты и выписки из банка 💛',
       {
         reply_markup: {
           inline_keyboard: [[
-            { text: '🔓 Попробовать бесплатно', callback_data: 'buy_subscription' },
+            { text: 'Оформить подписку', callback_data: 'buy_subscription' },
           ]],
         },
       }
