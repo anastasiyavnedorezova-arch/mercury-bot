@@ -1,4 +1,5 @@
 import { supabase } from '../db.js';
+import { pickSubscription, expireRow, hasLaterAccess } from '../utils/trial.js';
 
 // ── Хелперы дат ───────────────────────────────────────────────────────────────
 
@@ -62,9 +63,8 @@ async function getSubscription(userId) {
   const { data } = await supabase
     .from('subscriptions')
     .select('status, ends_at')
-    .eq('user_id', userId)
-    .maybeSingle();
-  return data ?? { status: 'free', ends_at: null };
+    .eq('user_id', userId);
+  return pickSubscription(data);
 }
 
 async function hasNotification(userId, type, month = null) {
@@ -372,7 +372,7 @@ export async function checkTrialEnding(bot) {
 
   const { data: subs } = await supabase
     .from('subscriptions')
-    .select('user_id, ends_at')
+    .select('id, user_id, ends_at')
     .eq('status', 'trial');
 
   console.log('[trial_ending] found:', subs?.length ?? 0);
@@ -391,11 +391,13 @@ export async function checkTrialEnding(bot) {
       const daysLeft = Math.ceil((new Date(sub.ends_at).getTime() - Date.now()) / 86_400_000);
       console.log('[trial_ending] user:', user.id, 'ends_at:', endsAtStr, 'days_left:', daysLeft);
 
+      // Если пользователь уже оплатил подписку, которая идёт дольше триала, напоминания про триал не нужны
+      const paidLater = await hasLaterAccess(supabase, user.id, sub.ends_at);
+
       // Истёк
       if (endsAtStr < todayStr) {
-        await supabase.from('subscriptions')
-          .update({ status: 'expired' })
-          .eq('user_id', sub.user_id);
+        await expireRow(supabase, sub.id);
+        if (paidLater) continue;
 
         console.log('[trial_ending] sending notification (expired) to:', user.id);
         await bot.sendMessage(
@@ -412,6 +414,8 @@ export async function checkTrialEnding(bot) {
         console.log('[trial_ending] sent to:', user.id);
         continue;
       }
+
+      if (paidLater) continue;
 
       // За 3 дня
       if (endsAtStr === in3daysStr) {
@@ -478,7 +482,7 @@ export async function checkSubscriptionEnding(bot) {
 
   const { data: subs } = await supabase
     .from('subscriptions')
-    .select('user_id, ends_at')
+    .select('id, user_id, ends_at')
     .eq('status', 'active');
 
   if (!subs?.length) return;
@@ -494,11 +498,13 @@ export async function checkSubscriptionEnding(bot) {
 
       const endsAtStr = dateStrUTC(new Date(sub.ends_at));
 
+      // Продлил заранее: следующий оплаченный период уже есть — напоминания не нужны
+      const paidLater = await hasLaterAccess(supabase, user.id, sub.ends_at);
+
       // Истёк
       if (endsAtStr < todayStr) {
-        await supabase.from('subscriptions')
-          .update({ status: 'expired' })
-          .eq('user_id', sub.user_id);
+        await expireRow(supabase, sub.id);
+        if (paidLater) continue;
 
         await bot.sendMessage(
           user.external_id,
@@ -513,6 +519,8 @@ export async function checkSubscriptionEnding(bot) {
         );
         continue;
       }
+
+      if (paidLater) continue;
 
       // За 3 дня
       if (endsAtStr === in3daysStr) {

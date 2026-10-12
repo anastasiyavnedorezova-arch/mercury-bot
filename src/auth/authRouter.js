@@ -9,6 +9,7 @@ import {
 } from './authCore.js';
 import { createRateLimiter } from './rateLimit.js';
 import { maskEmail } from '../utils/email.js';
+import { startTrial } from '../utils/trial.js';
 
 const DEFAULT_LIMITS = {
   loginIp:       { windowMs: 15 * 60_000, max: 30 }, // неудачных входов с одного IP
@@ -103,6 +104,10 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       // 23505 — тот же e-mail занят параллельным запросом (двойной клик)
       if (insertError?.code === '23505') return res.status(409).json({ error: 'email_taken', message: takenMsg });
       if (insertError) throw insertError;
+
+      // Новому пользователю сразу включаем пробный период на 30 дней (сбой не мешает регистрации)
+      const trial = await startTrial(db, id);
+      console.log('[trial] register:', trial.ok ? 'started' : 'not started (' + trial.reason + ')');
 
       Promise.resolve(mailer?.sendWelcomeEmail?.({ to: email, name, userId: id }))
         .then((r) => console.log('[email] welcome:', r?.ok ? 'sent' : (r?.skipped ? 'skipped' : 'failed ' + (r?.status ?? r?.error))))

@@ -11,6 +11,8 @@ import { maybeShowWebWelcome } from './handlers/onboarding.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
 import { inTz, monthStartStr, monthEndStr } from './utils/dateTz.js';
 import { notifyAdminAboutFeedback } from './utils/feedbackNotify.js';
+import { getUserAccess } from './utils/access.js';
+import { hadTrial, startTrial, rowsHadTrial } from './utils/trial.js';
 
 const webBot = createWebBotAdapter();
 
@@ -727,7 +729,7 @@ router.get('/api/profile', requireAuth, async (req, res) => {
 
     const { data: subs } = await supabase
       .from('subscriptions')
-      .select('status, starts_at, ends_at, period_months')
+      .select('status, starts_at, ends_at, period_months, payment_id')
       .eq('user_id', req.userId)
       .order('ends_at', { ascending: false });
 
@@ -735,7 +737,7 @@ router.get('/api/profile', requireAuth, async (req, res) => {
     const activeSub = (subs || []).find(s =>
       (s.status === 'trial' || s.status === 'active') && new Date(s.ends_at) > now
     );
-    const hadTrialBefore = (subs || []).some(s => s.status === 'trial');
+    const hadTrialBefore = rowsHadTrial(subs);
     const lastExpiredSub = !activeSub ? (subs || [])[0] : null;
 
     res.json({
@@ -809,25 +811,16 @@ router.put('/api/profile', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.post('/api/profile/activate-trial', requireAuth, async (req, res) => {
   try {
-    const { data: existing } = await supabase
-      .from('subscriptions')
-      .select('id')
-      .eq('user_id', req.userId)
-      .eq('status', 'trial')
-      .limit(1);
-    if (existing?.length) {
+    // Доступ уже есть (триал или подписка)
+    if ((await getUserAccess(req.userId)) !== 'free') {
+      return res.status(400).json({ error: 'Access already active' });
+    }
+    // Пробный период был и закончился: повторно не включаем
+    if (await hadTrial(supabase, req.userId)) {
       return res.status(400).json({ error: 'Trial already used' });
     }
-    const startsAt = new Date();
-    const endsAt = new Date();
-    endsAt.setDate(endsAt.getDate() + 30);
-    const { error } = await supabase.from('subscriptions').insert({
-      user_id: req.userId,
-      status: 'trial',
-      starts_at: startsAt.toISOString(),
-      ends_at: endsAt.toISOString(),
-    });
-    if (error) throw error;
+    const trial = await startTrial(supabase, req.userId, { onlyIfNoSubscriptions: false });
+    if (!trial.ok) throw new Error('trial start failed: ' + trial.reason);
     res.json({ ok: true });
   } catch (err) {
     console.error('[cabinet] activate-trial error:', err.message);

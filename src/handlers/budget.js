@@ -131,7 +131,7 @@ export async function showBudget(bot, chatId, telegramId) {
       {
         reply_markup: {
           inline_keyboard: [[
-            { text: 'Активировать trial', callback_data: 'budget:trial' },
+            { text: 'Активировать пробный период', callback_data: 'onboarding:activate_trial' },
             { text: 'Не сейчас', callback_data: 'menu:main' },
           ]],
         },

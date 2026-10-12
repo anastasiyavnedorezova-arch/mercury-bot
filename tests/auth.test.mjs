@@ -44,6 +44,20 @@ let counter = 0;
 const uniq = (p = 'u') => `${p}${Date.now()}${counter++}@Example.ru`;
 const goodReg = (email, extra = {}) => ({ email, password: 'secret1', name: 'Анна', terms_accepted: true, consent_pd_accepted: true, ...extra });
 
+test('регистрация: сразу включает пробный период на 30 дней', async () => {
+  const s = await start();
+  try {
+    const email = uniq('trial');
+    const r = await s.post('/api/auth/register', goodReg(email));
+    assert.equal(r.status, 201);
+    const { userId } = jwt.verify(r.json.token, SECRET);
+    const { data: subs } = await ctx.db.from('subscriptions').select('*').eq('user_id', userId);
+    assert.equal(subs.length, 1);
+    assert.equal(subs[0].status, 'trial');
+    assert.equal(Math.round((new Date(subs[0].ends_at) - new Date(subs[0].starts_at)) / 86_400_000), 30);
+  } finally { await s.close(); }
+});
+
 test('регистрация: создаёт аккаунт, хеш bcrypt, токен, приветственное письмо', async () => {
   const s = await start();
   try {

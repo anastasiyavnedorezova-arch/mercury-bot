@@ -5,27 +5,57 @@ import { showBudget } from './budget.js';
 import { showSubscription } from './subscription.js';
 import { getUserAccess } from '../utils/access.js';
 import { recordHint } from '../utils/botTexts.js';
+import { startTrial, hadTrial } from '../utils/trial.js';
 
-const STEP1_TEXT =
+const STEP1_INTRO =
   `Привет! Я Финник — твой личный финансовый помощник 👋\n\n` +
   `Помогу тебе: \n` +
   `💰понять, куда уходят деньги;\n` +
   `🎯поставить финансовую цель и двигаться к ней; \n` +
   `📊видеть понятную аналитику по доходам и расходам.\n\n` +
   `Просто пиши мне в свободной форме — например, «продукты 2500» \n` +
-  `или «зарплата 120000» — и я всё запишу.\n\n` +
+  `или «зарплата 120000» — и я всё запишу.`;
+
+// Запасной вариант: пробный период почему-то не включился (сбой базы) — предлагаем включить вручную
+const STEP1_TEXT =
+  `${STEP1_INTRO}\n\n` +
   `У тебя есть 30 дней бесплатного доступа ко всем функциям — ` +
   `бюджет, уведомления, глубокая аналитика. Активировать сразу ` +
   `или сначала подробнее рассказать о моих возможностях?`;
 
+function trialStartedText(endsAt) {
+  const until = endsAt
+    ? ` (до ${new Date(endsAt).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' })})`
+    : '';
+  return `${STEP1_INTRO}\n\n` +
+    `🎁 Я уже включил тебе 30 дней бесплатного доступа ко всем функциям${until} — ` +
+    `бюджет, уведомления, глубокая аналитика.\n\n` +
+    `Расскажу подробнее о моих возможностях или сразу запишем первую трату?`;
+}
+
+const INFO_ROWS = [
+  [{ text: 'Как записывать расходы и доходы?', callback_data: 'onboarding:how_to_record' }],
+  [{ text: 'Расскажи о целях', callback_data: 'onboarding:about_goals' }],
+  [{ text: 'Подробнее об аналитике', callback_data: 'onboarding:about_analytics' }],
+  [{ text: 'Зачем устанавливать бюджет?', callback_data: 'onboarding:about_budget' }],
+];
+
+// Запасной вариант (пробный период не включён): последняя кнопка — включить вручную
 const STEP1_KEYBOARD = {
   reply_markup: {
     inline_keyboard: [
-      [{ text: 'Как записывать расходы и доходы?', callback_data: 'onboarding:how_to_record' }],
-      [{ text: 'Расскажи о целях', callback_data: 'onboarding:about_goals' }],
-      [{ text: 'Подробнее об аналитике', callback_data: 'onboarding:about_analytics' }],
-      [{ text: 'Зачем устанавливать бюджет?', callback_data: 'onboarding:about_budget' }],
+      ...INFO_ROWS,
       [{ text: 'Активировать пробный период', callback_data: 'onboarding:activate_trial' }],
+    ],
+  },
+};
+
+// Пробный период уже включён
+const STEP1_TRIAL_KEYBOARD = {
+  reply_markup: {
+    inline_keyboard: [
+      ...INFO_ROWS,
+      [{ text: 'Записать первую трату', callback_data: 'onboarding:start_transaction' }],
     ],
   },
 };
@@ -81,13 +111,12 @@ export async function maybeShowWebWelcome(bot, chatId, userId) {
     }
   }
 
-  const cut = STEP1_TEXT.indexOf('У тебя есть 30 дней');
-  const intro = (cut > 0 ? STEP1_TEXT.slice(0, cut) : STEP1_TEXT).trimEnd();
+  const intro = STEP1_INTRO;
   let tail = 'Рассказать подробнее о моих возможностях или сразу запишем первую трату?';
   if (access === 'trial') tail = `Пробный период уже активирован — тебе доступны все функции 🎉 ${tail}`;
   if (access === 'active') tail = `Подписка уже активна — тебе доступны все функции 🎉 ${tail}`;
 
-  const rows = STEP1_KEYBOARD.reply_markup.inline_keyboard.slice(0, 4);
+  const rows = [...INFO_ROWS];
   rows.push([{ text: 'Записать первую трату', callback_data: 'onboarding:start_transaction' }]);
   await bot.sendMessage(chatId, `${intro}\n\n${tail}`, { reply_markup: { inline_keyboard: rows } });
   return true;
@@ -140,7 +169,15 @@ export async function handleOnboardingCallback(bot, query) {
       .update({ terms_accepted_at: new Date().toISOString(), terms_version: '2.0' })
       .eq('external_id', telegramId);
 
-    await bot.sendMessage(chatId, STEP1_TEXT, STEP1_KEYBOARD);
+    // Новому пользователю сразу включаем пробный период на 30 дней
+    const acceptedUserId = await getUserId(telegramId);
+    const trial = acceptedUserId ? await startTrial(supabase, acceptedUserId) : { ok: false, reason: 'no_user' };
+    const accessNow = acceptedUserId ? await getUserAccess(acceptedUserId) : 'free';
+    if (accessNow === 'free') {
+      await bot.sendMessage(chatId, STEP1_TEXT, STEP1_KEYBOARD);
+    } else {
+      await bot.sendMessage(chatId, trialStartedText(trial.ok ? trial.endsAt : null), STEP1_TRIAL_KEYBOARD);
+    }
     return;
   }
 
@@ -314,47 +351,27 @@ export async function handleOnboardingCallback(bot, query) {
       return;
     }
 
-    // Есть ли уже пробный период или подписка (в том числе закончившиеся)
-    const { data: existingSub } = await supabase
-      .from('subscriptions')
-      .select('status, ends_at')
-      .eq('user_id', userId)
-      .in('status', ['trial', 'active'])
-      .order('ends_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (existingSub) {
-      const isActive = new Date(existingSub.ends_at) > new Date();
-      if (isActive) {
-        await bot.sendMessage(chatId, 'У тебя уже всё активировано 💛 Все функции доступны, пользуйся!');
-      } else {
-        await bot.sendMessage(
-          chatId,
-          'Пробный период уже был использован 💛 Чтобы вернуть все функции, можно оформить подписку 👇',
-          { reply_markup: { inline_keyboard: [[{ text: 'Оформить подписку', callback_data: 'onboarding:pay_subscription' }]] } }
-        );
-      }
+    // Доступ уже есть (триал или подписка)
+    if ((await getUserAccess(userId)) !== 'free') {
+      await bot.sendMessage(chatId, 'У тебя уже всё активировано 💛 Все функции доступны, пользуйся!');
       return;
     }
 
-    const now = new Date();
-    const endsAt = new Date(now);
-    endsAt.setDate(endsAt.getDate() + 30);
+    // Пробный период был и закончился (раньше такой пользователь мог включать его снова и снова)
+    if (await hadTrial(supabase, userId)) {
+      await bot.sendMessage(
+        chatId,
+        'Пробный период уже был использован 💛 Чтобы вернуть все функции, можно оформить подписку 👇',
+        { reply_markup: { inline_keyboard: [[{ text: 'Оформить подписку', callback_data: 'onboarding:pay_subscription' }]] } }
+      );
+      return;
+    }
 
-    const { error: insertError } = await supabase.from('subscriptions').insert({
-      user_id: userId,
-      status: 'trial',
-      starts_at: now.toISOString(),
-      ends_at: endsAt.toISOString(),
-      period_months: null,
-      payment_id: null,
-      amount_rub: null,
-    });
+    const trial = await startTrial(supabase, userId, { onlyIfNoSubscriptions: false });
 
     // Раньше при ошибке бот всё равно отвечал «Пробный период активирован»
-    if (insertError) {
-      console.error('[onboarding] activate_trial insert error:', insertError.message);
+    if (!trial.ok) {
+      console.error('[onboarding] activate_trial error:', trial.reason);
       await bot.sendMessage(chatId, 'Не получилось активировать пробный период 😔 Попробуй ещё раз, а если повторится — напиши нам через «Обратную связь»');
       return;
     }
