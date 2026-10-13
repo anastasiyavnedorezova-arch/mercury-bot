@@ -24,4 +24,16 @@ CREATE INDEX IF NOT EXISTS email_events_provider_idx ON public.email_events (pro
 
 ALTER TABLE public.email_events ENABLE ROW LEVEL SECURITY;
 
+-- Приложение работает от роли-владельца остальных таблиц. Если миграцию запускали от postgres, таблицы писем
+-- принадлежат ему, и приложение получит «permission denied». Передаём обе таблицы владельцу таблицы users.
+DO $$
+DECLARE owner_name text;
+BEGIN
+  SELECT tableowner INTO owner_name FROM pg_tables WHERE schemaname = 'public' AND tablename = 'users';
+  IF owner_name IS NOT NULL THEN
+    EXECUTE format('ALTER TABLE public.email_log OWNER TO %I', owner_name);
+    EXECUTE format('ALTER TABLE public.email_events OWNER TO %I', owner_name);
+  END IF;
+END $$;
+
 COMMIT;

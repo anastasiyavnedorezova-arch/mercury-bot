@@ -1,7 +1,9 @@
 // События от RuSender (вебхук): доставлено, открыто, переход, отказ, жалоба, отписка.
 //  POST /webhook/rusender/<RUSENDER_WEBHOOK_SECRET>
-// Подписи у вебхуков RuSender нет, поэтому секрет — часть адреса. Формат событий нам заранее неизвестен,
-// поэтому каждое событие сохраняется целиком (email_events.raw), а понятые события разбираются «мягко».
+// Подписи у вебхуков RuSender нет, поэтому секрет — часть адреса.
+// Формат события: { eventId, trigger: 'external_mail.delivered', occurredAt, payload: { email, taskId, linkUrl } }.
+// Названия для отказов/жалоб/отписки мы пока не видели, поэтому разбираются «мягко», а каждое событие
+// сохраняется целиком (email_events.raw).
 // Действуем только когда уверены: постоянный отказ / жалоба → больше не пишем на этот адрес; отписка → маркетинг выключаем.
 import crypto from 'crypto';
 import express from 'express';
@@ -34,7 +36,7 @@ export function classify(name) {
   if (!s) return 'unknown';
   if (/spam|complain|abuse|жалоб/.test(s)) return 'complaint';
   if (/unsub|отпис/.test(s)) return 'unsubscribed';
-  if (/permanent|hard|not.?exist|no.?such|invalid|постоянн|не существует|несуществ/.test(s)) return 'hard_bounce';
+  if (/permanent|hard|not.?exist|non.?exist|no.?such|invalid|постоянн|не существует|несуществ/.test(s)) return 'hard_bounce';
   if (/temporar|soft|overflow|full|unavailab|временн|переполн|недоступ/.test(s)) return 'soft_bounce';
   if (/fail|bounce|error|reject|undeliver|not.?deliver|отказ|ошибк/.test(s)) return 'error';
   if (/click|клик|переход/.test(s)) return 'clicked';
@@ -44,11 +46,11 @@ export function classify(name) {
 }
 
 export function normalizeEvent(raw) {
-  const name = pick(raw, ['event', 'type', 'event_type', 'eventType', 'status', 'name', 'action']);
+  const name = pick(raw, ['trigger', 'event', 'type', 'event_type', 'eventType', 'status', 'name', 'action']);
   return {
     event: classify(name),
     name,
-    providerUuid: pick(raw, ['uuid', 'mail_uuid', 'mailUuid', 'message_uuid', 'messageUuid', 'message_id', 'messageId', 'id']),
+    providerUuid: pick(raw, ['taskId', 'task_id', 'uuid', 'mail_uuid', 'mailUuid', 'message_uuid', 'messageUuid', 'message_id', 'messageId']),
     email: pick(raw, ['email', 'to', 'recipient', 'rcpt', 'address']),
   };
 }

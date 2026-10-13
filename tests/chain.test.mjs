@@ -292,6 +292,28 @@ test('событие: тип, номер письма и адрес берутс
   assert.equal(extractEvents({ a: 1 }).length, 1);
 });
 
+test('настоящие события RuSender (формат external_mail.*) разбираются', () => {
+  const mk = (trigger) => ({ eventId: 'e', trigger, occurredAt: '2026-10-13T16:01:09.949Z', payload: { email: 'a@b.ru', taskId: 'task-1' } });
+  assert.deepEqual(normalizeEvent(mk('external_mail.delivered')), { event: 'delivered', name: 'external_mail.delivered', providerUuid: 'task-1', email: 'a@b.ru' });
+  assert.equal(normalizeEvent(mk('external_mail.open')).event, 'opened');
+  assert.equal(normalizeEvent({ ...mk('external_mail.click'), payload: { email: 'a@b.ru', taskId: 't', linkUrl: 'https://x.ru' } }).event, 'clicked');
+  assert.equal(normalizeEvent(mk('rusender.webhook_test')).event, 'unknown');
+  assert.equal(normalizeEvent(mk('external_mail.spam_complaint')).event, 'complaint');
+  assert.equal(normalizeEvent(mk('external_mail.unsubscribe')).event, 'unsubscribed');
+  assert.equal(normalizeEvent(mk('external_mail.nonexistent')).event, 'hard_bounce');
+});
+
+test('событие находит письмо и пользователя по taskId, а если письма нет в журнале — по адресу', async () => {
+  await reset();
+  const id = await user({ email: 'known@example.com' });
+  await ctx.query("INSERT INTO public.email_log (user_id, letter, status, provider_uuid) VALUES ($1,'trial5','sent','task-77')", [id]);
+  const { handleEvents } = await import('../src/emails/events.js');
+  await handleEvents(ctx.db, { trigger: 'external_mail.delivered', payload: { email: 'other@x.ru', taskId: 'task-77' } });
+  await handleEvents(ctx.db, { trigger: 'external_mail.open', payload: { email: 'Known@Example.com', taskId: 'no-such-task' } });
+  const rows = (await ctx.query('SELECT event, user_id, letter FROM public.email_events ORDER BY event')).rows;
+  assert.deepEqual(rows, [{ event: 'delivered', user_id: id, letter: 'trial5' }, { event: 'opened', user_id: id, letter: null }]);
+});
+
 async function startHook() {
   const app = express();
   app.use(express.json());
