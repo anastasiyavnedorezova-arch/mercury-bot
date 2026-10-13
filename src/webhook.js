@@ -6,6 +6,7 @@ import cabinetRoutes from './cabinetRoutes.js';
 import authRoutes from './authRoutes.js';
 import { monthsForAmount } from './utils/plans.js';
 import { grantSubscription } from './utils/grantSubscription.js';
+import { createEmailRouter } from './emails/unsubscribe.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,6 +78,7 @@ export function startWebhookServer(bot) {
 
   app.use('/fonts', express.static(path.join(__dirname, '../public/fonts'), { maxAge: '365d', immutable: true }));
   app.use(express.static(path.join(__dirname, '../public')));
+  app.use(createEmailRouter({ db: supabase }));
   app.use(authRoutes);
   app.use(cabinetRoutes);
 
