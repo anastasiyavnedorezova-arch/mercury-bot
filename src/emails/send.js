@@ -38,9 +38,11 @@ export async function sendLetter(db, userId, key, deps = {}) {
   const ins = await db.from('email_log').insert({ user_id: userId, letter: key, status: 'sending' }).select('id').single();
   if (ins.error) {
     if (ins.error.code !== '23505') return { ok: false, reason: 'db' };
-    const { data: prev } = await db.from('email_log').select('id, status').eq('user_id', userId).eq('letter', key).maybeSingle();
+    const { data: prev } = await db.from('email_log').select('id, status, attempts').eq('user_id', userId).eq('letter', key).maybeSingle();
     if (!prev || prev.status !== 'failed') return { ok: false, reason: 'already' };
-    const { error } = await db.from('email_log').update({ status: 'sending', error: null }).eq('id', prev.id);
+    const { error } = await db.from('email_log')
+      .update({ status: 'sending', error: null, attempts: (prev.attempts ?? 1) + 1, attempted_at: new Date().toISOString() })
+      .eq('id', prev.id);
     if (error) return { ok: false, reason: 'db' };
     logId = prev.id;
   } else {

@@ -8,6 +8,8 @@ import {
 } from './index.js';
 import { sendMonthlyAnalytics } from '../handlers/analytics.js';
 import { supabase } from '../db.js';
+import { runChainOnce } from '../emails/chain.js';
+import { lettersMode } from '../emails/config.js';
 
 async function runDailyChecks(bot) {
   console.log('[scheduler] Daily checks started at:',
@@ -43,6 +45,13 @@ export function startScheduler(bot) {
   cron.schedule('0 10 * * *', () => {
     console.log('[scheduler] Running daily checks...');
     runDailyChecks(bot);
+  }, { timezone: 'Europe/Moscow' });
+
+  // Цепочка писем: проход раз в 5 минут (по умолчанию выключена: LETTERS_MODE=off)
+  console.log(`[letters] mode=${lettersMode()}`);
+  cron.schedule('*/5 * * * *', () => {
+    if (lettersMode() === 'off') return;
+    runChainOnce(supabase);
   }, { timezone: 'Europe/Moscow' });
 
   // Аналитика 1-го числа в 10:00 МСК

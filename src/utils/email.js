@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { lettersMode, chainStart } from '../emails/config.js';
 
 // Экранирует HTML-спецсимволы. Нестрока → ''
 export function escapeHtml(s) {
@@ -113,6 +114,10 @@ export async function sendEmail({ to, toName, subject, text, html, idempotencyKe
  */
 export async function sendWelcomeEmail({ to, name, userId } = {}) {
   if (process.env.WELCOME_EMAIL_ENABLED === 'false') {
+    return { ok: false, skipped: true };
+  }
+  // Когда включена цепочка писем, приветствие уходит из неё (письмо №1) — техническое не отправляем
+  if (lettersMode() === 'on' && chainStart()) {
     return { ok: false, skipped: true };
   }
 

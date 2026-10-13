@@ -324,6 +324,14 @@ LETTERS.activation2 = {
 export const LETTER_KEYS = Object.keys(LETTERS);
 export const isMarketing = (key) => LETTERS[key]?.kind === 'marketing';
 
+// Есть ли в письме кнопки «Оплатить…» (такие письма нельзя слать, пока нет платёжных ссылок)
+export function needsPay(key) {
+  const def = LETTERS[key];
+  if (!def) return false;
+  const hasPay = (b) => b.type === 'buttons' && b.items.some((it) => /^Оплатить/.test(it.label));
+  return def.blocks(siteLinks()).some((b) => hasPay(b) || (b.type === 'card' && b.children.some(hasPay)));
+}
+
 export function siteLinks(base = baseUrl()) {
   return {
     bot: `${base}/cabinet/bot`,
