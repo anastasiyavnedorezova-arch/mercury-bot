@@ -5,7 +5,11 @@ export function parseAmount(text) {
   if (str === '') return null;
 
   let cleaned = str
-    .replace(/[₽руб\.]/g, '')
+    .replace(/[₽руб]/g, '')
+    // точка между цифрами — десятичный разделитель («1.5 млн»); точка после слова или в конце («руб.», «тыс.») — просто мусор
+    .replace(/\.(?!\d)/g, '')
+    // «1.500.000» — точки как разделители тысяч
+    .replace(/^\d{1,3}(\.\d{3})+(?=\s|$|[^\d.])/, (m) => m.replace(/\./g, ''))
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -29,4 +33,18 @@ export function parseAmount(text) {
 
   const num = parseFloat(cleaned.replace(/\s/g, '').replace(',', '.'));
   return isNaN(num) ? null : Math.round(num);
+}
+
+// Строгий разбор для диалогов, где бот ждёт ТОЛЬКО сумму (цель: «сколько накоплено» и т.п.).
+// «282 тыс», «1.5 млн», «3 000 000 ₽» — сумма; «500 на цель», «такси 450» — нет (null), чтобы обычная трата
+// не принималась за ответ на вопрос бота.
+const UNIT_TAIL = /^(?:\s*(?:млрд|миллиард(?:а|ов)?|млн|миллион(?:а|ов)?|тыс(?:яч(?:а|и)?)?|тк|[кk]))?\s*(?:₽|р|руб(?:л(?:ей|я|ь))?)?\.?$/i;
+
+export function parseAmountStrict(text) {
+  if (text === undefined || text === null) return null;
+  const t = String(text).trim().toLowerCase();
+  const m = t.match(/^(\d[\d\s.,]*)(.*)$/);
+  if (!m) return null;
+  if (!UNIT_TAIL.test(m[2])) return null;
+  return parseAmount(t);
 }

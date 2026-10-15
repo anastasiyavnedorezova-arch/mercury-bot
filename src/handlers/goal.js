@@ -2,7 +2,8 @@ import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { calculateMonthlyPayment } from '../utils/goalCalc.js';
-import { parseAmount } from '../utils/parseAmount.js';
+import { parseAmount, parseAmountStrict } from '../utils/parseAmount.js';
+import { applyGoalSaved, isGoalStateExpired } from '../utils/goalEdit.js';
 
 // ── Константы и форматирование ────────────────────────────────────────────────
 
@@ -125,7 +126,7 @@ export async function showGoal(bot, chatId, telegramId) {
   ]);
 
   if (goals.length === 0) {
-    userStates.set(telegramId, { awaitingGoal: 'name' });
+    userStates.set(telegramId, { awaitingGoal: 'name', createdAt: Date.now() });
     await bot.sendMessage(
       chatId,
       `🎯 Давай поставим финансовую цель!\n\n` +
@@ -224,6 +225,12 @@ export async function handleGoalState(bot, msg) {
   const state = userStates.get(telegramId);
   if (!state) return false;
 
+  // Диалог про цель забыт больше чем на полчаса — не перехватываем обычные сообщения
+  if (isGoalStateExpired(state)) {
+    userStates.delete(telegramId);
+    return false;
+  }
+
   // ── Ветка создания новой цели ─────────────────────────────────────────────
 
   if (state.awaitingGoal) {
@@ -257,9 +264,9 @@ export async function handleGoalState(bot, msg) {
     }
 
     if (step === 'amount') {
-      const amount = parseAmount(text);
+      const amount = parseAmountStrict(text);
       if (!amount || amount <= 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
+        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇\nЕсли передумала — нажми «Главное меню».', MENU_KEYBOARD);
         return true;
       }
       userStates.set(telegramId, { ...state, awaitingGoal: 'saved', amount });
@@ -268,9 +275,9 @@ export async function handleGoalState(bot, msg) {
     }
 
     if (step === 'saved') {
-      const saved = parseAmount(text);
+      const saved = parseAmountStrict(text);
       if (saved === null || saved < 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
+        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇\nЕсли передумала — нажми «Главное меню».', MENU_KEYBOARD);
         return true;
       }
 
@@ -386,9 +393,9 @@ export async function handleGoalState(bot, msg) {
     }
 
     if (field === 'amount') {
-      const amount = parseAmount(text);
+      const amount = parseAmountStrict(text);
       if (!amount || amount <= 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
+        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇\nЕсли передумала — нажми «Главное меню».', MENU_KEYBOARD);
         return true;
       }
       const { data: goal } = await supabase.from('goals').select('*').eq('id', goalId).single();
@@ -401,7 +408,8 @@ export async function handleGoalState(bot, msg) {
           yieldRate: goal.yield_rate ?? null,
         });
       } catch (e) {
-        await bot.sendMessage(chatId, `${e.message} 🎉`);
+        userStates.delete(telegramId);
+        await bot.sendMessage(chatId, `${e.message}${/накоплено/i.test(e.message) ? " 🎉" : ""} Значение не изменил.`);
         return true;
       }
       await supabase.from('goals')
@@ -435,7 +443,8 @@ export async function handleGoalState(bot, msg) {
           yieldRate: goal.yield_rate ?? null,
         });
       } catch (e) {
-        await bot.sendMessage(chatId, `${e.message} 🎉`);
+        userStates.delete(telegramId);
+        await bot.sendMessage(chatId, `${e.message}${/накоплено/i.test(e.message) ? " 🎉" : ""} Значение не изменил.`);
         return true;
       }
       await supabase.from('goals')
@@ -447,29 +456,36 @@ export async function handleGoalState(bot, msg) {
     }
 
     if (field === 'saved') {
-      const saved = parseAmount(text);
+      const saved = parseAmountStrict(text);
       if (saved === null || saved < 0) {
-        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши числом, например: 3000000 или 3 миллиона 👇');
+        await bot.sendMessage(chatId, 'Не смог распознать сумму. Напиши только число, например: 300000 или 300 тысяч 👇\nЕсли передумала — нажми «Главное меню».', MENU_KEYBOARD);
         return true;
       }
-      const { data: goal } = await supabase.from('goals').select('*').eq('id', goalId).single();
-      let calc;
-      try {
-        calc = calculateMonthlyPayment({
-          targetAmount: goal.target_amount,
-          initialSaved: saved,
-          targetDate: goal.target_date,
-          yieldRate: goal.yield_rate ?? null,
-        });
-      } catch (e) {
-        await bot.sendMessage(chatId, `${e.message} 🎉`);
-        return true;
-      }
-      await supabase.from('goals')
-        .update({ initial_saved: saved, future_value: calc.futureValue, monthly_payment: calc.monthlyPayment, last_recalculated_at: new Date().toISOString() })
-        .eq('id', goalId);
+      // Диалог закрываем в любом случае: даже при сбое бот не должен ждать сумму вечно
       userStates.delete(telegramId);
-      await bot.sendMessage(chatId, `Накопленная сумма обновлена. Новый взнос: ${formatNum(calc.monthlyPayment)} ₽/мес ✅`);
+      let r;
+      try {
+        r = await applyGoalSaved(supabase, goalId, saved);
+      } catch (e) {
+        console.error('[goal] edit saved error:', e.message);
+        await bot.sendMessage(chatId, 'Не получилось обновить сумму. Попробуй ещё раз чуть позже 🙏');
+        return true;
+      }
+      if (r.status === 'notfound') {
+        await bot.sendMessage(chatId, 'Не нашёл эту цель. Возможно, она уже удалена 🤔');
+      } else if (r.status === 'enough') {
+        await bot.sendMessage(
+          chatId,
+          `Накопленная сумма обновлена: ${formatNum(saved)} ₽ ✅\n` +
+          `С такой суммой цель уже обеспечена: к сроку она дорастёт до ${formatNum(r.futureValue)} ₽ без новых взносов 🎉`
+        );
+      } else {
+        await bot.sendMessage(
+          chatId,
+          `Накопленная сумма обновлена: ${formatNum(saved)} ₽ ✅\n` +
+          `Новый взнос: ${formatNum(r.calc.monthlyPayment)} ₽/мес`
+        );
+      }
       return true;
     }
   }
@@ -540,7 +556,7 @@ export async function handleGoalCallback(bot, query) {
   // ── Начать диалог новой/первой цели ───────────────────────────────────────
 
   if (action === 'goal:new') {
-    userStates.set(telegramId, { awaitingGoal: 'name' });
+    userStates.set(telegramId, { awaitingGoal: 'name', createdAt: Date.now() });
     await bot.sendMessage(
       chatId,
       `🎯 Давай поставим финансовую цель!\n\n` +
@@ -561,7 +577,7 @@ export async function handleGoalCallback(bot, query) {
       await bot.sendMessage(chatId, `У тебя уже ${goals.length} ${pluralGoal(goals.length)} — это максимум для твоего тарифа 💛`);
       return;
     }
-    userStates.set(telegramId, { awaitingGoal: 'name' });
+    userStates.set(telegramId, { awaitingGoal: 'name', createdAt: Date.now() });
     await bot.sendMessage(
       chatId,
       `🎯 Давай поставим ещё одну финансовую цель!\n\n` +
@@ -682,25 +698,25 @@ export async function handleGoalCallback(bot, query) {
   // ── Редактирование поля: goal:edit_{field}:{goalId} ───────────────────────
 
   if (parts[1] === 'edit_name') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'name', goalId: parts[2] });
+    userStates.set(telegramId, { awaitingGoalEdit: 'name', goalId: parts[2], createdAt: Date.now() });
     await bot.sendMessage(chatId, 'Напиши новое название цели 👇');
     return;
   }
 
   if (parts[1] === 'edit_amount') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'amount', goalId: parts[2] });
+    userStates.set(telegramId, { awaitingGoalEdit: 'amount', goalId: parts[2], createdAt: Date.now() });
     await bot.sendMessage(chatId, 'Напиши новую стоимость цели в рублях 👇');
     return;
   }
 
   if (parts[1] === 'edit_date') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'date', goalId: parts[2] });
+    userStates.set(telegramId, { awaitingGoalEdit: 'date', goalId: parts[2], createdAt: Date.now() });
     await bot.sendMessage(chatId, 'Напиши новый срок — месяц и год, например: март 2032 👇');
     return;
   }
 
   if (parts[1] === 'edit_saved') {
-    userStates.set(telegramId, { awaitingGoalEdit: 'saved', goalId: parts[2] });
+    userStates.set(telegramId, { awaitingGoalEdit: 'saved', goalId: parts[2], createdAt: Date.now() });
     await bot.sendMessage(chatId, 'Сколько уже накоплено? Напиши сумму 👇');
     return;
   }

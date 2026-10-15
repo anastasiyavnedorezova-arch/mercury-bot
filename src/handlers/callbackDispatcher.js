@@ -112,6 +112,9 @@ export async function dispatchCallbackQuery(bot, query) {
   if (action.startsWith('menu:')) {
     if (action === 'menu:main') {
       await bot.answerCallbackQuery(query.id);
+      // «Главное меню» закрывает незаконченный диалог про цель, иначе следующее сообщение примут за ответ на его вопрос
+      const st = userStates.get(query.from.id);
+      if (st?.awaitingGoal || st?.awaitingGoalEdit) userStates.delete(query.from.id);
       await showMainMenu(bot, query.message.chat.id);
       return;
     }

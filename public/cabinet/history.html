@@ -1135,12 +1135,38 @@
     document.body.style.overflow = '';
   }
 
+  // Категории для окна правки и фильтров: берём из базы (системные + свои). Зашитые списки выше — запасной вариант.
+  var CAT_OBJ = null;
+  async function loadCategoryLists() {
+    try {
+      var res = await fetch('/api/categories', { headers: authHeaders() });
+      if (!res.ok) return;
+      var json = await res.json();
+      var rows = json.data || [];
+      var inc = rows.filter(function(c){ return c.type === 'income'; });
+      var exp = rows.filter(function(c){ return c.type === 'expense'; });
+      if (!inc.length && !exp.length) return;
+      CAT_OBJ = { income: inc, expense: exp };
+      ALL_INCOME_CATS.length = 0;
+      inc.forEach(function(c){ ALL_INCOME_CATS.push(c.name); });
+      ALL_EXPENSE_CATS.length = 0;
+      exp.forEach(function(c){ ALL_EXPENSE_CATS.push(c.name); });
+    } catch(e) { console.error('Categories load error:', e); }
+  }
+
   function fillEditCats(type, selectedCat) {
-    var cats = type === 'income' ? ALL_INCOME_CATS : ALL_EXPENSE_CATS;
     var sel = document.getElementById('editCategory');
-    sel.innerHTML = cats.map(function(c) {
-      return '<option value="'+escH(c)+'"'+(c===selectedCat?' selected':'')+'>'+escH(c)+'</option>';
+    var list = CAT_OBJ ? CAT_OBJ[type === 'income' ? 'income' : 'expense'] : (type === 'income' ? ALL_INCOME_CATS : ALL_EXPENSE_CATS).map(function(n){ return { id: '', name: n }; });
+    var html = '';
+    // Текущая категория записи может быть не в списке (например, удалена) — показываем её, чтобы «Сохранить» ничего не подменял
+    if (selectedCat && !list.some(function(c){ return c.name === selectedCat; })) {
+      html += '<option value="" data-name="'+escH(selectedCat)+'" selected>'+escH(selectedCat)+'</option>';
+    }
+    html += list.map(function(c) {
+      var v = c.id || c.name;
+      return '<option value="'+escH(v)+'" data-name="'+escH(c.name)+'"'+(c.name===selectedCat?' selected':'')+'>'+escH(c.name)+'</option>';
     }).join('');
+    sel.innerHTML = html;
   }
 
   function openEditModal(id) {
@@ -1202,20 +1228,29 @@
   document.getElementById('editModalSave').addEventListener('click', async function() {
     if (!_editId) return;
     var type = document.getElementById('editType').value;
-    var category = document.getElementById('editCategory').value;
+    var catSel = document.getElementById('editCategory');
+    var catOpt = catSel.options[catSel.selectedIndex];
+    var catVal = catSel.value;
+    var catName = catOpt ? (catOpt.getAttribute('data-name') || catOpt.textContent) : '';
     var amount = parseFloat(document.getElementById('editAmount').value) || 0;
     var date = document.getElementById('editDate').value;
-    if (!category || !amount || !date) return;
+    if (!catName || !amount || !date) return;
+    var payload = { type: type, category: catName, amount: amount, transaction_date: date };
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catVal)) payload.category_id = catVal;
     try {
       var resp = await fetch('/api/history/'+_editId, {
         method: 'PUT', headers: authHeaders(),
-        body: JSON.stringify({ type: type, category: category, amount: amount, transaction_date: date })
+        body: JSON.stringify(payload)
       });
-      if (!resp.ok) throw new Error('error');
+      if (!resp.ok) {
+        var errJson = {};
+        try { errJson = await resp.json(); } catch(_) {}
+        throw new Error(errJson.message || 'error');
+      }
       closeAllModals();
       historyData = []; historyOffset = 0; historyTotal = 0;
       loadHistoryData(0);
-    } catch(e) { alert('Ошибка при сохранении'); }
+    } catch(e) { alert(e && e.message && e.message !== 'error' ? e.message : 'Ошибка при сохранении'); }
   });
 
   // Delete modal events
@@ -1266,6 +1301,7 @@
     if (card) openDetailModal(card.getAttribute('data-id'));
   });
 
+  loadCategoryLists();
   loadHistoryData(0);
   });
 </script>

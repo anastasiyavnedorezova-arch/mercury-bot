@@ -60,3 +60,12 @@ export function calculateMonthlyPayment({ targetAmount, initialSaved, targetDate
     months,
   };
 }
+
+// Будущая стоимость цели с учётом инфляции (без расчёта взноса). Нужна, когда взнос не требуется, а цель надо пересчитать.
+export function futureValueOf({ targetAmount, targetDate }) {
+  const today = inTz();
+  const target = new Date(targetDate);
+  const months = (target.getFullYear() - today.getFullYear()) * 12 + (target.getMonth() - today.getMonth());
+  if (months <= 0) throw new Error('Дата цели должна быть в будущем');
+  return Math.round(targetAmount * Math.pow(1.06, months / 12));
+}

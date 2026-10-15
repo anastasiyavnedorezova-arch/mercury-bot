@@ -664,6 +664,10 @@
             <option value="expense">Расход</option>
           </select>
         </div>
+        <div class="form-field">
+          <label class="form-label">Группа*</label>
+          <select class="form-select" id="formCatGroup"></select>
+        </div>
         <div class="modal-ae-name-row">
           <div class="form-field modal-ae-name-field">
             <label class="form-label">Назовите свою категорию*</label>
@@ -743,7 +747,7 @@
   // ── Categories ───────────────────────────────────────────
   var allCats = [];
   var filterType = 'all', filterMine = false;
-  var deletingCat = null, editingCat = null;
+  var deletingCat = null, editingCat = null, allGroups = [];
 
   function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -753,6 +757,12 @@
       if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
       var json = await res.json();
       allCats = json.data || [];
+      if (!allGroups.length) {
+        try {
+          var gr = await fetch('/api/category-groups', { headers: authHeaders() });
+          if (gr.ok) allGroups = (await gr.json()).data || [];
+        } catch(_) {}
+      }
 
       // ПРАВКА 4: кнопка добавить — только при trial/active подписке
       var sub = json.subscription_status;
@@ -872,6 +882,16 @@
     document.getElementById('modalDelete').classList.add('is-open');
   }
 
+  function fillGroups(type, selectedId) {
+    var sel = document.getElementById('formCatGroup');
+    if (!sel) return;
+    var list = allGroups.filter(function(g) { return g.type === type; });
+    sel.innerHTML = list.map(function(g) {
+      return '<option value="' + escH(String(g.id)) + '"' + (String(g.id) === String(selectedId) ? ' selected' : '') + '>' + escH(g.name) + '</option>';
+    }).join('');
+  }
+  document.getElementById('formCatType').addEventListener('change', function() { fillGroups(this.value, ''); });
+
   function openEditModal(id) {
     var cat = allCats.find(function(c) { return String(c.id) === id; });
     if (!cat) return;
@@ -881,6 +901,7 @@
     var emojiEl = document.getElementById('formCatEmoji');
     if (emojiEl) { emojiEl.value = cat.icon || ''; document.getElementById('emojiPreview').textContent = cat.icon || '💰'; }
     document.getElementById('formCatType').value = cat.type;
+    fillGroups(cat.type, cat.group_id);
     var hintEl = document.getElementById('formCatHint');
     if (hintEl) hintEl.value = cat.hint || '';
     document.getElementById('btnAddEditSave').disabled = false;
@@ -927,6 +948,7 @@
     var hintEl = document.getElementById('formCatHint');
     if (hintEl) hintEl.value = '';
     document.getElementById('formCatType').value = 'expense';
+    fillGroups('expense', '');
     var emojiEl = document.getElementById('formCatEmoji');
     if (emojiEl) { emojiEl.value = ''; document.getElementById('emojiPreview').textContent = '💰'; }
     document.getElementById('btnAddEditSave').disabled = true;
@@ -958,12 +980,16 @@
       var method = editingCat ? 'PUT' : 'POST';
       var res = await fetch(url, {
         method: method, headers: authHeaders(),
-        body: JSON.stringify({ name: name, type: type, icon: icon, hint: hint })
+        body: JSON.stringify({ name: name, type: type, icon: icon, hint: hint, group_id: (document.getElementById('formCatGroup') || {}).value || undefined })
       });
-      if (!res.ok) throw new Error('error');
+      if (!res.ok) {
+        var errJson = {};
+        try { errJson = await res.json(); } catch(_) {}
+        throw new Error(errJson.message || 'error');
+      }
       document.getElementById('modalAddEdit').classList.remove('is-open');
       await loadCategories();
-    } catch(e) { alert('Ошибка при сохранении'); }
+    } catch(e) { alert(e && e.message && e.message !== 'error' ? e.message : 'Ошибка при сохранении'); }
     this.disabled = false;
   });
 

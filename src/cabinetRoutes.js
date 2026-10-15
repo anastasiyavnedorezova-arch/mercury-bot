@@ -13,6 +13,8 @@ import { inTz, monthStartStr, monthEndStr } from './utils/dateTz.js';
 import { notifyAdminAboutFeedback } from './utils/feedbackNotify.js';
 import { getUserAccess } from './utils/access.js';
 import { hadTrial, startTrial, rowsHadTrial } from './utils/trial.js';
+import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } from './cabinet/categories.js';
+import { updateTransaction } from './cabinet/historyEdit.js';
 
 const webBot = createWebBotAdapter();
 
@@ -457,34 +459,11 @@ router.get('/api/history', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.put('/api/history/:id', requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { type, category, amount, transaction_date } = req.body;
-
-    if (!type || !category || !amount || !transaction_date) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Resolve category_id by name (user's own or system)
-    const { data: catRows } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('name', category)
-      .or(`user_id.eq.${req.userId},user_id.is.null`)
-      .limit(1);
-
-    const category_id = catRows?.[0]?.id ?? null;
-
-    const { error } = await supabase
-      .from('transactions')
-      .update({ type, category_id, amount, transaction_date })
-      .eq('id', id)
-      .eq('user_id', req.userId);
-
-    if (error) throw error;
-    res.json({ ok: true });
+    const r = await updateTransaction(supabase, req.userId, req.params.id, req.body);
+    res.status(r.status).json(r.json);
   } catch (err) {
     console.error('[cabinet] PUT /api/history/:id error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', message: 'Не удалось сохранить запись. Попробуй ещё раз' });
   }
 });
 
@@ -555,14 +534,14 @@ router.get('/api/categories', requireAuth, async (req, res) => {
     const [sysRes, userRes, subRes] = await Promise.all([
       supabase
         .from('categories')
-        .select('id, name, type, user_id, is_active, category_groups(name)')
+        .select('id, name, type, user_id, group_id, icon, synonyms, is_active, category_groups(name)')
         .is('user_id', null)
         .eq('is_active', true)
         .order('user_id', { nullsFirst: true })
         .order('name', { ascending: true }),
       supabase
         .from('categories')
-        .select('id, name, type, user_id, is_active, category_groups(name)')
+        .select('id, name, type, user_id, group_id, icon, synonyms, is_active, category_groups(name)')
         .eq('user_id', req.userId)
         .eq('is_active', true)
         .order('user_id', { nullsFirst: true })
@@ -581,13 +560,7 @@ router.get('/api/categories', requireAuth, async (req, res) => {
     if (sysRes.error) throw sysRes.error;
     if (userRes.error) throw userRes.error;
 
-    const map = (c) => ({
-      id: c.id,
-      name: c.name,
-      type: c.type,
-      user_id: c.user_id,
-      group_name: c.category_groups?.name ?? null,
-    });
+    const map = mapCategoryRow;
 
     const data = [...(userRes.data || []).map(map), ...(sysRes.data || []).map(map)];
     res.json({ data, subscription_status: subRes.data?.status ?? null });
@@ -603,53 +576,39 @@ router.get('/api/categories', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.post('/api/categories', requireAuth, async (req, res) => {
   try {
-    const { name, type } = req.body;
-    if (!name || !type) return res.status(400).json({ error: 'Missing required fields' });
-    if (!['income', 'expense'].includes(type)) return res.status(400).json({ error: 'Invalid type' });
-
-    const { data, error } = await supabase
-      .from('categories')
-      .insert({
-        name: name.trim(),
-        type,
-        user_id: req.userId,
-        is_active: true,
-      })
-      .select('id, name, type, user_id')
-      .single();
-
-    if (error) throw error;
-    res.status(201).json({ data });
+    const r = await createUserCategory(supabase, req.userId, req.body);
+    res.status(r.status).json(r.json);
   } catch (err) {
     console.error('[cabinet] POST /api/categories error:', err.message);
+    res.status(500).json({ error: 'Internal server error', message: 'Не удалось сохранить категорию. Попробуй ещё раз' });
+  }
+});
+
+// ──────────────────────────────────────────
+// GET /api/category-groups
+// Группы категорий (для выбора группы в окне «Добавить категорию»)
+// ──────────────────────────────────────────
+router.get('/api/category-groups', requireAuth, async (req, res) => {
+  try {
+    const groups = await listGroups(supabase);
+    res.json({ data: groups.map((g) => ({ id: g.id, name: g.name, type: g.type })) });
+  } catch (err) {
+    console.error('[cabinet] GET /api/category-groups error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
 // ──────────────────────────────────────────
 // PUT /api/categories/:id
-// Update user's own category (name/icon only)
+// Update user's own category (name, type, group, icon, hint)
 // ──────────────────────────────────────────
 router.put('/api/categories/:id', requireAuth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, type } = req.body;
-    if (!name) return res.status(400).json({ error: 'Missing name' });
-
-    const update = { name: name.trim() };
-    if (type && ['income', 'expense'].includes(type)) update.type = type;
-
-    const { error } = await supabase
-      .from('categories')
-      .update(update)
-      .eq('id', id)
-      .eq('user_id', req.userId);
-
-    if (error) throw error;
-    res.json({ ok: true });
+    const r = await updateUserCategory(supabase, req.userId, req.params.id, req.body);
+    res.status(r.status).json(r.json);
   } catch (err) {
     console.error('[cabinet] PUT /api/categories/:id error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error', message: 'Не удалось сохранить категорию. Попробуй ещё раз' });
   }
 });
 
