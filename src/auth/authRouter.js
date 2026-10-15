@@ -141,7 +141,11 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       if (!user || !ok) {
         L.loginIp.record(ipKey);
         L.loginEmail.record(emailKey);
-        return res.status(401).json({ error: 'invalid_credentials', message: 'Неверный e-mail или пароль' });
+        // Нет такого e-mail — говорим об этом в поле e-mail (так понятнее; перебор по-прежнему ограничен счётчиками выше)
+        if (!user) {
+          return res.status(401).json({ error: 'email_not_found', field: 'email', message: 'Аккаунта с такой почтой нет. Проверь адрес или зарегистрируйся' });
+        }
+        return res.status(401).json({ error: 'invalid_credentials', field: 'password', message: 'Неверный пароль' });
       }
 
       L.loginEmail.clear(emailKey);

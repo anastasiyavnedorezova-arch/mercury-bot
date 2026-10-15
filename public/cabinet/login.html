@@ -577,7 +577,9 @@
 
       if (res.status === 429) throw new Error(waitText(res));
       if (!res.ok || !data.token) {
-        throw new Error(data.message || 'Неверный e-mail или пароль');
+        const e = new Error(data.message || 'Неверный e-mail или пароль');
+        e.field = data.field === 'email' ? 'email' : 'password';
+        throw e;
       }
 
       localStorage.setItem('mercury_token', data.token);
@@ -588,7 +590,13 @@
       btnLogin.classList.remove('is-loading');
       btnLogin.textContent = 'Войти';
       const offline = err instanceof TypeError;
-      setErr(loginPassword, loginPasswordHint, offline ? 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.' : (err.message || 'Неверный e-mail или пароль'));
+      if (!offline && err.field === 'email') {
+        // e-mail не зарегистрирован — ошибка под полем e-mail, а не под паролем
+        setErr(loginEmail, loginEmailHint, err.message);
+        loginEmail.focus();
+      } else {
+        setErr(loginPassword, loginPasswordHint, offline ? 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.' : (err.message || 'Неверный e-mail или пароль'));
+      }
     }
   });
 
@@ -668,5 +676,6 @@
     setTimeout(() => window.location.href = '/cabinet/login', 1200);
   });
 </script>
+<script src="/js/pw-toggle.js" defer></script>
 </body>
 </html>

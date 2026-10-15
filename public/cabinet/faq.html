@@ -119,9 +119,11 @@
     
         .lk-sidebar__toggle { flex-shrink: 0; padding: 12px 16px; border-top: 1px solid #E2E8F0; display: flex; align-items: center; }
         .lk-sidebar.is-collapsed .lk-sidebar__toggle { justify-content: center; padding: 12px 0; }
-        .sidebar-toggle-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; transition: background 150ms; }
-        .sidebar-toggle-btn:hover { background: #EEF4FF; }
-        .sidebar-toggle-btn img { width: 24px; height: 24px; display: block; }
+        .sb-toggle-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; transition: background 150ms; }
+        .sb-toggle-btn:hover { background: #EEF4FF; }
+        .sb-toggle-btn:focus { outline: none; }
+        .sb-toggle-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #4C9AFF; }
+        .sb-toggle-btn img { width: 24px; height: 24px; display: block; }
     
         /* ══════ CONTENT ══════ */
         .page-content { flex: 1; min-width: 0; padding: 28px 40px 120px; display: flex; flex-direction: column; gap: 20px; }
@@ -290,6 +292,10 @@
         /* ══════ FAQ ACCORDION ══════ */
         .faq-group { display: none; max-width: 760px; }
         .faq-group.visible { display: block; }
+        .faq-ask { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 32px; }
+        .faq-ask__text { font-size: 14px; color: #6B7280; line-height: 20px; }
+        .faq-ask__btn { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 24px; background: #1E2A38; color: #fff; border-radius: 12px; font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600; text-decoration: none; transition: opacity 150ms; }
+        .faq-ask__btn:hover { opacity: .85; }
         .faq-item { border-bottom: 1px solid #E2E8F0; }
         .faq-item:first-child { border-top: 1px solid #E2E8F0; }
         .faq-question {
@@ -578,6 +584,10 @@
           </div>
         </div>
       </div><!-- /budget -->
+    <div class="faq-ask">
+    <span class="faq-ask__text">Не нашлось ответа на свой вопрос?</span>
+    <a class="faq-ask__btn" href="/cabinet/feedback">Задать вопрос</a>
+  </div>
   </main>
 </div><!-- /page-layout -->
 

@@ -123,7 +123,7 @@ test('регистрация: то же самое при параллельны
   } finally { await s.close(); }
 });
 
-test('вход: верный пароль, неверный пароль, неизвестный e-mail — одинаковая ошибка', async () => {
+test('вход: неверный пароль — ошибка в поле пароля, неизвестный e-mail — ошибка в поле e-mail', async () => {
   const s = await start();
   try {
     const email = uniq('login');
@@ -135,7 +135,11 @@ test('вход: верный пароль, неверный пароль, неи
     const wrong = await s.post('/api/auth/login', { email, password: 'неверный' });
     const none = await s.post('/api/auth/login', { email: uniq('none'), password: 'secret1' });
     assert.equal(wrong.status, 401); assert.equal(none.status, 401);
-    assert.deepEqual(wrong.json, none.json);
+    assert.equal(wrong.json.error, 'invalid_credentials');
+    assert.equal(wrong.json.field, 'password');
+    assert.equal(none.json.error, 'email_not_found');
+    assert.equal(none.json.field, 'email');
+    assert.notEqual(wrong.json.message, none.json.message);
 
     assert.equal((await s.post('/api/auth/login', { email })).status, 400);
     assert.equal((await s.post('/api/auth/login', {})).status, 400);

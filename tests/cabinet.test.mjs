@@ -308,3 +308,41 @@ test('страницы и бот подключены к новой логике
   assert.ok(routes.includes("'/api/category-groups'") && routes.includes('updateTransaction(') && routes.includes('createUserCategory('));
   assert.ok(fs.existsSync(new URL('../db/migrations/005_category_icon.sql', import.meta.url)));
 });
+
+// ── Правки интерфейса из тестирования 15.10.2026 ──────────────────────────
+
+test('«Показать пароль» подключён на входе, регистрации и смене пароля', () => {
+  for (const n of ['login', 'register', 'reset-password']) {
+    assert.ok(read(`public/cabinet/${n}.html`).includes('src="/js/pw-toggle.js"'), n);
+  }
+  const js = read('public/js/pw-toggle.js');
+  assert.ok(js.includes('input[type="password"]') && js.includes('Показать пароль') && js.includes('Скрыть пароль'));
+});
+
+test('вход: несуществующий e-mail подсвечивает поле e-mail, неверный пароль — поле пароля', () => {
+  const s = read('public/cabinet/login.html');
+  assert.ok(s.includes("err.field === 'email'") && s.includes('setErr(loginEmail, loginEmailHint, err.message)'));
+  const r = read('src/auth/authRouter.js');
+  assert.ok(r.includes("error: 'email_not_found', field: 'email'") && r.includes("error: 'invalid_credentials', field: 'password'"));
+});
+
+test('кнопка «Свернуть сайдбар» без обводки на всех страницах кабинета', () => {
+  for (const n of ['dashboard', 'accounting', 'history', 'categories', 'goals', 'budget', 'how-to', 'faq', 'feedback', 'profile', 'analytics', 'family']) {
+    const page = read(`public/cabinet/${n}.html`);
+    // кнопка в разметке называется sb-toggle-btn — раньше стили были написаны под другое имя, и кнопка оставалась с рамкой браузера
+    assert.ok(page.includes('class="sb-toggle-btn"'), n);
+    assert.match(page, /\.sb-toggle-btn \{ background: none; border: none;/, n);
+    assert.match(page, /\.sb-toggle-btn:focus \{ outline: none; \}/, n);
+    assert.ok(!page.includes('.sidebar-toggle-btn'), n);
+  }
+});
+
+test('отступы и крестики: учёт по месяцам, история, бюджет, FAQ', () => {
+  assert.match(read('public/cabinet/accounting.html'), /\.toggle-row--desktop \.toggle-label \{ flex: 0 1 auto; \}/);
+  const h = read('public/cabinet/history.html');
+  assert.match(h, /\.modal-header \{ display:flex; align-items:center; justify-content:space-between/);
+  assert.match(h, /<!-- Export row -->\s*<div style="display:flex;justify-content:flex-start;margin-bottom:20px;">/);
+  assert.match(read('public/cabinet/budget.html'), /\.section-subtitle \{[^}]*margin-top: 32px; margin-bottom: 32px;/);
+  const f = read('public/cabinet/faq.html');
+  assert.ok(f.includes('href="/cabinet/feedback">Задать вопрос</a>'));
+});

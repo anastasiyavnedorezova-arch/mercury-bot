@@ -119,9 +119,11 @@
     
         .lk-sidebar__toggle { flex-shrink: 0; padding: 12px 16px; border-top: 1px solid #E2E8F0; display: flex; align-items: center; }
         .lk-sidebar.is-collapsed .lk-sidebar__toggle { justify-content: center; padding: 12px 0; }
-        .sidebar-toggle-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; transition: background 150ms; }
-        .sidebar-toggle-btn:hover { background: #EEF4FF; }
-        .sidebar-toggle-btn img { width: 24px; height: 24px; display: block; }
+        .sb-toggle-btn { background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 6px; transition: background 150ms; }
+        .sb-toggle-btn:hover { background: #EEF4FF; }
+        .sb-toggle-btn:focus { outline: none; }
+        .sb-toggle-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px #4C9AFF; }
+        .sb-toggle-btn img { width: 24px; height: 24px; display: block; }
     
         /* ══════ CONTENT ══════ */
         .page-content { flex: 1; min-width: 0; padding: 28px 40px 120px; display: flex; flex-direction: column; gap: 20px; }
@@ -255,7 +257,7 @@
         .budget-card-actions { display: flex; justify-content: flex-end; }
     
         /* ══════ SECTION SUBTITLE ══════ */
-        .section-subtitle { font-size: 18px; font-weight: 600; line-height: 26px; color: var(--color-text-main); margin-bottom: 12px; }
+        .section-subtitle { font-size: 18px; font-weight: 600; line-height: 26px; color: var(--color-text-main); margin-top: 32px; margin-bottom: 32px; }
     
         /* ══════ BUDGET TABLE ══════ */
         .budget-table-wrap { background: var(--color-white); border-radius: var(--radius-md); overflow: clip; box-shadow: var(--shadow-card); border: 1px solid var(--color-border); }
