@@ -127,6 +127,17 @@
         .page-content { flex: 1; min-width: 0; padding: 28px 40px 120px; display: flex; flex-direction: column; gap: 20px; }
         .page-title { font-size: 32px; font-weight: 600; color: #2D3748; line-height: 40px; padding-bottom: 12px; }
     
+        /* ══════ TOAST (уведомление сверху) ══════ */
+        .toast { position: fixed; top: 88px; left: 50%; z-index: 250; width: calc(100% - 32px); max-width: 560px; box-sizing: border-box; display: none; align-items: center; gap: 12px; padding: 10px 12px 10px 16px; border-radius: 12px; font-size: 14px; line-height: 20px; font-weight: 500; box-shadow: 0 6px 20px rgba(15,23,42,.12); transform: translate(-50%, -12px); opacity: 0; transition: opacity 200ms, transform 200ms; }
+        .toast.is-open { display: flex; }
+        .toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+        .toast--success { background: #EAF7F0; color: #1F7A4C; border: 1px solid #BFE5CF; }
+        .toast--info { background: #EEF4FF; color: #2F5FB3; border: 1px solid #C9DBFA; }
+        .toast--warn { background: #FFF6E5; color: #8A5A00; border: 1px solid #F3DDA8; }
+        .toast__text { flex: 1; }
+        .toast__close { flex-shrink: 0; width: 28px; height: 28px; border: none; background: transparent; color: inherit; font-size: 22px; line-height: 1; cursor: pointer; border-radius: 6px; opacity: .7; }
+        .toast__close:hover { opacity: 1; background: rgba(0,0,0,.06); }
+
         /* ══════ MOBILE OVERLAY + DRAWER ══════ */
         .lk-overlay { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(15,23,42,.45); backdrop-filter: blur(2px); opacity: 0; transition: opacity 250ms; }
         .lk-overlay.is-open { display: block; }
@@ -495,6 +506,11 @@
     </div>
   </aside>
 
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span class="toast__text" id="toastText"></span>
+    <button class="toast__close" type="button" aria-label="Закрыть" onclick="hideToast()">&times;</button>
+  </div>
+
   <main class="page-content">
     <h1 class="page-title">Мой профиль</h1>
 
@@ -545,8 +561,6 @@
             </div>
           </div>
         </div>
-
-        <div id="payNotice" style="display:none;background:#EAF7F0;color:#1F7A4C;border-radius:12px;padding:12px 16px;font-size:14px;line-height:20px;font-weight:500"></div>
 
         <!-- SUBSCRIPTION CARD -->
         <div class="profile-card">
@@ -1065,6 +1079,25 @@
       if (!els.length) alert(text);
     }
 
+    // Уведомление сверху: showToast(текст, 'success'|'info'|'warn', автозакрытие_мс)
+    let toastTimer = null;
+    window.hideToast = function () {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      clearTimeout(toastTimer);
+      el.classList.remove('is-visible');
+      setTimeout(() => { if (!el.classList.contains('is-visible')) el.classList.remove('is-open'); }, 200);
+    };
+    window.showToast = function (text, kind, autoHideMs) {
+      const el = document.getElementById('toast');
+      if (!el) return;
+      clearTimeout(toastTimer);
+      document.getElementById('toastText').textContent = text;
+      el.className = 'toast toast--' + (kind || 'info') + ' is-open';
+      requestAnimationFrame(() => el.classList.add('is-visible'));
+      if (autoHideMs) toastTimer = setTimeout(window.hideToast, autoHideMs);
+    };
+
     // Переходы из писем и после оплаты: /cabinet/profile?pay=6 и /cabinet/profile?paid=1
     (function handlePayParams() {
       const qs = new URLSearchParams(window.location.search);
@@ -1075,8 +1108,7 @@
       if ([1, 6, 12].includes(pay)) {
         startPayment(pay, null);
       } else if (paid === '1') {
-        const box = document.getElementById('payNotice');
-        if (box) { box.textContent = 'Спасибо! Проверяем оплату: подписка включится в течение минуты.'; box.style.display = 'block'; }
+        showToast('Спасибо! Проверяем оплату: подписка включится в течение минуты.', 'info');
         let tries = 0;
         const timer = setInterval(async () => {
           tries += 1;
@@ -1086,10 +1118,14 @@
             if (d && d.subscription && d.subscription.status === 'active') {
               clearInterval(timer);
               renderProfile(d);
-              if (box) box.textContent = 'Оплата прошла, подписка активна. Спасибо!';
+              showToast('Оплата прошла, подписка активна. Спасибо!', 'success', 10000);
+              return;
             }
           } catch (e) { /* пробуем дальше */ }
-          if (tries >= 12) { clearInterval(timer); if (box && box.textContent.startsWith('Спасибо')) box.textContent = 'Оплата обрабатывается. Если подписка не появилась через несколько минут, напишите нам через «Обратную связь».'; }
+          if (tries >= 12) {
+            clearInterval(timer);
+            showToast('Оплата обрабатывается. Если подписка не появилась через несколько минут, напишите нам через «Обратную связь».', 'warn');
+          }
         }, 5000);
       }
     })();
