@@ -48,14 +48,15 @@ test('ссылки в письмах — как заказал владелец'
   assert.ok(links('sub_started').includes('https://finnikbot.ru/cabinet/profile'));
 });
 
-test('кнопки оплаты пока без ссылки: нарисованы, но не кликабельны', () => {
+test('кнопки оплаты ведут в кабинет: /cabinet/profile?pay=1|6|12 (там создаётся платёж ЮKassa)', () => {
+  const want = { 'Оплатить 1 мес': 1, 'Оплатить 6 мес': 6, 'Оплатить 12 мес': 12 };
   for (const k of ['trial5', 'trial1', 'trialover', 'sub5', 'sub1', 'subover']) {
     const { html, text } = renderLetter(k, { userId: '00000000-0000-4000-8000-000000000001' });
-    for (const label of ['Оплатить 1 мес', 'Оплатить 6 мес', 'Оплатить 12 мес']) {
-      assert.ok(html.includes(label), `${k}: нет «${label}»`);
-      assert.doesNotMatch(html, new RegExp(`<a [^>]*>${label}</a>`), `${k}: «${label}» не должна быть ссылкой`);
+    for (const [label, m] of Object.entries(want)) {
+      const url = `https://finnikbot.ru/cabinet/profile?pay=${m}`;
+      assert.ok(new RegExp(`<a href="${url.replace(/[?.]/g, '\\$&')}"[^>]*>${label}</a>`).test(html), `${k}: «${label}» должна вести на ${url}`);
+      assert.ok(text.includes(`${label}: ${url}`), `${k}: в текстовой версии нет ссылки «${label}»`);
     }
-    assert.doesNotMatch(text, /Оплатить/, k);
   }
 });
 

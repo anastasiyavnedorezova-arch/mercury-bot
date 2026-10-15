@@ -3,6 +3,13 @@
 const IC = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMTcuNzUgMTlDMTcuNzUgMTkuMzEzOSAxNy41NTQ2IDE5LjU5NDYgMTcuMjYwMiAxOS43MDM1QzE2Ljk2NTggMTkuODEyMyAxNi42MzQ4IDE5LjcyNjQgMTYuNDMwNiAxOS40ODgxTDEwLjQzMDYgMTIuNDg4MUMxMC4xODk4IDEyLjIwNzMgMTAuMTg5OCAxMS43OTI4IDEwLjQzMDYgMTEuNTExOUwxNi40MzA2IDQuNTExOTRDMTYuNjM0OCA0LjI3MzY0IDE2Ljk2NTggNC4xODc3MyAxNy4yNjAyIDQuMjk2NjJDMTcuNTU0NiA0LjQwNTUxIDE3Ljc1IDQuNjg2MTggMTcuNzUgNS4wMDAwNEwxNy43NSAxOVoiIGZpbGw9IiNDQkQ1RTEiLz4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMy40ODgxIDE5LjU2OTVDMTMuODAyNiAxOS4yOTk5IDEzLjgzOSAxOC44MjY0IDEzLjU2OTQgMTguNTExOUw3Ljk4NzgxIDEyTDEzLjU2OTQgNS40ODgxMUMxMy44MzkgNS4xNzM2MSAxMy44MDI2IDQuNzAwMTQgMTMuNDg4MSA0LjQzMDU3QzEzLjE3MzYgNC4xNjEgMTIuNzAwMSA0LjE5NzQzIDEyLjQzMDYgNC41MTE5Mkw2LjQzMDU2IDExLjUxMTlDNi4xODk4MSAxMS43OTI4IDYuMTg5ODEgMTIuMjA3MiA2LjQzMDU2IDEyLjQ4ODFMMTIuNDMwNiAxOS40ODgxQzEyLjcwMDEgMTkuODAyNiAxMy4xNzM2IDE5LjgzOSAxMy40ODgxIDE5LjU2OTVaIiBmaWxsPSIjQ0JENUUxIi8+Cjwvc3ZnPgo=';
 const IO = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNNi4yNSAxOUM2LjI1IDE5LjMxMzkgNi40NDU0MyAxOS41OTQ2IDYuNzM5NzkgMTkuNzAzNUM3LjAzNDE1IDE5LjgxMjMgNy4zNjUxOSAxOS43MjY0IDcuNTY5NDQgMTkuNDg4MUwxMy41Njk0IDEyLjQ4ODFDMTMuODEwMiAxMi4yMDczIDEzLjgxMDIgMTEuNzkyOCAxMy41Njk0IDExLjUxMTlMNy41Njk0NCA0LjUxMTk0QzcuMzY1MTkgNC4yNzM2NCA3LjAzNDE1IDQuMTg3NzMgNi43Mzk3OSA0LjI5NjYyQzYuNDQ1NDMgNC40MDU1MSA2LjI1IDQuNjg2MTggNi4yNSA1LjAwMDA0TDYuMjUgMTlaIiBmaWxsPSIjQ0JENUUxIi8+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTAuNTExOSAxOS41Njk1QzEwLjE5NzQgMTkuMjk5OSAxMC4xNjEgMTguODI2NCAxMC40MzA2IDE4LjUxMTlMMTYuMDEyMiAxMkwxMC40MzA2IDUuNDg4MTFDMTAuMTYxIDUuMTczNjEgMTAuMTk3NCA0LjcwMDE0IDEwLjUxMTkgNC40MzA1N0MxMC44MjY0IDQuMTYxIDExLjI5OTkgNC4xOTc0MyAxMS41Njk1IDQuNTExOTJMMTcuNTY5NSAxMS41MTE5QzE3LjgxMDIgMTEuNzkyOCAxNy44MTAyIDEyLjIwNzIgMTcuNTY5NSAxMi40ODgxTDExLjU2OTUgMTkuNDg4MUMxMS4yOTk5IDE5LjgwMjYgMTAuODI2NCAxOS44MzkgMTAuNTExOSAxOS41Njk1WiIgZmlsbD0iI0NCRDVFMSIvPgo8L3N2Zz4K';
 
+// Отправляет на страницу входа и запоминает, куда вернуть после входа (например, оплата из письма: /cabinet/profile?pay=6)
+function goLogin() {
+  const back = window.location.pathname + window.location.search;
+  const redirect = back.startsWith('/cabinet/') && !back.startsWith('/cabinet/login') ? '?redirect=' + encodeURIComponent(back) : '';
+  window.location.replace('/cabinet/login' + redirect);
+}
+
 export function getToken() {
   const raw = localStorage.getItem('mercury_token');
   if (!raw) return null;
@@ -63,7 +70,7 @@ export function renderHeader({username, subscription}) {
 })();
 
 export function initLayout(activeNavItem) {
-  if (!getToken()) { window.location.replace('/cabinet/login'); return; }
+  if (!getToken()) { goLogin(); return; }
 
   // Set active nav item
   const targetHref = '/cabinet/' + activeNavItem;
@@ -170,7 +177,7 @@ export function initLogoutModal() {
   }
   function doLogout() {
     localStorage.removeItem('mercury_token');
-    window.location.replace('/cabinet/login');
+    goLogin();
   }
 
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeLogoutModal(); });
@@ -183,10 +190,10 @@ export function initLogoutModal() {
 
 export async function loadUser() {
   const token = getToken();
-  if (!token) { window.location.replace('/cabinet/login'); return; }
+  if (!token) { goLogin(); return; }
   try {
     const res = await fetch('/api/me', { headers: authHeaders() });
-    if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
+    if (res.status === 401) { goLogin(); return; }
     if (!res.ok) return;
     const d = await res.json();
     renderHeader({ username: d.username || 'Пользователь', subscription: d.subscription || null });

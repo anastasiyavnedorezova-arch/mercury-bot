@@ -3,8 +3,8 @@ import { computePeriod } from './plans.js';
 
 // Добавляет оплаченный период. Всегда новая строка (в subscriptions нет
 // уникального user_id); если доступ ещё действует — период идёт после него.
-export async function grantSubscription(userId, months, { paymentId = null, amountRub = null } = {}) {
-  const { data: last } = await supabase
+export async function grantSubscription(userId, months, { paymentId = null, amountRub = null, db = supabase } = {}) {
+  const { data: last } = await db
     .from('subscriptions')
     .select('ends_at')
     .eq('user_id', userId)
@@ -15,7 +15,7 @@ export async function grantSubscription(userId, months, { paymentId = null, amou
 
   const { startsAt, endsAt } = computePeriod(last?.ends_at, months);
 
-  const { error } = await supabase.from('subscriptions').insert({
+  const { error } = await db.from('subscriptions').insert({
     user_id: userId,
     status: 'active',
     period_months: months,
@@ -24,7 +24,11 @@ export async function grantSubscription(userId, months, { paymentId = null, amou
     payment_id: paymentId,
     amount_rub: amountRub,
   });
-  if (error) throw new Error(`subscription insert failed: ${error.message}`);
+  if (error) {
+    const e = new Error(`subscription insert failed: ${error.message}`);
+    e.code = error.code; // 23505 — этот платёж уже записан
+    throw e;
+  }
 
   return { startsAt, endsAt };
 }

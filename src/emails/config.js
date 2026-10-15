@@ -1,8 +1,13 @@
 // Настройки писем, которые меняются руками.
 
-// Ссылки на оплату для кнопок «Оплатить 1 / 6 / 12 мес». Пока платёжная система не подключена — null:
-// кнопка рисуется, но не кликабельна. Когда подключим оплату, сюда вписываем ссылки (или адреса страниц оплаты).
-export const PAY_URLS = { 1: null, 6: null, 12: null };
+// Ссылки для кнопок «Оплатить 1 / 6 / 12 мес» в письмах: открывают профиль в кабинете, а он создаёт платёж ЮKassa
+// (если человек не вошёл — сначала предложит войти и вернёт обратно). Адрес зависит от APP_BASE_URL.
+export const payUrl = (months) => `${baseUrl()}/cabinet/profile?pay=${months}`;
+export const PAY_URLS = {
+  get 1() { return payUrl(1); },
+  get 6() { return payUrl(6); },
+  get 12() { return payUrl(12); },
+};
 
 // Письмо №2.2 («Почитай, что пишут») содержит отзывы пользователей. Отправляется только если владелец подтвердил,
 // что это настоящие отзывы реальных людей. Подтверждено 13.10.2026: отзывы настоящих тестовых пользователей.
@@ -20,7 +25,7 @@ export const SUPPORT_EMAIL = 'hello@finnikbot.ru';
 // LETTERS_ONLY_TO=a@x.ru,b@y.ru — если задано, письма уходят только на эти адреса (защита на стейдже).
 // LETTERS_CHAIN_START=2026-10-14T00:00:00+03:00 — кто зарегистрировался раньше, считается «старым аккаунтом»
 //   и получает только письма про срок пробного периода (№4.1, №4.2, №5). Без этой переменной «новых» нет.
-// LETTERS_ALLOW_NO_PAY_LINKS=true — разрешить письма с кнопками «Оплатить» без ссылок оплаты (только для тестов).
+// LETTERS_ALLOW_NO_PAY_LINKS=true — разрешить письма с кнопками «Оплатить», даже если ключи ЮKassa не заданы (только для тестов).
 export function lettersMode() {
   const m = String(process.env.LETTERS_MODE || 'off').toLowerCase();
   return ['off', 'dry', 'on'].includes(m) ? m : 'off';
@@ -37,7 +42,15 @@ export function chainStart() {
   return d && !Number.isNaN(d.getTime()) ? d : null;
 }
 
+// Письма с кнопками «Оплатить» можно слать, только когда оплата реально работает (заданы ключи ЮKassa).
 export function paymentsReady() {
   if (String(process.env.LETTERS_ALLOW_NO_PAY_LINKS).toLowerCase() === 'true') return true;
-  return Boolean(PAY_URLS[1] && PAY_URLS[6] && PAY_URLS[12]);
+  return Boolean(process.env.YOOKASSA_SHOP_ID && process.env.YOOKASSA_SECRET_KEY);
+}
+
+// Можно ли прямо сейчас отправить письмо на этот адрес (для писем, которые уходят не из цепочки, например «Подписка активирована»)
+export function maySendTo(email) {
+  if (lettersMode() !== 'on') return false;
+  const only = lettersOnlyTo();
+  return !only || only.has(String(email ?? '').trim().toLowerCase());
 }

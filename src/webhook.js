@@ -4,10 +4,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cabinetRoutes from './cabinetRoutes.js';
 import authRoutes from './authRoutes.js';
-import { monthsForAmount } from './utils/plans.js';
 import { grantSubscription } from './utils/grantSubscription.js';
 import { createEmailRouter } from './emails/unsubscribe.js';
 import { createRusenderRouter } from './emails/events.js';
+import { createPaymentRouter } from './payments/routes.js';
+import { processYookassaEvent } from './payments/process.js';
+import { fetchPayment } from './payments/yookassa.js';
+import { sendLetter } from './emails/send.js';
+import { maySendTo } from './emails/config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -81,6 +85,7 @@ export function startWebhookServer(bot) {
   app.use(express.static(path.join(__dirname, '../public')));
   app.use(createEmailRouter({ db: supabase }));
   app.use(createRusenderRouter({ db: supabase }));
+  app.use(createPaymentRouter({ db: supabase }));
   app.use(authRoutes);
   app.use(cabinetRoutes);
 
@@ -88,97 +93,47 @@ export function startWebhookServer(bot) {
     res.send('Finnik bot webhook server is running');
   });
 
+  // ЮKassa: уведомление «платёж прошёл». Платёж перепроверяется запросом в ЮKassa (см. payments/process.js).
   app.post('/webhook/yookassa', async (req, res) => {
     try {
       const event = req.body;
-      console.log('[webhook] Received:', JSON.stringify(event));
-
-      if (event.event !== 'payment.succeeded') {
-        return res.status(200).send('ok');
-      }
-
-      const payment = event.object;
-      const amount = parseFloat(payment.amount.value);
-      const paymentId = payment.id;
-
-      // Email покупателя — ЮKassa передаёт в receipt или metadata
-      const customerEmail =
-        payment.receipt?.customer?.email ??
-        payment.metadata?.custEmail ??
-        payment.metadata?.customerNumber ??
-        null;
-
-      const months = monthsForAmount(amount) || 1;
-
-      console.log('[webhook] Payment succeeded:', paymentId,
-        'amount:', amount, 'email:', customerEmail, 'months:', months);
-
-      // Идемпотентность — не обрабатывать один платёж дважды
-      const { data: existing } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('payment_id', paymentId)
-        .limit(1);
-
-      if (existing?.length) {
-        console.log('[webhook] Payment already processed:', paymentId);
-        return res.status(200).send('ok');
-      }
-
-      // Ищем пользователя по email
-      const { data: users } = await supabase
-        .from('users')
-        .select('id, external_id')
-        .eq('email', customerEmail)
-        .limit(1);
-
-      if (!users?.length) {
-        console.error('[webhook] User not found for email:', customerEmail);
-
-        // Сохраняем необработанный платёж для ручной активации
-        await supabase.from('feedback').insert({
-          message: `НЕОБРАБОТАННЫЙ ПЛАТЁЖ: paymentId=${paymentId}, amount=${amount}, email=${customerEmail}`,
-        }).catch(e => console.error('[webhook] feedback insert error:', e.message));
-
-        // Уведомляем администратора
-        await bot.sendMessage(
-          process.env.ADMIN_TELEGRAM_ID,
-          `⚠️ Необработанный платёж!\n` +
-          `PaymentId: ${paymentId}\n` +
-          `Сумма: ${amount} ₽\n` +
-          `Email: ${customerEmail}\n\n` +
-          `Активируй вручную: /activate <telegram_id> ${months}`
-        ).catch(e => console.error('[webhook] admin notify error:', e.message));
-
-        return res.status(200).send('ok');
-      }
-
-      const { id: userId, external_id: telegramId } = users[0];
-
-      const { endsAt } = await grantSubscription(userId, months, {
-        paymentId,
-        amountRub: Math.round(amount),
+      console.log('[webhook] yookassa:', event?.event, event?.object?.id);
+      const out = await processYookassaEvent(supabase, event, {
+        fetchPayment,
+        grant: grantSubscription,
+        onGranted: async ({ user, months, endsAt, payment, amount }) => {
+          console.log('[webhook] Subscription created for user:', user.id, 'payment:', payment.id, 'months:', months);
+          if (user.channel === 'telegram' && user.external_id) {
+            await bot.sendMessage(
+              user.external_id,
+              '🎉 Подписка активирована!\n\n' +
+              `✅ Период: ${months} ${monthsWord(months)}\n` +
+              `📅 Действует до: ${endsAt.toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' })}\n\n` +
+              'Теперь тебе доступны все функции Финника 💛',
+              { reply_markup: { inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]] } }
+            ).catch((e) => console.error('[webhook] notify error:', e.message));
+          }
+          if (user.email && maySendTo(user.email)) {
+            sendLetter(supabase, user.id, 'sub_started').catch((e) => console.error('[webhook] letter error:', e.message));
+          }
+        },
+        onUnmatched: async ({ payment, amount, months }) => {
+          console.error('[webhook] User not found for payment:', payment.id);
+          const email = payment.receipt?.customer?.email ?? payment.metadata?.custEmail ?? null;
+          await supabase.from('feedback').insert({
+            message: `НЕОБРАБОТАННЫЙ ПЛАТЁЖ: paymentId=${payment.id}, amount=${amount}, email=${email}`,
+          }).catch((e) => console.error('[webhook] feedback insert error:', e.message));
+          if (process.env.ADMIN_TELEGRAM_ID) {
+            await bot.sendMessage(
+              process.env.ADMIN_TELEGRAM_ID,
+              `⚠️ Необработанный платёж!\nPaymentId: ${payment.id}\nСумма: ${amount} ₽\nEmail: ${email}\n\n` +
+              `Активируй вручную: /activate <telegram_id> ${months}`
+            ).catch((e) => console.error('[webhook] admin notify error:', e.message));
+          }
+        },
       });
-
-      console.log('[webhook] Subscription created for user:', userId);
-
-      await bot.sendMessage(
-        telegramId,
-        '🎉 Подписка активирована!\n\n' +
-        `✅ Период: ${months} ${monthsWord(months)}\n` +
-        `📅 Действует до: ${endsAt.toLocaleDateString('ru-RU')}\n\n` +
-        'Теперь тебе доступны все функции Финника 💛',
-        {
-          reply_markup: {
-            inline_keyboard: [[
-              { text: '☰ Главное меню', callback_data: 'menu:main' },
-            ]],
-          },
-        }
-      );
-
-      res.status(200).send('ok');
-
+      console.log('[webhook] yookassa result:', out.result);
+      res.status(out.status).send(out.status === 200 ? 'ok' : 'error');
     } catch (err) {
       console.error('[webhook] Error:', err.message);
       res.status(500).send('error');
