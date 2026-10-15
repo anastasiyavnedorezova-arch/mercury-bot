@@ -4,6 +4,7 @@ import { userStates } from '../state.js';
 import { inTz } from '../utils/dateTz.js';
 import { grantSubscription } from '../utils/grantSubscription.js';
 import { createPayment, yookassaConfigured } from '../payments/yookassa.js';
+import { findRecentPaidSubscription } from '../payments/process.js';
 import { baseUrl } from '../emails/config.js';
 
 async function getUserId(telegramId) {
@@ -239,6 +240,17 @@ export async function handleSubscriptionCallback(bot, query) {
   }
 
   if (action.startsWith('check_payment_')) {
+    // Если оплата уже прошла и подписка включена — говорим об этом сразу
+    const userId = await getUserId(telegramId);
+    const paid = userId ? await findRecentPaidSubscription(supabase, userId).catch(() => null) : null;
+    if (paid) {
+      await bot.sendMessage(
+        chatId,
+        `✅ Оплата прошла, подписка активна.\n📅 Действует до: ${formatDate(paid.endsAt)}\n\nСпасибо! 💛`,
+        { reply_markup: { inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]] } }
+      );
+      return;
+    }
     await bot.sendMessage(
       chatId,
       'Проверяю оплату... ⏳\n\n' +

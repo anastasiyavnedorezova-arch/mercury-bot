@@ -72,3 +72,24 @@ export async function processYookassaEvent(db, event, deps) {
   await deps.onGranted?.({ user, months, endsAt, payment, amount });
   return { status: 200, result: 'granted' };
 }
+
+/**
+ * Недавно оплаченная подписка пользователя (для кнопки «Я оплатил(а)» в боте):
+ * активная запись с payment_id, созданная за последние `withinMinutes` минут.
+ * @returns {Promise<{ endsAt: string } | null>}
+ */
+export async function findRecentPaidSubscription(db, userId, { now = new Date(), withinMinutes = 120 } = {}) {
+  const since = new Date(now.getTime() - withinMinutes * 60_000).toISOString();
+  const { data, error } = await db
+    .from('subscriptions')
+    .select('ends_at')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .not('payment_id', 'is', null)
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data?.ends_at) return null;
+  return { endsAt: data.ends_at };
+}

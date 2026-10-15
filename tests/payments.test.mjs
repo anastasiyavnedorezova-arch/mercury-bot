@@ -6,7 +6,7 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { makeDb } from './helpers/testDb.mjs';
 import { buildPaymentBody, createPayment, fetchPayment, yookassaConfigured } from '../src/payments/yookassa.js';
-import { processYookassaEvent, monthsFor } from '../src/payments/process.js';
+import { processYookassaEvent, monthsFor, findRecentPaidSubscription } from '../src/payments/process.js';
 import { createPaymentRouter } from '../src/payments/routes.js';
 import { paymentsReady, maySendTo } from '../src/emails/config.js';
 
@@ -270,4 +270,28 @@ test('бот и сервер: статичных платёжных ссылок
   assert.doesNotMatch(read('src/handlers/subscription.js'), /PAYMENT_LINK/);
   assert.doesNotMatch(read('src/webhook.js'), /monthsForAmount|PAYMENT_LINK/);
   assert.match(read('src/webhook.js'), /processYookassaEvent/);
+});
+
+test('кнопка «Я оплатил(а)»: находит свежую оплаченную подписку, пробный период и старые оплаты не считает', async () => {
+  const now = new Date('2026-10-15T12:00:00Z');
+  const uid = await newUser();
+  assert.equal(await findRecentPaidSubscription(ctx.db, uid, { now }), null);
+  // пробный период без payment_id — не оплата
+  await ctx.db.from('subscriptions').insert({ user_id: uid, status: 'trial', starts_at: now.toISOString(), ends_at: '2026-11-14T00:00:00Z', created_at: now.toISOString() });
+  assert.equal(await findRecentPaidSubscription(ctx.db, uid, { now }), null);
+  // оплата трёхчасовой давности — уже не «свежая»
+  await ctx.db.from('subscriptions').insert({ user_id: uid, status: 'active', period_months: 1, starts_at: '2026-11-14T00:00:00Z', ends_at: '2026-12-14T00:00:00Z', payment_id: 'old-1', amount_rub: 399, created_at: '2026-10-15T09:00:00Z' });
+  assert.equal(await findRecentPaidSubscription(ctx.db, uid, { now }), null);
+  // оплата 5 минут назад — находим
+  await ctx.db.from('subscriptions').insert({ user_id: uid, status: 'active', period_months: 6, starts_at: '2026-12-14T00:00:00Z', ends_at: '2027-06-14T00:00:00Z', payment_id: 'new-1', amount_rub: 1995, created_at: '2026-10-15T11:55:00Z' });
+  const r = await findRecentPaidSubscription(ctx.db, uid, { now });
+  assert.equal(new Date(r.endsAt).toISOString(), '2027-06-14T00:00:00.000Z');
+  // чужая оплата не подтягивается
+  assert.equal(await findRecentPaidSubscription(ctx.db, await newUser(), { now }), null);
+});
+
+test('бот: на «Я оплатил(а)» без найденной оплаты остаётся ответ «Проверяю оплату»', () => {
+  const src = read('src/handlers/subscription.js');
+  assert.ok(src.includes('findRecentPaidSubscription(supabase, userId)'));
+  assert.ok(src.includes('Проверяю оплату'));
 });
