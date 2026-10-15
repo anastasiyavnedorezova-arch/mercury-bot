@@ -114,7 +114,7 @@ export function startWebhookServer(bot) {
             ).catch((e) => console.error('[webhook] notify error:', e.message));
           }
           if (user.email && maySendTo(user.email)) {
-            sendLetter(supabase, user.id, 'sub_started').catch((e) => console.error('[webhook] letter error:', e.message));
+            sendLetter(supabase, user.id, 'sub_started', { vars: { endsAt }, logKey: `sub_started:${payment.id}` }).catch((e) => console.error('[webhook] letter error:', e.message));
           }
         },
         onUnmatched: async ({ payment, amount, months }) => {

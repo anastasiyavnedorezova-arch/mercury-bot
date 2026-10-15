@@ -241,10 +241,11 @@ export const LETTERS = {
     number: '—', title: 'Подписка активирована', kind: 'service', unsub: false, reason: 'service_payment',
     subject: 'Готово! Подписка активирована 🎉',
     preheader: 'Все возможности Финника доступны — продолжим заботиться о твоих финансах.',
-    blocks: (l) => [
+    blocks: (l, v = {}) => [
       banner('sub-started.png', 'Подписка активирована! Теперь тебе доступен полный функционал'),
       card([
         P('Готово! Твоя подписка активирована 🎉', { b: true }),
+        ...(fmtDate(v.endsAt) ? [P(`Подписка действует до ${fmtDate(v.endsAt)}.`, { b: true })] : []),
         P('Теперь тебе доступны все возможности Финника: бюджет и предупреждения о тратах, аналитика в любой момент, до трёх финансовых целей и другие полезные функции.'),
         P('Продолжай записывать расходы и доходы — Бот поможет держать финансы под контролем 💛', { b: true }),
         P('Проверить, сколько оплаченных дней подписки осталось, можно в личном кабинете в разделе «Мой профиль»', { i: true }),
@@ -332,6 +333,16 @@ export function needsPay(key) {
   return def.blocks(siteLinks()).some((b) => hasPay(b) || (b.type === 'card' && b.children.some(hasPay)));
 }
 
+/** «13 декабря 2026» по Москве; пустая строка, если даты нет или она некорректна. */
+export function fmtDate(d) {
+  if (!d) return '';
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Moscow' }).formatToParts(date);
+  const get = (type) => parts.find((x) => x.type === type)?.value ?? '';
+  return `${get('day')} ${get('month')} ${get('year')}`;
+}
+
 export function siteLinks(base = baseUrl()) {
   return {
     bot: `${base}/cabinet/bot`,
@@ -366,7 +377,7 @@ export function renderLetter(key, o = {}) {
   if (!def) throw new Error(`unknown letter: ${key}`);
   const base = baseUrl();
   const links = siteLinks(base);
-  const blocks = def.blocks(links);
+  const blocks = def.blocks(links, o.vars ?? {});
   const bannerBase = (o.bannerBase ?? `${base}/email/banners`).replace(/\/+$/, '');
 
   const reason = REASONS[def.reason];

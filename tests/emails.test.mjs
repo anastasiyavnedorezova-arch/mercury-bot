@@ -148,6 +148,41 @@ test('отписка: неверная подпись и мусор в адре�
   } finally { await srv.close(); }
 });
 
+test('письмо о подписке: дата окончания показывается, без даты письмо не ломается', async () => {
+  const uid = '00000000-0000-4000-8000-000000000001';
+  const withDate = renderLetter('sub_started', { userId: uid, vars: { endsAt: new Date('2026-12-13T16:10:11Z') } });
+  assert.match(withDate.html, /Подписка действует до 13 декабря 2026\./);
+  assert.match(withDate.text, /Подписка действует до 13 декабря 2026\./);
+  for (const bad of [undefined, null, 'не дата']) {
+    const r = renderLetter('sub_started', { userId: uid, vars: { endsAt: bad } });
+    assert.doesNotMatch(r.html, /Подписка действует до/);
+  }
+  assert.doesNotMatch(renderLetter('sub_started', { userId: uid }).html, /Подписка действует до/);
+});
+
+test('sendLetter передаёт дату окончания в письмо', async () => {
+  const id = await newUser();
+  const m = mailer();
+  const r = await sendLetter(ctx.db, id, 'sub_started', { ...m, vars: { endsAt: new Date('2027-01-05T10:00:00Z') } });
+  assert.deepEqual(r, { ok: true });
+  assert.match(m.sent[0].html, /Подписка действует до 5 января 2027\./);
+});
+
+test('письмо об оплате уходит при каждой оплате, но по одному разу на платёж', async () => {
+  const id = await newUser();
+  const m = mailer();
+  const a = { ...m, vars: { endsAt: new Date('2026-12-13T10:00:00Z') }, logKey: 'sub_started:pay-1' };
+  assert.deepEqual(await sendLetter(ctx.db, id, 'sub_started', a), { ok: true });
+  assert.deepEqual(await sendLetter(ctx.db, id, 'sub_started', a), { ok: false, reason: 'already' });
+  const b = { ...m, vars: { endsAt: new Date('2027-01-13T10:00:00Z') }, logKey: 'sub_started:pay-2' };
+  assert.deepEqual(await sendLetter(ctx.db, id, 'sub_started', b), { ok: true });
+  assert.equal(m.sent.length, 2);
+  assert.match(m.sent[1].html, /до 13 января 2027\./);
+  assert.notEqual(m.sent[0].idempotencyKey, m.sent[1].idempotencyKey);
+  const log = (await ctx.query("SELECT letter FROM public.email_log WHERE user_id=$1 ORDER BY letter", [id])).rows.map((r) => r.letter);
+  assert.deepEqual(log, ['sub_started:pay-1', 'sub_started:pay-2']);
+});
+
 // «Почтальон» для тестов: запоминает письма
 function mailer(result = { ok: true, uuid: 'prov-1' }) {
   const sent = [];

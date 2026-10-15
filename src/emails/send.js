@@ -15,6 +15,8 @@ export async function sendLetter(db, userId, key, deps = {}) {
   const sendEmail = deps.sendEmail ?? realSendEmail;
   const testimonialsOk = deps.testimonialsConfirmed ?? config.TESTIMONIALS_CONFIRMED ?? TESTIMONIALS_CONFIRMED;
   const def = LETTERS[key];
+  // Ключ записи в журнале: обычно равен виду письма; для повторяемых писем (например, об оплате) он свой на каждое событие
+  const logKey = deps.logKey ?? key;
   if (!def) return { ok: false, reason: 'unknown_letter' };
   if (def.requiresTestimonials && !testimonialsOk) return { ok: false, reason: 'testimonials_not_confirmed' };
 
@@ -35,10 +37,10 @@ export async function sendLetter(db, userId, key, deps = {}) {
 
   // Бронируем письмо в журнале. Если уже есть: «failed» — пробуем снова, всё остальное — не повторяем.
   let logId;
-  const ins = await db.from('email_log').insert({ user_id: userId, letter: key, status: 'sending' }).select('id').single();
+  const ins = await db.from('email_log').insert({ user_id: userId, letter: logKey, status: 'sending' }).select('id').single();
   if (ins.error) {
     if (ins.error.code !== '23505') return { ok: false, reason: 'db' };
-    const { data: prev } = await db.from('email_log').select('id, status, attempts').eq('user_id', userId).eq('letter', key).maybeSingle();
+    const { data: prev } = await db.from('email_log').select('id, status, attempts').eq('user_id', userId).eq('letter', logKey).maybeSingle();
     if (!prev || prev.status !== 'failed') return { ok: false, reason: 'already' };
     const { error } = await db.from('email_log')
       .update({ status: 'sending', error: null, attempts: (prev.attempts ?? 1) + 1, attempted_at: new Date().toISOString() })
@@ -49,8 +51,8 @@ export async function sendLetter(db, userId, key, deps = {}) {
     logId = ins.data.id;
   }
 
-  const { subject, html, text } = renderLetter(key, { userId });
-  const res = await sendEmail({ to: email, subject, html, text, idempotencyKey: `letter-${key}-${userId}` });
+  const { subject, html, text } = renderLetter(key, { userId, vars: deps.vars });
+  const res = await sendEmail({ to: email, subject, html, text, idempotencyKey: `letter-${logKey}-${userId}` });
 
   if (res.ok) {
     await db.from('email_log').update({ status: 'sent', provider_uuid: res.uuid ?? null, sent_at: new Date().toISOString() }).eq('id', logId);

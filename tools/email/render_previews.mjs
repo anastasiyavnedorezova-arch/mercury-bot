@@ -16,6 +16,7 @@ for (const key of LETTER_KEYS) {
     userId: '00000000-0000-4000-8000-000000000000',
     bannerBase: `file://${banners}`,
     unsubUrl: 'https://finnikbot.ru/unsubscribe',
+    vars: { endsAt: new Date('2026-12-13T12:00:00Z') },
   });
   const file = `${key}.html`;
   fs.writeFileSync(path.join(out, file), html);
