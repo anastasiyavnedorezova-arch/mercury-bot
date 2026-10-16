@@ -63,7 +63,7 @@ body.lw-lock { overflow: hidden; }
 .lw-close { width: 36px; height: 36px; border-radius: 50%; background: transparent; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: background 150ms; }
 .lw-close:hover { background: #F3F4F6; }
 
-.lw-chat { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; display: flex; flex-direction: column; scroll-behavior: smooth; }
+.lw-chat { position: relative; flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px; display: flex; flex-direction: column; scroll-behavior: smooth; }
 .lw-bubble-wrap { display: flex; flex-direction: column; margin-bottom: 10px; }
 .lw-bubble-wrap.from-bot { align-items: flex-start; }
 .lw-bubble-wrap.from-user { align-items: flex-end; }
