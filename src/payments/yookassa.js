@@ -2,6 +2,7 @@
 // Ключи берутся из окружения: YOOKASSA_SHOP_ID и YOOKASSA_SECRET_KEY (на сервере, в чат не отправлять).
 import crypto from 'crypto';
 import { PRICES } from '../utils/plans.js';
+import { priceWithPromo } from './promo.js';
 
 const API = 'https://api.yookassa.ru/v3';
 export const PLAN_MONTHS = [1, 6, 12];
@@ -17,14 +18,20 @@ export function planTitle(months) {
 
 // Тело запроса «создать платёж». Систему налогообложения в чеке не передаём: берётся из настроек магазина
 // (в API ЮKassa нет кода для АУСН). НДС — «без НДС» (vat_code 1), услуга, полная предоплата.
-export function buildPaymentBody({ months, userId, email, returnUrl }) {
-  const price = PRICES[months];
+// promo (необязательно): { code, amountOff } — скидка в рублях; в чек и в платёж идёт уже сниженная цена,
+// а код и размер скидки сохраняются в метках платежа (по ним потом засчитывается использование кода).
+export function buildPaymentBody({ months, userId, email, returnUrl, promo }) {
+  const price = promo ? priceWithPromo(months, promo.amountOff) : PRICES[months];
   return {
     amount: money(price),
     capture: true,
     confirmation: { type: 'redirect', return_url: returnUrl },
     description: planTitle(months),
-    metadata: { user_id: String(userId), months: String(months) },
+    metadata: {
+      user_id: String(userId),
+      months: String(months),
+      ...(promo ? { promo: promo.code, promo_off: String(promo.amountOff) } : {}),
+    },
     receipt: {
       customer: { email },
       items: [{
@@ -57,15 +64,16 @@ async function call(method, path, { body, idempotenceKey, fetchImpl = fetch } = 
 
 /**
  * @returns {Promise<{ ok: true, id: string, url: string } | { ok: false, reason: string }>}
- *  reason: not_configured | bad_months | no_email | yookassa_error
+ *  reason: not_configured | bad_months | no_email | promo_not_applicable | yookassa_error
  */
-export async function createPayment({ months, userId, email, returnUrl }, deps = {}) {
+export async function createPayment({ months, userId, email, returnUrl, promo }, deps = {}) {
   if (!yookassaConfigured()) return { ok: false, reason: 'not_configured' };
   if (!isPlanMonths(months)) return { ok: false, reason: 'bad_months' };
   if (!email) return { ok: false, reason: 'no_email' };
+  if (promo && priceWithPromo(Number(months), promo.amountOff) === null) return { ok: false, reason: 'promo_not_applicable' };
   try {
     const r = await call('POST', '/payments', {
-      body: buildPaymentBody({ months: Number(months), userId, email, returnUrl }),
+      body: buildPaymentBody({ months: Number(months), userId, email, returnUrl, promo }),
       idempotenceKey: crypto.randomUUID(),
       fetchImpl: deps.fetch,
     });

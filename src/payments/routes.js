@@ -1,10 +1,12 @@
-// POST /api/pay { months: 1 | 6 | 12, email? } → { url } — ссылка на оплату ЮKassa для вошедшего пользователя.
+// POST /api/pay { months: 1 | 6 | 12, email?, promo? } → { url } — ссылка на оплату ЮKassa для вошедшего пользователя.
+// POST /api/promo/check { code } → { code, amount_off_rub } — проверка промокода до оплаты (показать новую цену).
 // Чек уходит на email из профиля. Если в профиле его нет (например, вход через Telegram), берём email из запроса
 // и пробуем сохранить его в профиль (если он занят другим аккаунтом, сохранение пропускаем: для чека это не важно).
 import { Router } from 'express';
 import { requireAuth } from '../authMiddleware.js';
 import { baseUrl } from '../emails/config.js';
 import { createPayment, isPlanMonths } from './yookassa.js';
+import { checkPromo, normalizeCode, priceWithPromo, PROMO_MESSAGES } from './promo.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -16,8 +18,30 @@ const ERRORS = {
   yookassa_error: [502, 'Не удалось создать платёж. Попробуйте ещё раз.'],
 };
 
+// Не даём перебирать промокоды: не больше 10 проверок в минуту на пользователя (память процесса; при перезапуске сбрасывается)
+const checks = new Map();
+function tooManyChecks(userId, now = Date.now()) {
+  const recent = (checks.get(userId) ?? []).filter((t) => now - t < 60_000);
+  recent.push(now);
+  checks.set(userId, recent);
+  return recent.length > 10;
+}
+
 export function createPaymentRouter({ db, create = createPayment }) {
   const router = Router();
+
+  router.post('/api/promo/check', requireAuth, async (req, res) => {
+    try {
+      if (tooManyChecks(req.userId)) return res.status(429).json({ error: 'too_many', message: 'Слишком много попыток. Подожди минуту.' });
+      const r = await checkPromo(db, req.body?.code, req.userId);
+      if (!r.ok) return res.status(400).json({ error: `promo_${r.reason}`, message: PROMO_MESSAGES[r.reason] });
+      res.json({ code: r.promo.code, amount_off_rub: r.promo.amountOff });
+    } catch (e) {
+      console.error('[promo] check error:', e.message);
+      res.status(500).json({ error: 'internal', message: 'Не удалось проверить промокод. Попробуй ещё раз.' });
+    }
+  });
+
   router.post('/api/pay', requireAuth, async (req, res) => {
     try {
       const months = Number(req.body?.months);
@@ -40,17 +64,28 @@ export function createPaymentRouter({ db, create = createPayment }) {
         }
       }
 
+      let promo = null;
+      if (normalizeCode(req.body?.promo)) {
+        if (tooManyChecks(user.id)) return res.status(429).json({ error: 'too_many', message: 'Слишком много попыток. Подожди минуту.' });
+        const pr = await checkPromo(db, req.body.promo, user.id);
+        if (!pr.ok) return res.status(400).json({ error: `promo_${pr.reason}`, message: PROMO_MESSAGES[pr.reason] });
+        if (priceWithPromo(months, pr.promo.amountOff) === null) return res.status(400).json({ error: 'promo_not_applicable', message: PROMO_MESSAGES.not_applicable });
+        promo = pr.promo;
+      }
+
       const r = await create({
         months,
         userId: user.id,
         email,
         returnUrl: `${baseUrl()}/cabinet/profile?paid=1`,
+        ...(promo ? { promo } : {}),
       });
       if (!r.ok) {
+        if (r.reason === 'promo_not_applicable') return res.status(400).json({ error: r.reason, message: PROMO_MESSAGES.not_applicable });
         const [status, message] = ERRORS[r.reason] ?? ERRORS.yookassa_error;
         return res.status(status).json({ error: r.reason, message });
       }
-      console.log(`[pay] payment ${r.id} created, user=${user.id}, months=${months}`);
+      console.log(`[pay] payment ${r.id} created, user=${user.id}, months=${months}${promo ? `, promo=${promo.code}` : ''}`);
       res.json({ url: r.url });
     } catch (e) {
       console.error('[pay] error:', e.message);

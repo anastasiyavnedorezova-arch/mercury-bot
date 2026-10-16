@@ -421,6 +421,15 @@
 .modal-plan2__prices{display:flex;align-items:baseline;gap:4px}
 .modal-plan2__old-price{font-size:16px;font-weight:400;line-height:24px;color:#9CA3AF;text-decoration:line-through}
 .modal-plan2__new-price{font-size:20px;font-weight:600;line-height:27px;letter-spacing:.4px;color:#E5484D}
+.promo-new-price{font-size:20px;font-weight:600;line-height:27px;letter-spacing:.4px;color:#E5484D}
+.promo-box{margin:0 0 12px}
+.promo-toggle{background:none;border:none;padding:0;color:var(--color-brand-primary);font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;text-decoration:underline}
+.promo-row{display:none;gap:8px;margin-top:8px}
+.promo-row .modal-input{flex:1;min-width:0;text-transform:uppercase}
+.promo-row .promo-apply{flex:none}
+.promo-msg{display:none;font-size:13px;line-height:18px;margin:8px 0 0}
+.promo-msg.ok{color:#1E7A46}
+.promo-msg.err{color:#9B2C2C}
 .modal-plan2__btn{padding:6px 14px;background:#1E2A38;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;line-height:20px;letter-spacing:.14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;transition:opacity 150ms}
 .modal-plan2__btn:hover{opacity:.85}
 .modal-plan2__btn--accent{background:#4C9AFF}
@@ -674,6 +683,14 @@
       ✓ Бюджет на месяц и Контроль сальдо<br>
       ✓ Предупреждения о риске превышения бюджета
     </div>
+    <div class="promo-box">
+      <button type="button" class="promo-toggle" onclick="togglePromo(this)">У меня есть промокод</button>
+      <div class="promo-row">
+        <input class="modal-input promo-input" type="text" placeholder="Промокод" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32"/>
+        <button type="button" class="modal-btn-primary promo-apply" onclick="applyPromo(this)">Применить</button>
+      </div>
+      <p class="promo-msg"></p>
+    </div>
     <div class="modal-plans2">
     
             <!-- 1 месяц -->
@@ -748,6 +765,14 @@
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('modalRenew')">✕</button>
     <h2 class="modal-title">Выберите тариф</h2>
+    <div class="promo-box">
+      <button type="button" class="promo-toggle" onclick="togglePromo(this)">У меня есть промокод</button>
+      <div class="promo-row">
+        <input class="modal-input promo-input" type="text" placeholder="Промокод" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32"/>
+        <button type="button" class="modal-btn-primary promo-apply" onclick="applyPromo(this)">Применить</button>
+      </div>
+      <p class="promo-msg"></p>
+    </div>
     <div class="modal-plans2">
     
             <!-- 1 месяц -->
@@ -1084,11 +1109,17 @@
       const oldText = btn ? btn.textContent : '';
       if (btn) btn.textContent = 'Переходим к оплате…';
       try {
-        const res = await fetch('/api/pay', { method: 'POST', headers: authHeaders(), body: JSON.stringify(email ? { months, email } : { months }) });
+        const payload = { months };
+        if (email) payload.email = email;
+        if (appliedPromo) payload.promo = appliedPromo.code;
+        const res = await fetch('/api/pay', { method: 'POST', headers: authHeaders(), body: JSON.stringify(payload) });
         if (res.status === 401) { window.location.href = '/cabinet/login?redirect=' + encodeURIComponent('/cabinet/profile?pay=' + months); return; }
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) { window.location.href = data.url; return; }
-        if (data.error === 'no_email' || data.error === 'bad_email') {
+        if (String(data.error || '').startsWith('promo_')) {
+          appliedPromo = null; paintPromo(); setPromoMsg(data.message, 'err');
+          showPayError(data.message);
+        } else if (data.error === 'no_email' || data.error === 'bad_email') {
           askPayEmail(months, data.error === 'bad_email' ? data.message : '');
         } else {
           showPayError(data.message || 'Не удалось создать платёж. Попробуйте ещё раз.');
@@ -1099,6 +1130,84 @@
       buttons.forEach(b => { b.disabled = false; });
       if (btn) btn.textContent = oldText;
     };
+    // ---- ПРОМОКОД: скидка в рублях на любой тариф; сервер ещё раз проверяет код при создании платежа ----
+    const PLAN_PRICES = { 1: 399, 6: 1995, 12: 3990 };
+    let appliedPromo = null; // { code, off }
+    const fmtRub = (n) => n.toLocaleString('ru-RU') + ' руб.';
+    function paintPromo() {
+      document.querySelectorAll('.modal-plan2').forEach((card) => {
+        const btn = card.querySelector('.modal-plan2__btn');
+        const months = Number(((btn && btn.getAttribute('onclick')) || '').match(/startPayment\((\d+)/)?.[1]);
+        const base = PLAN_PRICES[months];
+        if (!base) return;
+        const single = card.querySelector('.modal-plan2__price');   // тариф без «старой» цены
+        const discounted = card.querySelector('.modal-plan2__new-price'); // тарифы со скидкой за срок
+        if (single) {
+          if (!single.dataset.orig) single.dataset.orig = single.textContent;
+          single.innerHTML = appliedPromo
+            ? '<span class="modal-plan2__old-price">' + single.dataset.orig + '</span> <span class="promo-new-price">' + fmtRub(base - appliedPromo.off) + '</span>'
+            : single.dataset.orig;
+        }
+        if (discounted) {
+          if (!discounted.dataset.orig) discounted.dataset.orig = discounted.textContent;
+          discounted.textContent = appliedPromo ? fmtRub(base - appliedPromo.off) : discounted.dataset.orig;
+        }
+      });
+    }
+    function setPromoMsg(text, kind) {
+      document.querySelectorAll('.promo-msg').forEach((el) => {
+        el.textContent = text || '';
+        el.className = 'promo-msg' + (kind ? ' ' + kind : '');
+        el.style.display = text ? 'block' : 'none';
+      });
+    }
+    function showPromoRows(code) {
+      document.querySelectorAll('.promo-toggle').forEach((b) => { b.style.display = 'none'; });
+      document.querySelectorAll('.promo-row').forEach((r) => { r.style.display = 'flex'; });
+      if (code !== undefined) document.querySelectorAll('.promo-input').forEach((i) => { i.value = code; });
+    }
+    window.togglePromo = function(btn) {
+      showPromoRows();
+      const input = btn.closest('.promo-box').querySelector('.promo-input');
+      if (input) input.focus();
+    };
+    async function applyPromoCode(raw) {
+      const code = String(raw || '').replace(/\s+/g, '').toUpperCase();
+      if (!code) { setPromoMsg('Введи промокод', 'err'); return false; }
+      showPromoRows(code);
+      try {
+        const res = await fetch('/api/promo/check', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ code }) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.code) {
+          appliedPromo = { code: data.code, off: Number(data.amount_off_rub) };
+          paintPromo();
+          setPromoMsg('Промокод ' + data.code + ' применён: −' + appliedPromo.off.toLocaleString('ru-RU') + ' ₽ на любой тариф', 'ok');
+          return true;
+        }
+        appliedPromo = null; paintPromo();
+        setPromoMsg(data.message || 'Не удалось проверить промокод. Попробуй ещё раз.', 'err');
+      } catch (e) {
+        appliedPromo = null; paintPromo();
+        setPromoMsg('Не удалось проверить промокод. Проверь интернет и попробуй ещё раз.', 'err');
+      }
+      return false;
+    }
+    window.applyPromo = function(btn) {
+      return applyPromoCode(btn.closest('.promo-box').querySelector('.promo-input').value);
+    };
+    document.addEventListener('input', (e) => {
+      if (!e.target.classList || !e.target.classList.contains('promo-input')) return;
+      document.querySelectorAll('.promo-input').forEach((i) => { if (i !== e.target) i.value = e.target.value; });
+      // Код изменили после применения — скидку снимаем, пока не нажмут «Применить» снова
+      if (appliedPromo && e.target.value.replace(/\s+/g, '').toUpperCase() !== appliedPromo.code) { appliedPromo = null; paintPromo(); setPromoMsg(''); }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('promo-input')) {
+        e.preventDefault();
+        e.target.closest('.promo-box').querySelector('.promo-apply').click();
+      }
+    });
+
     // Если в профиле нет почты, спрашиваем её прямо здесь: на неё уйдёт чек
     let payEmailMonths = null;
     function askPayEmail(months, errorText) {
@@ -1161,12 +1270,17 @@
     };
 
     // Переходы из писем и после оплаты: /cabinet/profile?pay=6 и /cabinet/profile?paid=1
-    (function handlePayParams() {
+    (async function handlePayParams() {
       const qs = new URLSearchParams(window.location.search);
       const pay = Number(qs.get('pay'));
       const paid = qs.get('paid');
-      if (!pay && !paid) return;
+      const promoParam = qs.get('promo');
+      if (!pay && !paid && !promoParam) return;
       history.replaceState(null, '', window.location.pathname);
+      if (promoParam) {
+        const applied = await applyPromoCode(promoParam);
+        if (applied && ![1, 6, 12].includes(pay)) showToast('Промокод применён. Выбери тариф: цена уже со скидкой.', 'success', 6000);
+      }
       if ([1, 6, 12].includes(pay)) {
         startPayment(pay, null);
       } else if (paid === '1') {

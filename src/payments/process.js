@@ -3,14 +3,22 @@
 // перепроверяем запросом в ЮKassa и дальше работаем только с тем, что вернула она.
 import { PRICES, monthsForAmount } from '../utils/plans.js';
 import { isPlanMonths } from './yookassa.js';
+import { recordRedemption } from './promo.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Сколько месяцев оплачено: из метки платежа, если сумма сходится с ценой; иначе по сумме (старые платежи по статичным ссылкам). */
+/**
+ * Сколько месяцев оплачено: из метки платежа, если сумма сходится с ценой (или с ценой минус скидка по промокоду,
+ * которую записали в метки мы сами при создании платежа); иначе по сумме (старые платежи по статичным ссылкам).
+ */
 export function monthsFor(payment) {
   const amount = parseFloat(payment?.amount?.value);
   const m = Number(payment?.metadata?.months);
-  if (isPlanMonths(m) && Math.abs(amount - PRICES[m]) < 0.005) return m;
+  if (isPlanMonths(m)) {
+    if (Math.abs(amount - PRICES[m]) < 0.005) return m;
+    const off = Number(payment?.metadata?.promo_off);
+    if (off > 0 && Math.abs(amount - (PRICES[m] - off)) < 0.005) return m;
+  }
   return monthsForAmount(amount) || 0;
 }
 
@@ -68,6 +76,11 @@ export async function processYookassaEvent(db, event, deps) {
     if (e.code === '23505') return { status: 200, result: 'duplicate' }; // параллельное уведомление уже записало платёж
     console.error('[payments] grant failed:', e.message);
     return { status: 500, result: 'grant_failed' };
+  }
+  // Промокод засчитываем только если сумма действительно сходится со скидкой (метки создаём мы, ЮKassa их возвращает как есть)
+  const off = Number(payment.metadata?.promo_off);
+  if (payment.metadata?.promo && off > 0 && Math.abs(amount - (PRICES[months] - off)) < 0.005) {
+    await recordRedemption(db, { code: payment.metadata.promo, userId: user.id, paymentId: payment.id, amountOff: off });
   }
   await deps.onGranted?.({ user, months, endsAt, payment, amount });
   return { status: 200, result: 'granted' };

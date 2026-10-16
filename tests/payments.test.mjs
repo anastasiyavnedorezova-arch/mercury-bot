@@ -267,7 +267,7 @@ test('кабинет: без почты в профиле открывается
   assert.match(profile, /id="modalPayEmail"/);
   assert.match(profile, /Куда отправить чек\?/);
   assert.match(profile, /window\.submitPayEmail/);
-  assert.match(profile, /JSON\.stringify\(email \? \{ months, email \} : \{ months \}\)/);
+  assert.match(profile, /if \(email\) payload\.email = email;/);
   assert.match(profile, /data\.error === 'no_email'/);
   assert.match(profile, /askPayEmail\(/);
 });

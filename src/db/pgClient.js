@@ -22,6 +22,8 @@ export const FOREIGN_KEYS = {
   goals: { users: 'user_id' },
   notifications: { users: 'user_id' },
   password_resets: { users: 'user_id' },
+  promo_codes: {},
+  promo_redemptions: { users: 'user_id' },
   subscriptions: { users: 'user_id' },
   transactions: { categories: 'category_id', goals: 'goal_id', users: 'user_id' },
   users: { users: 'merged_into' },
