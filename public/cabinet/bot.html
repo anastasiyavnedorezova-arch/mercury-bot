@@ -168,6 +168,17 @@ body{font-family:'Manrope',sans-serif;background:#F5F7FA;margin:0;overflow:hidde
 
 <script type="module">
 import { getToken, authHeaders } from './layout.js';
+import { createChatHistory, userIdFromToken, compactKeyboard } from './chat-history.js';
+
+// История чата общая со встроенным виджетом: живёт в браузере до выхода из аккаунта
+const history = createChatHistory({
+  storage: (() => { try { return window.localStorage; } catch { return null; } })(),
+  getUserId: () => userIdFromToken(getToken()),
+});
+function sessionExpired(redirect) {
+  history.clear();
+  window.location.href = redirect || '/cabinet/login';
+}
 
 // ── Auth guard: redirect to login if no token present ──────────────────────
 if (!getToken()) {
@@ -183,7 +194,7 @@ async function initChat() {
   try {
     const res = await fetch('/api/bot/init', { method: 'POST', headers: authHeaders() });
     if (res.status === 401) {
-      window.location.href = '/cabinet/login?redirect=/cabinet/bot';
+      sessionExpired('/cabinet/login?redirect=/cabinet/bot');
       return;
     }
     if (!res.ok) return;
@@ -208,7 +219,7 @@ async function pollLoop() {
   while (isPolling) {
     try {
       const res = await fetch('/api/bot/poll', { headers: authHeaders() });
-      if (res.status === 401) { window.location.href = '/cabinet/login'; return; }
+      if (res.status === 401) { sessionExpired(); return; }
       if (!res.ok) throw new Error('poll failed: ' + res.status);
       const data = await res.json();
       if (data.messages?.length) {
@@ -234,39 +245,67 @@ function removeTyping() {
   document.querySelectorAll('.typing-wrap').forEach(el => el.remove());
 }
 
+// Пузырь бота + кнопки под ним. keyboard: [[ [текст, callback_data], … ], …]
+function appendBotBubble(area, text, keyboard) {
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap from-bot';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble bot';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  area.appendChild(wrap);
+
+  if (keyboard.length > 0) {
+    const ctaWrap = document.createElement('div');
+    ctaWrap.className = 'cta-wrap';
+    for (const row of keyboard) {
+      for (const [label, data] of row) {
+        const b = document.createElement('button');
+        b.className = 'cta-btn msg-inline-btn';
+        b.textContent = label;
+        b.callback_data = data || '';
+        b.onclick = () => handleInlineButton(b);
+        ctaWrap.appendChild(b);
+      }
+    }
+    area.appendChild(ctaWrap);
+  }
+}
+
+function appendUserBubble(area, text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'bubble-wrap from-user';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble user';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  area.appendChild(wrap);
+}
+
 function renderMessages(messages) {
   removeTyping();
   const area = document.getElementById('chatArea');
   for (const msg of messages) {
     if (msg.type !== 'message' && msg.type !== 'edit') continue;
     const text = msg.text || '';
-    const keyboard = msg.opts?.reply_markup?.inline_keyboard || [];
-
-    const wrap = document.createElement('div');
-    wrap.className = 'bubble-wrap from-bot';
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble bot';
-    bubble.textContent = text;
-    wrap.appendChild(bubble);
-    area.appendChild(wrap);
-
-    if (keyboard.length > 0) {
-      const ctaWrap = document.createElement('div');
-      ctaWrap.className = 'cta-wrap';
-      for (const row of keyboard) {
-        for (const btn of row) {
-          const b = document.createElement('button');
-          b.className = 'cta-btn msg-inline-btn';
-          b.textContent = btn.text;
-          b.callback_data = btn.callback_data || '';
-          b.onclick = () => handleInlineButton(b);
-          ctaWrap.appendChild(b);
-        }
-      }
-      area.appendChild(ctaWrap);
-    }
+    const keyboard = compactKeyboard(msg.opts?.reply_markup?.inline_keyboard);
+    appendBotBubble(area, text, keyboard);
+    history.addBot(text, keyboard);
   }
   area.scrollTop = area.scrollHeight;
+}
+
+// true, если в браузере была переписка (с других страниц кабинета) и она показана
+function restoreHistory() {
+  const items = history.load();
+  if (!items.length) return false;
+  const area = document.getElementById('chatArea');
+  for (const it of items) {
+    if (it.r === 'u') appendUserBubble(area, it.t || '');
+    else appendBotBubble(area, it.t || '', Array.isArray(it.k) ? it.k : []);
+  }
+  area.scrollTop = area.scrollHeight;
+  return true;
 }
 
 // ── Send message ───────────────────────────────────────────────────────────
@@ -279,13 +318,8 @@ async function sendMessage() {
   const area = document.getElementById('chatArea');
 
   // User bubble
-  const wrap = document.createElement('div');
-  wrap.className = 'bubble-wrap from-user';
-  const bubble = document.createElement('div');
-  bubble.className = 'bubble user';
-  bubble.textContent = text;
-  wrap.appendChild(bubble);
-  area.appendChild(wrap);
+  appendUserBubble(area, text);
+  history.addUser(text);
 
   // Typing indicator
   const typingId = 'typingIndicator-' + Date.now() + '-' + Math.random().toString(36).slice(2);
@@ -304,7 +338,7 @@ async function sendMessage() {
     });
     if (res.status === 401) {
       removeTyping();
-      window.location.href = '/cabinet/login?redirect=/cabinet/bot';
+      sessionExpired('/cabinet/login?redirect=/cabinet/bot');
       return;
     }
   } catch(e) {
@@ -315,22 +349,12 @@ async function sendMessage() {
 
 // ── Inline button handler ──────────────────────────────────────────────────
 async function handleInlineButton(btn) {
-  // Блокируем все inline-кнопки чтобы избежать повторных нажатий
-  document.querySelectorAll('.msg-inline-btn').forEach(b => { b.disabled = true; });
-
   const area = document.getElementById('chatArea');
 
-  // Показываем нажатую кнопку как пузырь пользователя, убираем клавиатуру
-  const ctaWrap = btn.closest('.cta-wrap');
-  if (ctaWrap) ctaWrap.remove();
-
-  const uWrap = document.createElement('div');
-  uWrap.className = 'bubble-wrap from-user';
-  const uBubble = document.createElement('div');
-  uBubble.className = 'bubble user';
-  uBubble.textContent = btn.textContent;
-  uWrap.appendChild(uBubble);
-  area.appendChild(uWrap);
+  // Как в Telegram и во встроенном виджете: кнопки остаются на месте и нажимаются повторно.
+  // Нажатая кнопка показывается пузырём пользователя.
+  appendUserBubble(area, btn.textContent);
+  history.addUser(btn.textContent);
 
   // Показываем индикатор печати
   const typingId = 'typingIndicator-' + Date.now() + '-' + Math.random().toString(36).slice(2);
@@ -347,7 +371,7 @@ async function handleInlineButton(btn) {
       headers: authHeaders(),
       body: JSON.stringify({ callback_data: btn.callback_data }),
     });
-    if (res.status === 401) { window.location.href = '/cabinet/login'; return; }
+    if (res.status === 401) { sessionExpired(); return; }
     const data = await res.json();
     if (data.messages?.length) {
       renderMessages(data.messages);
@@ -383,7 +407,12 @@ document.getElementById('botMenuBtn').addEventListener('click', () => {
 });
 
 // ── Start ──────────────────────────────────────────────────────────────────
-initChat();
+// Если переписка уже есть (начата на другой странице) — показываем её, меню заново не просим
+if (restoreHistory()) {
+  startPolling();
+} else {
+  initChat();
+}
 </script>
 </body>
 </html>

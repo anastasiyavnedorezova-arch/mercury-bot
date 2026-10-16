@@ -669,6 +669,7 @@
     // Clear local storage
     try {
       localStorage.removeItem('mercury_token');
+      localStorage.removeItem('finnik_chat_v1');
       Object.keys(localStorage).filter(k => k.includes('auth')).forEach(k => localStorage.removeItem(k));
     } catch {}
     closeLogoutModal();

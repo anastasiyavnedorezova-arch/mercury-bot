@@ -1,4 +1,11 @@
 import { getToken, authHeaders } from './layout.js';
+import { createChatHistory, userIdFromToken, compactKeyboard } from './chat-history.js';
+
+// История чата живёт в браузере до выхода из аккаунта и общая для всех страниц кабинета
+const history = createChatHistory({
+  storage: (() => { try { return window.localStorage; } catch { return null; } })(),
+  getUserId: () => userIdFromToken(getToken()),
+});
 
 let widgetMounted = false;
 let widgetPolling = false;
@@ -98,46 +105,79 @@ function removeTyping() {
   document.querySelectorAll('.bot-widget-typing-wrap').forEach(el => el.remove());
 }
 
+// Пузырь бота + кнопки под ним. keyboard: [[ [текст, callback_data], … ], …]
+function appendBotBubble(area, text, keyboard) {
+  const wrap = document.createElement('div');
+  wrap.className = 'bot-widget-bubble-wrap from-bot';
+  const bubble = document.createElement('div');
+  bubble.className = 'bot-widget-bubble bot';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  area.appendChild(wrap);
+
+  if (keyboard.length > 0) {
+    const ctaWrap = document.createElement('div');
+    ctaWrap.className = 'bot-widget-cta-wrap';
+    for (const row of keyboard) {
+      for (const [label, data] of row) {
+        const b = document.createElement('button');
+        b.className = 'bot-widget-cta-btn bot-widget-inline-btn';
+        b.textContent = label;
+        b.callback_data = data || '';
+        b.onclick = () => handleInlineButton(b);
+        ctaWrap.appendChild(b);
+      }
+    }
+    area.appendChild(ctaWrap);
+  }
+}
+
+function appendUserBubble(area, text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'bot-widget-bubble-wrap from-user';
+  const bubble = document.createElement('div');
+  bubble.className = 'bot-widget-bubble user';
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  area.appendChild(wrap);
+}
+
 function renderMessages(messages) {
   removeTyping();
   const area = document.getElementById('botWidgetChatArea');
   for (const msg of messages) {
     if (msg.type !== 'message' && msg.type !== 'edit') continue;
     const text = msg.text || '';
-    const keyboard = msg.opts?.reply_markup?.inline_keyboard || [];
-
-    const wrap = document.createElement('div');
-    wrap.className = 'bot-widget-bubble-wrap from-bot';
-    const bubble = document.createElement('div');
-    bubble.className = 'bot-widget-bubble bot';
-    bubble.textContent = text;
-    wrap.appendChild(bubble);
-    area.appendChild(wrap);
-
-    if (keyboard.length > 0) {
-      const ctaWrap = document.createElement('div');
-      ctaWrap.className = 'bot-widget-cta-wrap';
-      for (const row of keyboard) {
-        for (const btn of row) {
-          const b = document.createElement('button');
-          b.className = 'bot-widget-cta-btn bot-widget-inline-btn';
-          b.textContent = btn.text;
-          b.callback_data = btn.callback_data || '';
-          b.onclick = () => handleInlineButton(b);
-          ctaWrap.appendChild(b);
-        }
-      }
-      area.appendChild(ctaWrap);
-    }
+    const keyboard = compactKeyboard(msg.opts?.reply_markup?.inline_keyboard);
+    appendBotBubble(area, text, keyboard);
+    history.addBot(text, keyboard);
   }
   area.scrollTop = area.scrollHeight;
+}
+
+// Возвращает true, если в браузере была сохранённая переписка и она показана
+function restoreHistory() {
+  const items = history.load();
+  if (!items.length) return false;
+  const area = document.getElementById('botWidgetChatArea');
+  for (const it of items) {
+    if (it.r === 'u') appendUserBubble(area, it.t || '');
+    else appendBotBubble(area, it.t || '', Array.isArray(it.k) ? it.k : []);
+  }
+  return true;
+}
+
+// Сессия закончилась: чат не должен достаться следующему, кто войдёт в браузере
+function sessionExpired() {
+  history.clear();
+  window.location.href = '/cabinet/login?redirect=' + encodeURIComponent(window.location.pathname);
 }
 
 async function initChat() {
   try {
     const res = await fetch('/api/bot/init', { method: 'POST', headers: authHeaders() });
     if (res.status === 401) {
-      window.location.href = '/cabinet/login?redirect=' + encodeURIComponent(window.location.pathname);
+      sessionExpired();
       return;
     }
     if (!res.ok) return;
@@ -162,7 +202,7 @@ async function pollLoop() {
     try {
       const res = await fetch('/api/bot/poll', { headers: authHeaders() });
       if (res.status === 401) {
-        window.location.href = '/cabinet/login?redirect=' + encodeURIComponent(window.location.pathname);
+        sessionExpired();
         return;
       }
       if (!res.ok) throw new Error('poll failed: ' + res.status);
@@ -185,13 +225,8 @@ async function sendMessage() {
 
   const area = document.getElementById('botWidgetChatArea');
 
-  const wrap = document.createElement('div');
-  wrap.className = 'bot-widget-bubble-wrap from-user';
-  const bubble = document.createElement('div');
-  bubble.className = 'bot-widget-bubble user';
-  bubble.textContent = text;
-  wrap.appendChild(bubble);
-  area.appendChild(wrap);
+  appendUserBubble(area, text);
+  history.addUser(text);
 
   const typingId = 'botWidgetTyping-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   const typingWrap = document.createElement('div');
@@ -209,7 +244,7 @@ async function sendMessage() {
     });
     if (res.status === 401) {
       removeTyping();
-      window.location.href = '/cabinet/login?redirect=' + encodeURIComponent(window.location.pathname);
+      sessionExpired();
       return;
     }
   } catch(e) {
@@ -224,13 +259,8 @@ async function handleInlineButton(btn) {
   // Как в Telegram: кнопки под сообщением не удаляются и не блокируются —
   // остаются кликабельными сколько угодно раз (бот сам решает на сервере,
   // безопасно ли повторное нажатие — см. onboarding:activate_trial).
-  const uWrap = document.createElement('div');
-  uWrap.className = 'bot-widget-bubble-wrap from-user';
-  const uBubble = document.createElement('div');
-  uBubble.className = 'bot-widget-bubble user';
-  uBubble.textContent = btn.textContent;
-  uWrap.appendChild(uBubble);
-  area.appendChild(uWrap);
+  appendUserBubble(area, btn.textContent);
+  history.addUser(btn.textContent);
 
   const typingId = 'botWidgetTyping-' + Date.now() + '-' + Math.random().toString(36).slice(2);
   const typingWrap = document.createElement('div');
@@ -247,7 +277,7 @@ async function handleInlineButton(btn) {
       body: JSON.stringify({ callback_data: btn.callback_data }),
     });
     if (res.status === 401) {
-      window.location.href = '/cabinet/login?redirect=' + encodeURIComponent(window.location.pathname);
+      sessionExpired();
       return;
     }
     const data = await res.json();
@@ -310,8 +340,15 @@ export function openBotWidget() {
   document.body.style.overflow = 'hidden';
   if (!widgetInitialized) {
     widgetInitialized = true;
-    initChat();
+    // Есть переписка из прошлых страниц — показываем её и не просим у бота главное меню заново
+    if (restoreHistory()) {
+      startPolling();
+    } else {
+      initChat();
+    }
   }
+  const area = document.getElementById('botWidgetChatArea');
+  if (area) area.scrollTop = area.scrollHeight;
 }
 
 export function closeBotWidget() {
