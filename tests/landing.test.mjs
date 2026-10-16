@@ -139,3 +139,9 @@ test('превью для соцсетей: og:image 1200×630 и twitter:card',
   assert.equal(buf.readUInt32BE(16), 1200);
   assert.equal(buf.readUInt32BE(20), 630);
 });
+
+test('блок «для кого»: отступ сверху 120px на десктопе (не прилипает к предыдущему блоку)', () => {
+  assert.match(css, /\.forwhom\s*\{\s*background:\s*#F5F7FA;\s*padding:\s*120px 140px;\s*\}/);
+  assert.match(css, /\.forwhom \{ padding: 80px 40px; \}/);
+  assert.match(css, /\.forwhom \{ padding: 60px 20px; \}/);
+});

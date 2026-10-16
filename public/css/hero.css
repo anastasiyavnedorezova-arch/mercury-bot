@@ -1048,7 +1048,7 @@ body {
 
 .forwhom {
   background: #F5F7FA;
-  padding: 0 140px 120px;
+  padding: 120px 140px;
 }
 
 .forwhom__container {
@@ -1127,13 +1127,13 @@ body {
    ================================================ */
 
 @media (max-width: 1200px) {
-  .forwhom { padding: 0 40px 80px; }
+  .forwhom { padding: 80px 40px; }
   .forwhom__visual { width: 360px; }
   .forwhom__title { font-size: 26px; line-height: 34px; }
 }
 
 @media (max-width: 768px) {
-  .forwhom { padding: 0 20px 60px; }
+  .forwhom { padding: 60px 20px; }
 
   .forwhom__inner {
     flex-direction: column;
