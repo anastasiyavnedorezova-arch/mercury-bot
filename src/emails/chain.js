@@ -28,6 +28,10 @@ export const RULES = {
   trial5Min: 2 * D,
   trial1Max: 1 * D,             // №4.2: когда до конца остались сутки или меньше
   trialoverMax: 3 * D,          // №5: после окончания, не позже чем через 3 дня
+  sub5Max: 5 * D,               // оплаченная подписка: от 2 до 5 дней до конца
+  sub5Min: 2 * D,
+  sub1Max: 1 * D,               //   …и сутки или меньше
+  subOverMax: 3 * D,            //   …и после окончания, не позже чем через 3 дня
   retryAfter: 1 * H,            // после сбоя отправки повторяем не раньше чем через час
   maxAttempts: 3,
   windowFrom: 10,               // окно отправки по Москве: с 10:00 до 20:00
@@ -61,7 +65,9 @@ function canTry(entry, now) {
  * @param {Array}  f.subs          строки subscriptions
  * @param {boolean} f.payReady     платёжные ссылки подключены
  * @param {boolean} [f.testimonialsOk]
- * @returns {{ key: string, why: string } | null}
+ * @returns {{ key: string, logKey?: string, why: string } | null}
+ *   logKey — ключ записи в журнале, если он отличается от key (письма про оплаченную подписку повторяются
+ *   с каждым оплаченным периодом, поэтому в ключ входит дата окончания периода)
  */
 export function decideLetter(f) {
   const now = f.now.getTime();
@@ -90,6 +96,23 @@ export function decideLetter(f) {
   const paidEver = subs.some((r) => r.payment_id || r.status === 'active');
   if (win && !live && !paidEver && rowsHadTrial(subs) && endsAt !== null && endsAt <= now && now - endsAt <= RULES.trialoverMax && ok('trialover')) {
     return { key: 'trialover', why: 'пробный закончился не больше 3 дней назад' };
+  }
+
+  // 2. Письма про оплаченную подписку: 5 дней, 1 день, закончилась.
+  //    Один раз на каждый оплаченный период (в журнале ключ с датой окончания). Продлил — период сдвинулся,
+  //    письма «про конец» не уходят; продлил после окончания — у человека снова есть доступ, письмо не нужно.
+  const period = endsAt === null ? null : new Date(endsAt).toISOString().slice(0, 10);
+  if (win && sub.status === 'active' && left !== null && left > 0) {
+    const k1 = `sub1:${period}`;
+    const k5 = `sub5:${period}`;
+    if (left <= RULES.sub1Max && canTry(sent[k1], now) && payOk('sub1')) return { key: 'sub1', logKey: k1, why: 'до конца подписки ≤ 1 дня' };
+    if (left > RULES.sub5Min && left <= RULES.sub5Max && canTry(sent[k5], now) && payOk('sub5')) return { key: 'sub5', logKey: k5, why: 'до конца подписки 2–5 дней' };
+  }
+  const paidEnds = subs.filter((r) => (r.payment_id || r.status === 'active') && r.ends_at).map((r) => Date.parse(r.ends_at));
+  const lastPaidEnd = paidEnds.length ? Math.max(...paidEnds) : null;
+  if (win && !live && lastPaidEnd !== null && lastPaidEnd <= now && now - lastPaidEnd <= RULES.subOverMax) {
+    const k = `subover:${new Date(lastPaidEnd).toISOString().slice(0, 10)}`;
+    if (canTry(sent[k], now) && payOk('subover')) return { key: 'subover', logKey: k, why: 'оплаченная подписка закончилась не больше 3 дней назад' };
   }
 
   // Дальше — только для «новых» аккаунтов (старые получают лишь письма про срок)
@@ -195,7 +218,7 @@ export async function runChain(db, o = {}) {
     if (d && NEEDS_TX_CHECK.has(d.key) && (await hasTx(user.id))) {
       d = decideLetter({ ...facts, hasTransactions: true });
     }
-    if (d) out.planned.push({ userId: user.id, email: maskEmail(user.email), key: d.key, why: d.why });
+    if (d) out.planned.push({ userId: user.id, email: maskEmail(user.email), key: d.key, logKey: d.logKey, why: d.why });
   }
 
   for (const p of out.planned) {
@@ -203,7 +226,7 @@ export async function runChain(db, o = {}) {
       console.log(`[letters][dry] ${p.key} → ${p.email} (${p.why})`);
       continue;
     }
-    const r = await sender(db, p.userId, p.key);
+    const r = await sender(db, p.userId, p.key, p.logKey ? { logKey: p.logKey } : undefined);
     if (r.ok) out.sent += 1; else { out.failed += 1; p.result = r.reason; }
     await sleep(o.pauseMs ?? 300);
   }

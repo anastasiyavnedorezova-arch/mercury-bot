@@ -118,10 +118,59 @@ test('№5: пробный закончился не больше 3 дней н�
   assert.equal(key(f([expired(H)])), 'trialover');
   assert.equal(key(f([expired(2.9 * D)])), 'trialover');
   assert.equal(key(f([expired(3.1 * D)])), null);
-  assert.equal(key(f([expired(D), { status: 'expired', ends_at: ago(2 * D), payment_id: 'p1' }])), null, 'раньше платил — это не «пробный закончился»');
-  assert.equal(key(f([expired(D), { status: 'active', ends_at: inFuture(5 * D), payment_id: 'p' }])), null);
+  assert.equal(key(f([expired(D), { status: 'expired', ends_at: ago(2 * D), payment_id: 'p1' }])), 'subover', 'раньше платил — это не «пробный закончился», а «подписка закончилась»');
+  assert.equal(key(f([expired(D), { status: 'expired', ends_at: ago(20 * D), payment_id: 'p1' }])), null, 'платная давно закончилась — не пишем');
+  assert.equal(key(f([expired(D), { status: 'active', ends_at: inFuture(5 * D), payment_id: 'p' }])), 'sub5', 'доступ действует — не «пробный закончился»');
+  assert.equal(key(f([expired(D), { status: 'active', ends_at: inFuture(20 * D), payment_id: 'p' }])), null);
   assert.equal(key(f([expired(D)], { payReady: false })), null);
   assert.equal(key(f([])), null, 'без записей подписки ничего не шлём');
+});
+
+const paid = (endsInMs, extra = {}) => ({ status: 'active', ends_at: inFuture(endsInMs), payment_id: 'pay', ...extra });
+const paidEnded = (agoMs) => ({ status: 'expired', ends_at: ago(agoMs), payment_id: 'pay' });
+const day = (ms) => new Date(Date.parse(inFuture(ms))).toISOString().slice(0, 10);
+
+test('оплаченная подписка: за 5 дней и за 1 день до конца, один раз на каждый период', () => {
+  const f = (endsIn, extra = {}) => facts({ isNew: false, subs: [paid(endsIn)], ...extra });
+  assert.equal(key(f(6 * D)), null);
+  assert.equal(key(f(4.9 * D)), 'sub5');
+  assert.equal(key(f(2.5 * D)), 'sub5');
+  assert.equal(key(f(1.5 * D)), null);
+  assert.equal(key(f(0.9 * D)), 'sub1');
+  assert.equal(decideLetter(f(4 * D)).logKey, `sub5:${day(4 * D)}`, 'в журнале ключ с датой окончания периода');
+  assert.equal(decideLetter(f(0.5 * D)).logKey, `sub1:${day(0.5 * D)}`);
+  assert.equal(key(f(4 * D, { sent: { [`sub5:${day(4 * D)}`]: sentRow(H) } })), null, 'второй раз за период не шлём');
+  assert.equal(key(f(0.9 * D, { sent: { [`sub5:${day(0.9 * D)}`]: sentRow(4 * D) } })), 'sub1', 'после «5 дней» всё равно придёт «1 день»');
+  assert.equal(key(f(0.9 * D, { sent: { [`sub1:${day(0.9 * D)}`]: sentRow(H) } })), null);
+  assert.equal(key(f(4 * D, { sent: { 'sub5:2026-01-01': sentRow(300 * D) } })), 'sub5', 'письмо за прошлый период не мешает новому');
+  assert.equal(key(f(4 * D, { payReady: false })), null, 'нет ссылок оплаты — не шлём');
+  assert.equal(key(f(4 * D, { user: { email_letters_accepted: false, email_unsubscribed_at: ago(D) } })), 'sub5', 'сервисное письмо уходит и отписавшимся');
+  const night = new Date('2026-10-20T08:00:00+03:00');
+  assert.equal(key(facts({ now: night, isNew: false, subs: [paid(4 * D, {})].map((r) => ({ ...r, ends_at: inFuture(4 * D, night) })) })), null, 'вне окна');
+  assert.equal(key(f(4 * D, { isNew: true })), 'sub5', 'новым аккаунтам тоже');
+});
+
+test('оплаченная подписка: продлил — напоминаний нет; пробный период — не «подписка»', () => {
+  const f = (subs, extra = {}) => facts({ isNew: false, subs, ...extra });
+  assert.equal(key(f([paid(4 * D), paid(34 * D)])), null, 'продлил заранее — конец сдвинулся');
+  assert.equal(key(f([paidEnded(40 * D), paid(4 * D)])), 'sub5', 'старые периоды не считаются');
+  assert.equal(key(f([trial(4 * D)])), 'trial5', 'пробный получает свои письма, не «подписочные»');
+  assert.equal(key(f([paid(3 * D), trial(10 * D)])), null, 'пока есть более длинный доступ — молчим');
+});
+
+test('оплаченная подписка закончилась: письмо в течение 3 дней, один раз, если не продлил', () => {
+  const f = (subs, extra = {}) => facts({ isNew: false, subs, ...extra });
+  assert.equal(key(f([paidEnded(H)])), 'subover');
+  assert.equal(key(f([paidEnded(2.9 * D)])), 'subover');
+  assert.equal(key(f([paidEnded(3.1 * D)])), null);
+  const k = decideLetter(f([paidEnded(D)])).logKey;
+  assert.match(k, /^subover:\d{4}-\d{2}-\d{2}$/);
+  assert.equal(key(f([paidEnded(D)], { sent: { [k]: sentRow(H) } })), null, 'второй раз не шлём');
+  assert.equal(key(f([paidEnded(D), paid(20 * D)])), null, 'уже продлил — не пишем');
+  assert.equal(key(f([paidEnded(D)], { payReady: false })), null);
+  assert.equal(key(f([paidEnded(D)], { user: { email_letters_accepted: false, email_unsubscribed_at: ago(D) } })), 'subover');
+  assert.equal(key(f([{ status: 'expired', ends_at: ago(D), payment_id: null }])), 'trialover', 'без оплаты это «пробный закончился»');
+  assert.equal(key(f([{ status: 'expired', ends_at: ago(5 * D), payment_id: null }, paidEnded(D)])), 'subover');
 });
 
 test('сбой отправки: повтор через час, не больше 3 попыток', () => {
@@ -209,6 +258,31 @@ test('runChain: без LETTERS_CHAIN_START все аккаунты «стары�
   s = sender();
   await runChain(ctx.db, { ...base, chainStart: null, payReady: false, mode: 'on', sender: s.fn });
   assert.deepEqual(s.calls, []);
+});
+
+test('runChain: письма про подписку уходят с ключом периода и не повторяются', async () => {
+  await reset();
+  const id = await user({ created_at: ago(60 * D) });
+  const endsIn = 4 * D;
+  await ctx.query("INSERT INTO public.subscriptions (user_id, status, starts_at, ends_at, payment_id, period_months) VALUES ($1,'active',$2,$3,'pay-1',1)", [id, ago(26 * D), inFuture(endsIn)]);
+  const calls = [];
+  const fn = async (db, uid, k, deps) => { calls.push([uid, k, deps?.logKey ?? null]); return { ok: true }; };
+  const dry = await runChain(ctx.db, { ...base, mode: 'dry', sender: fn });
+  assert.equal(dry.planned[0].key, 'sub5');
+  assert.equal(calls.length, 0);
+  await runChain(ctx.db, { ...base, mode: 'on', sender: fn });
+  assert.deepEqual(calls, [[id, 'sub5', `sub5:${day(endsIn)}`]]);
+
+  // настоящая отправка: запись в журнале с ключом периода, повторный проход ничего не шлёт
+  const sent = [];
+  const sendEmail = async (m) => { sent.push(m.subject); return { ok: true, uuid: 'u1' }; };
+  const { sendLetter } = await import('../src/emails/send.js');
+  const real = (db, uid, k, deps) => sendLetter(db, uid, k, { ...deps, sendEmail });
+  await runChain(ctx.db, { ...base, mode: 'on', sender: real });
+  await runChain(ctx.db, { ...base, mode: 'on', sender: real });
+  assert.equal(sent.length, 1);
+  const log = await ctx.query('SELECT letter, status FROM public.email_log WHERE user_id=$1', [id]);
+  assert.deepEqual(log.rows, [{ letter: `sub5:${day(endsIn)}`, status: 'sent' }]);
 });
 
 test('runChain: запись (транзакция) останавливает цепочку активации', async () => {
