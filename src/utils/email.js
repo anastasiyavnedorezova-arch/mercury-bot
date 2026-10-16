@@ -44,7 +44,7 @@ export async function sendEmail({ to, toName, subject, text, html, idempotencyKe
   const apiToken = process.env.RUSENDER_API_TOKEN;
   const keyId = process.env.RUSENDER_KEY_ID;
   const fromEmail = process.env.MAIL_FROM_EMAIL;
-  const fromName = process.env.MAIL_FROM_NAME || 'Финник';
+  const fromName = process.env.MAIL_FROM_NAME || 'Финник · Деньги';
 
   if (!apiToken || !keyId || !fromEmail) {
     console.warn('[email] not configured, skipped');
@@ -126,26 +126,26 @@ export async function sendWelcomeEmail({ to, name, userId } = {}) {
   const greetingText = safeName ? `Привет, ${(name ?? '').slice(0, 100)}!` : 'Привет!';
 
   const html = `<p>${greeting}</p>
-<p>Вы зарегистрировались в Финнике — помощнике для учета личных финансов.</p>
+<p>Вы зарегистрировались в сервисе «Финник · Деньги» — помощнике для учета личных финансов.</p>
 <p>Записывать расходы или доходы можно обычным сообщением боту в личном кабинете: <a href="https://finnikbot.ru/cabinet/dashboard">finnikbot.ru/cabinet/dashboard</a> — или в Telegram: <a href="https://t.me/FinnikMoneyBot">t.me/FinnikMoneyBot</a>.</p>
 <p>Если возникнут вопросы, просто напишите нам на почту <a href="mailto:hello@finnikbot.ru">hello@finnikbot.ru</a>.</p>
-<p>Поддержка Финника</p>`;
+<p>Поддержка «Финник · Деньги»</p>`;
 
   const text = `${greetingText}
 
-Вы зарегистрировались в Финнике — помощнике для учета личных финансов.
+Вы зарегистрировались в сервисе «Финник · Деньги» — помощнике для учета личных финансов.
 
 Записывать расходы или доходы можно обычным сообщением боту в личном кабинете: https://finnikbot.ru/cabinet/dashboard — или в Telegram: https://t.me/FinnikMoneyBot.
 
 Если возникнут вопросы, просто напишите нам на почту hello@finnikbot.ru.
 
-Поддержка Финника`;
+Поддержка «Финник · Деньги»`;
 
   const iKey = userId ? `welcome-${userId}` : crypto.randomUUID();
 
   return sendEmail({
     to,
-    subject: 'Добро пожаловать в Финник',
+    subject: 'Добро пожаловать в «Финник · Деньги»',
     html,
     text,
     idempotencyKey: iKey,
@@ -163,24 +163,24 @@ export async function sendPasswordResetEmail({ to, link } = {}) {
   const safeLink = escapeHtml(link);
 
   const html = `<p>Привет!</p>
-<p>Вы запросили смену пароля в Финнике. Чтобы задать новый пароль, перейдите по ссылке:</p>
+<p>Вы запросили смену пароля в сервисе «Финник · Деньги». Чтобы задать новый пароль, перейдите по ссылке:</p>
 <p><a href="${safeLink}">Задать новый пароль</a></p>
 <p>Ссылка действует 1 час и работает один раз.</p>
 <p>Если вы не запрашивали смену пароля, просто проигнорируйте это письмо: пароль останется прежним.</p>
-<p>Поддержка Финника</p>`;
+<p>Поддержка «Финник · Деньги»</p>`;
 
   const text = `Привет!
 
-Вы запросили смену пароля в Финнике. Чтобы задать новый пароль, перейдите по ссылке:
+Вы запросили смену пароля в сервисе «Финник · Деньги». Чтобы задать новый пароль, перейдите по ссылке:
 ${link}
 
 Ссылка действует 1 час и работает один раз.
 
 Если вы не запрашивали смену пароля, просто проигнорируйте это письмо: пароль останется прежним.
 
-Поддержка Финника`;
+Поддержка «Финник · Деньги»`;
 
-  return sendEmail({ to, subject: 'Смена пароля в Финнике', html, text });
+  return sendEmail({ to, subject: 'Смена пароля в «Финник · Деньги»', html, text });
 }
 
 // Возвращает статус наличия почтовых переменных (только true/false, без значений).

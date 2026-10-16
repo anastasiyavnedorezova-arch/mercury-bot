@@ -76,9 +76,9 @@ const WIDGET_HTML = `
   <main class="bot-widget-page">
     <div class="bot-widget-chat-header">
       <div class="bot-widget-chat-header__info">
-        <img src="/images/bot-face.svg" class="bot-widget-avatar" alt="Финник бот"/>
+        <img src="/images/bot-face.svg" class="bot-widget-avatar" alt="Финник · Деньги"/>
         <div>
-          <div class="bot-widget-name">Финник</div>
+          <div class="bot-widget-name">Финник · Деньги</div>
           <div class="bot-widget-status">онлайн</div>
         </div>
       </div>

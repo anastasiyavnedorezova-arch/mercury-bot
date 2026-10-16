@@ -355,11 +355,11 @@ export function siteLinks(base = baseUrl()) {
 }
 
 const REASONS = {
-  registered: 'Ты получил это письмо, потому что зарегистрировался в Финнике.',
-  opted_in: 'Ты получил это письмо, потому что согласился получать письма и уведомления об обновлениях Финника.',
-  service_trial: 'Это сервисное письмо о сроке твоего пробного периода в Финнике.',
-  service_sub: 'Это сервисное письмо о сроке твоей подписки на Финник.',
-  service_payment: 'Это сервисное письмо об оплате подписки на Финник.',
+  registered: 'Ты получил это письмо, потому что зарегистрировался в сервисе «Финник · Деньги».',
+  opted_in: 'Ты получил это письмо, потому что согласился получать письма и уведомления об обновлениях «Финник · Деньги».',
+  service_trial: 'Это сервисное письмо о сроке твоего пробного периода в «Финник · Деньги».',
+  service_sub: 'Это сервисное письмо о сроке твоей подписки на «Финник · Деньги».',
+  service_payment: 'Это сервисное письмо об оплате подписки на «Финник · Деньги».',
 };
 const REQUISITES = 'ИП Захарова А. В., ИНН 504230305760, ОГРНИП 326508100607489';
 
@@ -388,8 +388,8 @@ export function renderLetter(key, o = {}) {
   const footerTextParts = [reason];
   if (unsub) {
     const note = def.kind === 'marketing' ? '' : ' Сервисные письма о сроке доступа это не отключит.';
-    footerHtmlParts.push(`<a href="${escapeHtml(unsub)}" style="color:${COLORS.footer};text-decoration:underline">Отписаться от писем о возможностях Финника</a>.${escapeHtml(note)}`);
-    footerTextParts.push(`Отписаться от писем о возможностях Финника:\n${unsub}${note ? `\n${note.trim()}` : ''}`);
+    footerHtmlParts.push(`<a href="${escapeHtml(unsub)}" style="color:${COLORS.footer};text-decoration:underline">Отписаться от писем о возможностях «Финник · Деньги»</a>.${escapeHtml(note)}`);
+    footerTextParts.push(`Отписаться от писем о возможностях «Финник · Деньги»:\n${unsub}${note ? `\n${note.trim()}` : ''}`);
   }
   footerHtmlParts.push(`${escapeHtml(REQUISITES)} · <a href="mailto:${SUPPORT_EMAIL}" style="color:${COLORS.footer};text-decoration:underline">${SUPPORT_EMAIL}</a>`);
   footerTextParts.push(`${REQUISITES}, ${SUPPORT_EMAIL}`);

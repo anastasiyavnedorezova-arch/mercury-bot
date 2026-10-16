@@ -1,7 +1,7 @@
 {
-  "name": "Финник — Чат с ботом",
+  "name": "Финник · Деньги — Чат",
   "short_name": "Финник",
-  "description": "Личный финансовый помощник Финник",
+  "description": "Личный финансовый помощник «Финник · Деньги»",
   "start_url": "/cabinet/bot",
   "display": "standalone",
   "background_color": "#F5F7FA",

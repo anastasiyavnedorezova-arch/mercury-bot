@@ -12,6 +12,7 @@ import { processYookassaEvent } from './payments/process.js';
 import { fetchPayment } from './payments/yookassa.js';
 import { sendLetter } from './emails/send.js';
 import { maySendTo } from './emails/config.js';
+import { addSeoRoutes } from './seo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,6 +42,8 @@ export function startWebhookServer(bot) {
     }
     next();
   });
+  // robots.txt, sitemap.xml, noindex для stage — до всех страниц
+  addSeoRoutes(app);
   // ── Clean URL redirects (no .html) ──────────────────────────────────────
   // .html → clean
   app.get('/cabinet/login.html',     (req, res) => res.redirect(301, '/cabinet/login'));

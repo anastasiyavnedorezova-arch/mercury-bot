@@ -12,7 +12,7 @@ export const isPlanMonths = (m) => PLAN_MONTHS.includes(Number(m));
 const money = (rub) => ({ value: Number(rub).toFixed(2), currency: 'RUB' });
 
 export function planTitle(months) {
-  return `Подписка на сервис Финник, ${months} мес.`;
+  return `Подписка на сервис «Финник · Деньги», ${months} мес.`;
 }
 
 // Тело запроса «создать платёж». Систему налогообложения в чеке не передаём: берётся из настроек магазина

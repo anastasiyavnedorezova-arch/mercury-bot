@@ -192,7 +192,7 @@ export async function handleSubscriptionCallback(bot, query) {
   if (action === 'buy_subscription') {
     await bot.sendMessage(
       chatId,
-      '💳 Оформление подписки Финника\n\n' +
+      '💳 Оформление подписки «Финник · Деньги»\n\n' +
       'Подписка даёт полный доступ ко всем функциям:\n' +
       '✅ до 3 финансовых целей с расчётом доходности\n' +
       '✅ бюджет и алерты о превышении\n' +

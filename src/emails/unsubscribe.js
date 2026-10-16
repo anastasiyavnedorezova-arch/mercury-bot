@@ -47,8 +47,8 @@ const invalidPage = page('Ссылка недействительна', `<h1>С�
 <p>Возможно, она скопировалась не полностью. Напиши нам на <a href="mailto:hello@finnikbot.ru">hello@finnikbot.ru</a>, и мы отключим письма вручную.</p>`);
 
 function confirmPage(u, t) {
-  return page('Отписаться от писем Финника', `<h1>Отписаться от писем?</h1>
-<p>Мы перестанем присылать письма о возможностях Финника. Важные сообщения о сроке пробного периода и подписки продолжат приходить.</p>
+  return page('Отписаться от писем «Финник · Деньги»', `<h1>Отписаться от писем?</h1>
+<p>Мы перестанем присылать письма о возможностях «Финник · Деньги». Важные сообщения о сроке пробного периода и подписки продолжат приходить.</p>
 <form method="post" action="/unsubscribe">
 <input type="hidden" name="u" value="${escapeHtml(u)}"><input type="hidden" name="t" value="${escapeHtml(t)}">
 <button type="submit">Да, отписаться</button></form>`);
@@ -56,7 +56,7 @@ function confirmPage(u, t) {
 
 function donePage(u, t) {
   return page('Вы отписались', `<h1>Готово, ты отписался 👌</h1>
-<p>Писем о возможностях Финника больше не будет. Важные сообщения о сроке доступа продолжат приходить.</p>
+<p>Писем о возможностях «Финник · Деньги» больше не будет. Важные сообщения о сроке доступа продолжат приходить.</p>
 <form method="post" action="/unsubscribe">
 <input type="hidden" name="u" value="${escapeHtml(u)}"><input type="hidden" name="t" value="${escapeHtml(t)}"><input type="hidden" name="action" value="resubscribe">
 <p class="small">Передумал? <button class="green" type="submit">Вернуть письма</button></p></form>`);
