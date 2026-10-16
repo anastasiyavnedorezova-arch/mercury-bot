@@ -817,6 +817,26 @@
   </div>
 </div>
 
+<!-- MODAL: EMAIL ДЛЯ ЧЕКА (если в профиле нет почты) -->
+<div class="modal-overlay" id="modalPayEmail">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modalPayEmail')">✕</button>
+    <h2 class="modal-title">Куда отправить чек?</h2>
+    <p style="font-size:14px;line-height:20px;color:var(--color-text-second);margin:0 0 16px">После оплаты ЮKassa пришлёт чек на этот адрес. Мы также сохраним его в твоём профиле.</p>
+    <div class="modal-fields">
+      <div>
+        <div class="modal-field-label">E-mail</div>
+        <input class="modal-input" type="email" id="payEmail" placeholder="mail@example.com" autocomplete="email"/>
+        <span class="field-error" id="payEmailError" style="display:none; color:#E5484D; font-size:12px; margin-top:4px;"></span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn-secondary" onclick="closeModal('modalPayEmail')">Отменить</button>
+      <button class="modal-btn-primary" id="payEmailBtn" onclick="submitPayEmail()">Перейти к оплате</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: РЕДАКТИРОВАНИЕ ЛИЧНЫХ ДАННЫХ -->
 <div class="modal-overlay" id="modalEditProfile">
   <div class="modal-box">
@@ -1057,25 +1077,65 @@
 
     // ---- ОПЛАТА (ЮKassa) ----
     // Создаём платёж на сервере и переходим на страницу оплаты ЮKassa
-    window.startPayment = async function(months, btn) {
+    window.startPayment = async function(months, btn, email) {
       document.querySelectorAll('.pay-error').forEach(e => { e.style.display = 'none'; });
       const buttons = document.querySelectorAll('.modal-plan2__btn');
       buttons.forEach(b => { b.disabled = true; });
       const oldText = btn ? btn.textContent : '';
       if (btn) btn.textContent = 'Переходим к оплате…';
       try {
-        const res = await fetch('/api/pay', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ months }) });
+        const res = await fetch('/api/pay', { method: 'POST', headers: authHeaders(), body: JSON.stringify(email ? { months, email } : { months }) });
         if (res.status === 401) { window.location.href = '/cabinet/login?redirect=' + encodeURIComponent('/cabinet/profile?pay=' + months); return; }
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) { window.location.href = data.url; return; }
-        showPayError(data.message || 'Не удалось создать платёж. Попробуйте ещё раз.');
+        if (data.error === 'no_email' || data.error === 'bad_email') {
+          askPayEmail(months, data.error === 'bad_email' ? data.message : '');
+        } else {
+          showPayError(data.message || 'Не удалось создать платёж. Попробуйте ещё раз.');
+        }
       } catch (e) {
         showPayError('Не удалось создать платёж. Проверьте интернет и попробуйте ещё раз.');
       }
       buttons.forEach(b => { b.disabled = false; });
       if (btn) btn.textContent = oldText;
     };
+    // Если в профиле нет почты, спрашиваем её прямо здесь: на неё уйдёт чек
+    let payEmailMonths = null;
+    function askPayEmail(months, errorText) {
+      payEmailMonths = months;
+      window.closeModal('modalSubscribe');
+      window.closeModal('modalRenew');
+      const err = document.getElementById('payEmailError');
+      err.textContent = errorText || '';
+      err.style.display = errorText ? 'block' : 'none';
+      window.openModal('modalPayEmail');
+      setTimeout(() => document.getElementById('payEmail').focus(), 50);
+    }
+    window.submitPayEmail = async function() {
+      const input = document.getElementById('payEmail');
+      const err = document.getElementById('payEmailError');
+      const btn = document.getElementById('payEmailBtn');
+      const email = input.value.trim().toLowerCase();
+      if (!isValidEmail(email)) {
+        err.textContent = 'Введи корректный email, например ivan@gmail.com';
+        err.style.display = 'block';
+        return;
+      }
+      err.style.display = 'none';
+      btn.disabled = true;
+      const oldText = btn.textContent;
+      btn.textContent = 'Переходим к оплате…';
+      await window.startPayment(payEmailMonths, null, email);
+      btn.disabled = false;
+      btn.textContent = oldText;
+    };
     function showPayError(text) {
+      if (document.getElementById('modalPayEmail').classList.contains('visible')) {
+        const err = document.getElementById('payEmailError');
+        err.textContent = text;
+        err.style.display = 'block';
+        return;
+      }
       const els = document.querySelectorAll('.pay-error');
       els.forEach(e => { e.textContent = text; e.style.display = 'block'; });
       if (!els.length) alert(text);

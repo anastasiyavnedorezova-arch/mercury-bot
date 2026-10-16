@@ -225,6 +225,69 @@ test('/api/pay: нужен вход; неверный тариф; нет email; 
   } finally { await bad.close(); }
 });
 
+test('/api/pay: если в профиле нет почты — берём email из запроса (для чека), сохраняем в профиль; плохой email отклоняем; почта из профиля главнее', async () => {
+  const calls = [];
+  const create = async (o) => { calls.push(o); return { ok: true, id: 'pay-eeeeeeee', url: 'https://yoomoney.ru/pay/e' }; };
+  const srv = await startApi(create);
+  const tok = (id) => jwt.sign({ userId: id }, process.env.JWT_SECRET);
+  try {
+    const noMail = await newUser({ email: null });
+    // без email в запросе — просим его
+    const r0 = await post(srv.url, tok(noMail), { months: 1 });
+    assert.equal(r0.status, 400);
+    const j0 = await r0.json();
+    assert.equal(j0.error, 'no_email');
+    assert.doesNotMatch(j0.message, /укажите|Попробуйте/);
+    assert.equal(calls.length, 0);
+    // неправильный email — отказ, платёж не создаётся
+    const r1 = await post(srv.url, tok(noMail), { months: 1, email: 'не-почта' });
+    assert.equal(r1.status, 400);
+    assert.equal((await r1.json()).error, 'bad_email');
+    assert.equal(calls.length, 0);
+    // нормальный email: платёж создаётся на него (в нижнем регистре, без пробелов) и адрес сохраняется в профиль
+    const r2 = await post(srv.url, tok(noMail), { months: 6, email: '  Buyer@Example.COM ' });
+    assert.equal(r2.status, 200);
+    assert.deepEqual(await r2.json(), { url: 'https://yoomoney.ru/pay/e' });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].email, 'buyer@example.com');
+    const { data: saved } = await ctx.db.from('users').select('email').eq('id', noMail).maybeSingle();
+    assert.equal(saved.email, 'buyer@example.com');
+    // если в профиле почта уже есть, email из запроса не используется и профиль не меняется
+    const withMail = await newUser({ email: 'own@example.com' });
+    const r3 = await post(srv.url, tok(withMail), { months: 1, email: 'other@example.com' });
+    assert.equal(r3.status, 200);
+    assert.equal(calls[1].email, 'own@example.com');
+    const { data: same } = await ctx.db.from('users').select('email').eq('id', withMail).maybeSingle();
+    assert.equal(same.email, 'own@example.com');
+  } finally { await srv.close(); }
+});
+
+test('кабинет: без почты в профиле открывается окно «Куда отправить чек?», email уходит в /api/pay', () => {
+  const profile = read('public/cabinet/profile.html');
+  assert.match(profile, /id="modalPayEmail"/);
+  assert.match(profile, /Куда отправить чек\?/);
+  assert.match(profile, /window\.submitPayEmail/);
+  assert.match(profile, /JSON\.stringify\(email \? \{ months, email \} : \{ months \}\)/);
+  assert.match(profile, /data\.error === 'no_email'/);
+  assert.match(profile, /askPayEmail\(/);
+});
+
+test('сайт: в модалке «Выбери тариф» кнопки «К оплате» ведут на оплату в кабинете (1, 6, 12 мес.), а не в Telegram', () => {
+  const html = read('public/index.html');
+  const start = html.indexOf('id="pricingModal"');
+  const end = html.indexOf('id="channelModal"');
+  const modal = html.slice(start, end);
+  assert.ok(start > 0 && end > start);
+  assert.doesNotMatch(modal, /t\.me\//, 'в модалке тарифов нет ссылок в Telegram');
+  for (const n of [1, 6, 12]) {
+    assert.ok(modal.includes(`<a href="/cabinet/profile?pay=${n}" class="modal-plan2__btn">К оплате</a>`), `кнопка на ${n} мес.`);
+  }
+  assert.match(modal, /modal-pricing-note[^>]*>[^<]*Для оплаты нужен личный кабинет[\s\S]*href="\/cabinet\/register"/);
+  assert.match(read('public/css/hero.css'), /\.modal-pricing-note\s*\{/);
+  // переход ?pay=N: невошедшего отправляем на вход с возвратом, вошедшего ведём прямо к оплате (это уже проверено выше для кабинета)
+  assert.match(read('public/cabinet/layout.js'), /redirect=/);
+});
+
 // ── Готовность к письмам, кабинет, бот ──────────────────────────────────────
 
 test('письма с кнопками «Оплатить» разрешены только при заданных ключах ЮKassa (или тестовом разрешении)', () => {
