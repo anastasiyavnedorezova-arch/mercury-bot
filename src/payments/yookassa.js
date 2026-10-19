@@ -102,3 +102,17 @@ export async function fetchPayment(id, deps = {}) {
     return { ok: false, reason: 'yookassa_error' };
   }
 }
+
+/** Возвраты по платежу (для терминального инструмента tools/refund.mjs): [{ id, status, amount }]. */
+export async function listRefunds(paymentId, deps = {}) {
+  if (!yookassaConfigured()) return { ok: false, reason: 'not_configured' };
+  if (typeof paymentId !== 'string' || !/^[A-Za-z0-9-]{8,64}$/.test(paymentId)) return { ok: false, reason: 'bad_id' };
+  try {
+    const r = await call('GET', `/refunds?payment_id=${encodeURIComponent(paymentId)}&limit=100`, { fetchImpl: deps.fetch });
+    if (!r.ok || !Array.isArray(r.json?.items)) return { ok: false, reason: 'yookassa_error' };
+    return { ok: true, refunds: r.json.items.map((x) => ({ id: x.id, status: x.status, amount: Number(x.amount?.value) || 0 })) };
+  } catch (e) {
+    console.error('[yookassa] refunds error:', e.message);
+    return { ok: false, reason: 'yookassa_error' };
+  }
+}

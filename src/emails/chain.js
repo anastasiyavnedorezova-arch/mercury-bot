@@ -108,7 +108,8 @@ export function decideLetter(f) {
     if (left <= RULES.sub1Max && canTry(sent[k1], now) && payOk('sub1')) return { key: 'sub1', logKey: k1, why: 'до конца подписки ≤ 1 дня' };
     if (left > RULES.sub5Min && left <= RULES.sub5Max && canTry(sent[k5], now) && payOk('sub5')) return { key: 'sub5', logKey: k5, why: 'до конца подписки 2–5 дней' };
   }
-  const paidEnds = subs.filter((r) => (r.payment_id || r.status === 'active') && r.ends_at).map((r) => Date.parse(r.ends_at));
+  // Вернувшим деньги (status 'refunded') письмо «подписка закончилась» не нужно
+  const paidEnds = subs.filter((r) => r.status !== 'refunded' && (r.payment_id || r.status === 'active') && r.ends_at).map((r) => Date.parse(r.ends_at));
   const lastPaidEnd = paidEnds.length ? Math.max(...paidEnds) : null;
   if (win && !live && lastPaidEnd !== null && lastPaidEnd <= now && now - lastPaidEnd <= RULES.subOverMax) {
     const k = `subover:${new Date(lastPaidEnd).toISOString().slice(0, 10)}`;

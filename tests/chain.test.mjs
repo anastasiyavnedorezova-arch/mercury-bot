@@ -445,3 +445,10 @@ test('вебхук: события сохраняются целиком; отк
     assert.ok(res);
   } finally { delete process.env.RUSENDER_WEBHOOK_SECRET; await srv.close(); }
 });
+
+test('вернувшему деньги (refunded) письмо «подписка закончилась» не уходит', () => {
+  const f = (subs) => facts({ isNew: false, subs });
+  assert.equal(key(f([{ status: 'refunded', ends_at: ago(H), payment_id: 'p-ref' }])), null);
+  assert.equal(key(f([{ status: 'expired', ends_at: ago(2 * D), payment_id: null }, { status: 'refunded', ends_at: ago(H), payment_id: 'p-ref' }])), null, 'и «пробный закончился» тоже: он платил');
+  assert.equal(key(f([{ status: 'refunded', ends_at: ago(H), payment_id: 'p-ref' }, { status: 'expired', ends_at: ago(D), payment_id: 'p-old' }])), 'subover', 'но более ранний оплаченный и закончившийся период остаётся поводом для письма');
+});
