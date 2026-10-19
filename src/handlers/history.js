@@ -1,13 +1,7 @@
 import { supabase } from '../db.js';
 import { userStates } from '../state.js';
 import { inTz } from '../utils/dateTz.js';
-
-// ── Константы ─────────────────────────────────────────────────────────────────
-
-const MONTHS_RU = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
+import { buildHistoryText } from '../utils/historyText.js';
 
 // ── Хелперы дат ───────────────────────────────────────────────────────────────
 
@@ -42,17 +36,6 @@ function yearAgo() {
   return dateStr(d);
 }
 
-// ── Форматирование ────────────────────────────────────────────────────────────
-
-function formatNum(n) {
-  return Math.round(n).toLocaleString('ru-RU');
-}
-
-function formatRuDate(dateStr) {
-  const [, m, d] = dateStr.split('-');
-  return `${parseInt(d)} ${MONTHS_RU[parseInt(m) - 1]}`;
-}
-
 // Парсит ДД.ММ.ГГГГ → 'YYYY-MM-DD' или null
 function parseDate(text) {
   const match = text.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
@@ -73,6 +56,8 @@ async function getUserId(telegramId) {
   return data?.id ?? null;
 }
 
+const LIST_LIMIT = 50;
+
 async function fetchTransactions(userId, startDate, endDate, typeFilter) {
   let query = supabase
     .from('transactions')
@@ -81,7 +66,7 @@ async function fetchTransactions(userId, startDate, endDate, typeFilter) {
     .gte('transaction_date', startDate)
     .lte('transaction_date', endDate)
     .order('transaction_date', { ascending: false })
-    .limit(50);
+    .limit(LIST_LIMIT);
 
   if (typeFilter === 'expense') {
     query = query.in('type', ['expense', 'goal']);
@@ -93,7 +78,8 @@ async function fetchTransactions(userId, startDate, endDate, typeFilter) {
   return data ?? [];
 }
 
-// Итоги всегда по ВСЕМ транзакциям периода, без фильтра типа
+// Итоги всегда по ВСЕМ транзакциям периода, без фильтра типа. Заодно считаем, сколько операций в периоде
+// (список ниже показывает не больше LIST_LIMIT последних, поэтому «Всего» берём отсюда, а не из длины списка).
 async function fetchTotals(userId, startDate, endDate) {
   const { data } = await supabase
     .from('transactions')
@@ -105,7 +91,8 @@ async function fetchTotals(userId, startDate, endDate) {
   const rows = data ?? [];
   const sumIncome  = rows.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const sumExpense = rows.filter(t => t.type !== 'income').reduce((s, t) => s + t.amount, 0);
-  return { sumIncome, sumExpense };
+  const countIncome = rows.filter(t => t.type === 'income').length;
+  return { sumIncome, sumExpense, countAll: rows.length, countIncome, countExpense: rows.length - countIncome };
 }
 
 // ── Лимиты по дате ────────────────────────────────────────────────────────────
@@ -116,54 +103,6 @@ function applyDateLimit(startDate) {
     return { effectiveStart: limit, limitNote: 'Показаны записи за последние 12 месяцев' };
   }
   return { effectiveStart: startDate, limitNote: null };
-}
-
-// ── Форматирование истории ────────────────────────────────────────────────────
-
-function buildHistoryText(transactions, totals, startDate, endDate, limitNote) {
-  const { sumIncome, sumExpense } = totals;
-  const balance = sumIncome - sumExpense;
-
-  let text =
-    `📋 История за ${formatRuDate(startDate)} — ${formatRuDate(endDate)}\n` +
-    `Всего: ${transactions.length} операций\n`;
-
-  if (limitNote) text += `ℹ️ ${limitNote}\n`;
-  text += '\n';
-
-  // Группируем по дате
-  const byDate = {};
-  for (const t of transactions) {
-    const d = t.transaction_date;
-    if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(t);
-  }
-
-  for (const [date, txs] of Object.entries(byDate)) {
-    text += `📅 ${formatRuDate(date)}\n`;
-    for (const t of txs) {
-      const sign = t.type === 'income' ? '+' : '-';
-      const cat = t.categories?.name ?? 'Другое';
-      const comment = t.comment ? ` (${t.comment})` : '';
-      text += `- ${cat}${comment} ${sign} ${formatNum(t.amount)} ₽\n`;
-    }
-    text += '\n';
-  }
-
-  const balanceStr = balance > 0 ? `+${formatNum(balance)}` :
-                     balance < 0 ? `-${formatNum(Math.abs(balance))}` :
-                     '0';
-  text +=
-    `💰 Доходы: +${formatNum(sumIncome)} ₽\n` +
-    `💸 Расходы: -${formatNum(sumExpense)} ₽\n` +
-    `📊 Баланс: ${balanceStr} ₽`;
-
-  // Telegram лимит 4096 символов
-  if (text.length > 3900) {
-    text = text.slice(0, 3850) + '\n\n…(сокращено, показаны первые записи)';
-  }
-
-  return text;
 }
 
 // ── Шаг 1: выбор периода ─────────────────────────────────────────────────────
@@ -249,7 +188,8 @@ async function showHistoryResult(bot, chatId, telegramId, startDate, endDate, ty
     return;
   }
 
-  const text = buildHistoryText(transactions, totals, effectiveStart, endDate, limitNote);
+  const total = typeFilter === 'expense' ? totals.countExpense : typeFilter === 'income' ? totals.countIncome : totals.countAll;
+  const text = buildHistoryText(transactions, totals, effectiveStart, endDate, limitNote, { total });
   await bot.sendMessage(chatId, text, actionKeyboard);
 }
 

@@ -13,6 +13,19 @@ const hash = (t) => crypto.createHash('sha256').update(String(t)).digest('hex');
 const inactive = (status) => ['deleted', 'merged'].includes(status ?? 'active');
 const fail = (reason) => ({ ok: false, reason });
 
+/**
+ * Почта для подтверждения в боте: первая буква, скрытая середина, домен и метка после «+» (если есть).
+ * Две почты вида a@gmail.com и a+t6@gmail.com иначе выглядели бы одинаково (a***@gmail.com), и подключение
+ * к не тому аккаунту было бы незаметно.
+ */
+export function maskEmailForLink(email) {
+  if (typeof email !== 'string' || !email.includes('@')) return maskEmail(email);
+  const [local, domain] = email.split('@');
+  const plus = local.indexOf('+');
+  const tag = plus > 0 ? local.slice(plus) : '';
+  return `${local[0]}***${tag}@${domain}`;
+}
+
 /** Имя бота для ссылки: на stage — тестовый бот, на проде — боевой. Можно задать переменной TELEGRAM_BOT_USERNAME. */
 export function botUsername() {
   if (process.env.TELEGRAM_BOT_USERNAME) return process.env.TELEGRAM_BOT_USERNAME.replace(/^@/, '');
@@ -54,7 +67,7 @@ export async function peekLinkToken(db, token, { telegramId = null, now = new Da
       ownRecords = count ?? 0;
     }
   }
-  return { ok: true, user, maskedEmail: maskEmail(user.email), ownRecords };
+  return { ok: true, user, maskedEmail: maskEmailForLink(user.email), ownRecords };
 }
 
 // Переносит данные аккаунта Telegram (Y) в аккаунт с сайта (X). Вызывается только внутри транзакции.
