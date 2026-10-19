@@ -18,6 +18,16 @@ export function priceWithPromo(months, amountOff) {
   return price >= 1 ? price : null;
 }
 
+// Не даём перебирать промокоды: не больше 10 проверок в минуту на пользователя
+// (общий счётчик для кабинета и бота; хранится в памяти процесса, при перезапуске сбрасывается)
+const checks = new Map();
+export function tooManyChecks(userId, now = Date.now()) {
+  const recent = (checks.get(userId) ?? []).filter((t) => now - t < 60_000);
+  recent.push(now);
+  checks.set(userId, recent);
+  return recent.length > 10;
+}
+
 export const PROMO_MESSAGES = {
   not_found: 'Такого промокода нет. Проверь, правильно ли он введён.',
   expired: 'Срок действия промокода закончился.',

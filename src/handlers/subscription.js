@@ -3,9 +3,9 @@ import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { inTz } from '../utils/dateTz.js';
 import { grantSubscription } from '../utils/grantSubscription.js';
-import { createPayment, yookassaConfigured } from '../payments/yookassa.js';
+import { yookassaConfigured } from '../payments/yookassa.js';
 import { findRecentPaidSubscription } from '../payments/process.js';
-import { baseUrl } from '../emails/config.js';
+import { PLANS, askPromo, continueWithoutPromo, handlePromoMessage } from './subscriptionPromo.js';
 
 async function getUserId(telegramId) {
   const { data } = await supabase
@@ -109,43 +109,8 @@ export async function showSubscription(bot, chatId, telegramId) {
   );
 }
 
-const PLANS = {
-  buy_1month:   { months: 1,  label: '1 месяц — 399 ₽' },
-  buy_6months:  { months: 6,  label: '6 месяцев — 1 995 ₽ (платишь за 5, 6-й в подарок)' },
-  buy_12months: { months: 12, label: '12 месяцев — 3 990 ₽ (платишь за 10, 2 месяца в подарок)' },
-};
-
-// Создаёт платёж в ЮKassa и присылает ссылку именно на него: подписка включится тому, кто платил, email вводить не нужно.
-async function showPaymentLink(bot, chatId, planKey, userId, email) {
-  const { months, label } = PLANS[planKey];
-  const r = await createPayment({ months, userId, email, returnUrl: `${baseUrl()}/cabinet/profile?paid=1` });
-  if (!r.ok) {
-    await bot.sendMessage(
-      chatId,
-      r.reason === 'not_configured'
-        ? 'Оплата временно недоступна. Попробуй чуть позже 🙏'
-        : 'Не получилось создать платёж. Попробуй ещё раз через минуту или напиши нам через «Обратная связь» 🙏',
-      { reply_markup: { inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]] } }
-    );
-    return;
-  }
-  await bot.sendMessage(
-    chatId,
-    `Отлично! Для оплаты перейди по ссылке 👇\n\n` +
-    `[Оплатить ${label}](${r.url})\n\n` +
-    `Чек придёт на email из твоего профиля. После оплаты подписка включится автоматически, это занимает около минуты 💛`,
-    {
-      parse_mode: 'Markdown',
-      disable_web_page_preview: true,
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '✅ Я оплатил(а)', callback_data: `check_payment_${months}` }],
-          [{ text: 'Отмена', callback_data: 'cancel_payment' }],
-        ],
-      },
-    }
-  );
-}
+// Шаг после выбора тарифа (и email): спрашиваем промокод, затем даём ссылку на оплату — см. subscriptionPromo.js
+export const handleSubscriptionPromoState = (bot, msg) => handlePromoMessage(bot, msg, { db: supabase });
 
 export async function handleSubscriptionEmailState(bot, msg) {
   const telegramId = msg.from.id;
@@ -178,7 +143,7 @@ export async function handleSubscriptionEmailState(bot, msg) {
     await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏');
     return true;
   }
-  await showPaymentLink(bot, chatId, selectedPeriod, userId, email);
+  await askPromo(bot, chatId, telegramId, { planKey: selectedPeriod, userId, email });
   return true;
 }
 
@@ -212,6 +177,11 @@ export async function handleSubscriptionCallback(bot, query) {
     return;
   }
 
+  if (action === 'buy_nopromo') {
+    await continueWithoutPromo(bot, chatId, telegramId);
+    return;
+  }
+
   if (PLANS[action]) {
     if (!yookassaConfigured()) {
       await bot.sendMessage(chatId, 'Оплата временно недоступна. Попробуй чуть позже 🙏');
@@ -228,7 +198,7 @@ export async function handleSubscriptionCallback(bot, query) {
     }
     // Если email уже есть в профиле — сразу создаём платёж, иначе спрашиваем (он нужен для чека)
     if (user.email) {
-      await showPaymentLink(bot, chatId, action, user.id, user.email);
+      await askPromo(bot, chatId, telegramId, { planKey: action, userId: user.id, email: user.email });
       return;
     }
     userStates.set(telegramId, { awaitingEmail: true, selectedPeriod: action });

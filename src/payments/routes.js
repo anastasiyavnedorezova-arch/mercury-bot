@@ -6,7 +6,7 @@ import { Router } from 'express';
 import { requireAuth } from '../authMiddleware.js';
 import { baseUrl } from '../emails/config.js';
 import { createPayment, isPlanMonths } from './yookassa.js';
-import { checkPromo, normalizeCode, priceWithPromo, PROMO_MESSAGES } from './promo.js';
+import { checkPromo, normalizeCode, priceWithPromo, tooManyChecks, PROMO_MESSAGES } from './promo.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -17,15 +17,6 @@ const ERRORS = {
   not_configured: [503, 'Оплата временно недоступна. Попробуйте позже.'],
   yookassa_error: [502, 'Не удалось создать платёж. Попробуйте ещё раз.'],
 };
-
-// Не даём перебирать промокоды: не больше 10 проверок в минуту на пользователя (память процесса; при перезапуске сбрасывается)
-const checks = new Map();
-function tooManyChecks(userId, now = Date.now()) {
-  const recent = (checks.get(userId) ?? []).filter((t) => now - t < 60_000);
-  recent.push(now);
-  checks.set(userId, recent);
-  return recent.length > 10;
-}
 
 export function createPaymentRouter({ db, create = createPayment }) {
   const router = Router();

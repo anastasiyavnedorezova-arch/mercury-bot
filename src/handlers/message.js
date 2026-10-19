@@ -10,7 +10,7 @@ import { handleGoalState } from './goal.js';
 import { handleBudgetState } from './budget.js';
 import { handleHistoryState } from './history.js';
 import { handleFeedbackMessage } from './feedback.js';
-import { handleSubscriptionEmailState } from './subscription.js';
+import { handleSubscriptionEmailState, handleSubscriptionPromoState } from './subscription.js';
 import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
@@ -452,6 +452,7 @@ export async function handleMessage(bot, msg) {
   if (await handleHistoryState(bot, msg)) return;
   if (await handleFeedbackMessage(bot, msg)) return;
   if (await handleSubscriptionEmailState(bot, msg)) return;
+  if (await handleSubscriptionPromoState(bot, msg)) return;
   if (await handleCategoryNameState(bot, msg)) return;
   if (await handleManualAmountState(bot, msg)) return;
 
