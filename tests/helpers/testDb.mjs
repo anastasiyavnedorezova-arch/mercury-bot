@@ -36,6 +36,9 @@ export async function makeDb() {
   const { PGlite } = await import('@electric-sql/pglite');
   const pgl = new PGlite({ parsers: PARSERS });
   await pgl.exec(schemaSql);
-  const db = createDbFromExecutor({ query: (t, p) => pgl.query(t, p) });
+  const db = createDbFromExecutor({
+    query: (t, p) => pgl.query(t, p),
+    transaction: (fn) => pgl.transaction((tx) => fn({ query: (t, p) => tx.query(t, p) })),
+  });
   return { db, query: (t, p) => pgl.query(t, p), close: async () => {} };
 }

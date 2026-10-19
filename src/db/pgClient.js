@@ -25,6 +25,7 @@ export const FOREIGN_KEYS = {
   promo_codes: {},
   promo_redemptions: { users: 'user_id' },
   subscriptions: { users: 'user_id' },
+  telegram_link_tokens: { users: 'user_id' },
   transactions: { categories: 'category_id', goals: 'goal_id', users: 'user_id' },
   users: { users: 'merged_into' },
 };
@@ -408,13 +409,17 @@ class QueryBuilder {
   }
 }
 
-// executor: { query(text, params) => Promise<{ rows }> }
+// executor: { query(text, params) => Promise<{ rows }>, transaction?(fn) }
+// db.transaction(async (tx) => ...) выполняет fn в одной транзакции: tx.query(text, params) — «чистый» SQL;
+// если fn бросает ошибку, все изменения откатываются. Нужна для операций из нескольких шагов (объединение аккаунтов).
 export function createDbFromExecutor(executor) {
-  return {
+  const db = {
     from(table) {
       return new QueryBuilder(executor, table);
     },
   };
+  if (executor.transaction) db.transaction = (fn) => executor.transaction(fn);
+  return db;
 }
 
 export function createPgDb(connectionString, opts = {}) {
@@ -427,7 +432,23 @@ export function createPgDb(connectionString, opts = {}) {
     types: { getTypeParser: (oid, format) => PARSERS[oid] ?? pg.types.getTypeParser(oid, format) },
   });
   pool.on('error', (e) => console.error('[db] pool error:', e.message));
-  const db = createDbFromExecutor({ query: (text, params) => pool.query(text, params) });
+  const db = createDbFromExecutor({
+    query: (text, params) => pool.query(text, params),
+    transaction: async (fn) => {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const result = await fn({ query: (text, params) => client.query(text, params) });
+        await client.query('COMMIT');
+        return result;
+      } catch (e) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw e;
+      } finally {
+        client.release();
+      }
+    },
+  });
   db.ping = async () => {
     await pool.query('select 1');
     return true;

@@ -1,5 +1,6 @@
 import { supabase } from '../db.js';
 import { userStates } from '../state.js';
+import { findUserIdByExternalId } from '../utils/findUser.js';
 
 const MENU_KEYBOARD = {
   reply_markup: {
@@ -7,14 +8,7 @@ const MENU_KEYBOARD = {
   },
 };
 
-async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .single();
-  return data?.id ?? null;
-}
+const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
 export async function showCategories(bot, chatId, telegramId) {
   const userId = await getUserId(telegramId);

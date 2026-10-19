@@ -1,4 +1,5 @@
-import { handleOnboardingCallback, requireTerms } from './onboarding.js';
+import { handleOnboardingCallback, requireTerms, showConsentScreen } from './onboarding.js';
+import { supabase } from '../db.js';
 import { handleGoalCallback } from './goal.js';
 import { showBudget, handleBudgetCallback } from './budget.js';
 import { handleHistoryCallback } from './history.js';
@@ -9,6 +10,7 @@ import { handleCategorySelection, handleManualCallback } from './message.js';
 import { showMainMenu, handleMenuCallback } from './menu.js';
 import { handleTransactionCallback } from './transaction.js';
 import { handleFileCallback } from './fileUpload.js';
+import { handleLinkCallback } from './linkTelegram.js';
 import { userStates } from '../state.js';
 import { recordHint } from '../utils/botTexts.js';
 
@@ -27,6 +29,12 @@ export async function dispatchCallbackQuery(bot, query) {
   // Кнопки онбординга — единственное, что разрешено без согласия
   if (action.startsWith('onboarding:')) {
     await handleOnboardingCallback(bot, query);
+    return;
+  }
+
+  // Подключение Telegram к аккаунту с сайта: человек мог ещё не принимать согласие в боте
+  if (action.startsWith('link:')) {
+    await handleLinkCallback(bot, query, { db: supabase, showConsentScreen, showMainMenu });
     return;
   }
 

@@ -897,12 +897,12 @@
         </svg>
       </div>
       <div class="tg-connect-text">
-        Чтобы подключить Telegram, нужно открыть Telegram-бота «Финник · Деньги» (@FinnikMoneyBot) и отправить ему любое сообщение. После этого аккаунт привяжется автоматически.
+        <span id="tgLinkText">Готовлю ссылку…</span>
       </div>
     </div>
     <div class="modal-actions">
-      <button class="modal-btn-secondary" onclick="closeModal('modalConnectTg')">Отменить</button>
-      <a href="https://t.me/FinnikMoneyBot" target="_blank" class="modal-btn-primary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none" onclick="closeModal('modalConnectTg')">Перейти в Telegram</a>
+      <button class="modal-btn-secondary" onclick="closeModal('modalConnectTg')">Закрыть</button>
+      <a href="#" target="_blank" rel="noopener" id="tgLinkBtn" class="modal-btn-primary" style="display:none;align-items:center;justify-content:center;text-decoration:none">Открыть Telegram</a>
     </div>
   </div>
 </div>
@@ -948,6 +948,7 @@
       <b>Обратите внимание.</b> После отключения новые записи из Telegram-бота перестанут попадать в этот личный кабинет. Исторические данные сохранятся, но синхронизация прекратится.
     </div>
     <p style="font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:24px">Вы уверены, что хотите отвязать Telegram от аккаунта?</p>
+    <p id="tgDisconnectError" style="display:none;font-size:14px;line-height:22px;color:var(--color-error-main);margin:-12px 0 20px"></p>
     <div class="modal-actions">
       <button class="modal-btn-secondary" onclick="closeModal('modalDisconnectTg')">Отменить</button>
       <button class="modal-btn-danger" onclick="confirmDisconnectTg()">Да, отключить</button>
@@ -1017,7 +1018,7 @@
       document.getElementById('personalCreated').textContent = fmtDateNoTime(data.created_at);
 
       // Telegram
-      const isTgConnected = !!data.external_id && data.channel === 'telegram';
+      const isTgConnected = data.telegram_connected ?? (!!data.external_id && data.channel === 'telegram');
       const tgBtn = document.getElementById('tgBtn');
       const tgUsername = document.getElementById('tgUsername');
       const tgStatus = document.getElementById('tgStatus');
@@ -1346,20 +1347,74 @@
     };
 
     // ---- TELEGRAM ----
+    let tgPoll = null;
+    function stopTgPoll() { if (tgPoll) { clearInterval(tgPoll); tgPoll = null; } }
+    // Пока открыто окно подключения, раз в 4 секунды смотрим, подключил ли человек Telegram в боте
+    function startTgPoll() {
+      stopTgPoll();
+      const until = Date.now() + 15 * 60 * 1000;
+      tgPoll = setInterval(async () => {
+        if (Date.now() > until || !document.getElementById('modalConnectTg').classList.contains('visible')) { stopTgPoll(); return; }
+        try {
+          const r = await fetch('/api/profile', { headers: authHeaders() });
+          if (!r.ok) return;
+          const d = await r.json();
+          if (d.telegram_connected) {
+            stopTgPoll();
+            window.closeModal('modalConnectTg');
+            if (window.showToast) window.showToast('Telegram подключён. Теперь бот и сайт работают с одними данными.', 'success', 8000);
+            loadProfile();
+          }
+        } catch (e) { /* сеть моргнула: попробуем в следующий раз */ }
+      }, 4000);
+    }
+
+    async function openConnectTg() {
+      const text = document.getElementById('tgLinkText');
+      const btn = document.getElementById('tgLinkBtn');
+      btn.style.display = 'none';
+      text.textContent = 'Готовлю ссылку…';
+      window.openModal('modalConnectTg');
+      try {
+        const res = await fetch('/api/profile/telegram-link', { method: 'POST', headers: authHeaders() });
+        if (res.status === 409) { window.closeModal('modalConnectTg'); loadProfile(); return; }
+        if (!res.ok) throw new Error('http ' + res.status);
+        const d = await res.json();
+        text.textContent = 'Нажми «Открыть Telegram», затем «Старт» и «Подключить» в боте. Ссылка действует 15 минут. Если в боте у тебя уже есть записи, они перейдут в этот аккаунт. Это окно закроется само, когда всё получится.';
+        btn.href = d.url;
+        btn.style.display = 'inline-flex';
+        startTgPoll();
+      } catch (e) {
+        text.textContent = 'Не получилось подготовить ссылку. Закрой окно и попробуй ещё раз 🙏';
+      }
+    }
+
     document.getElementById('tgBtn').addEventListener('click', function() {
       if (this.textContent.trim() === 'Подключить') {
-        window.openModal('modalConnectTg');
+        openConnectTg();
       } else {
+        document.getElementById('tgDisconnectError').style.display = 'none';
         window.openModal('modalDisconnectTg');
       }
     });
 
     window.confirmDisconnectTg = async function() {
-      const res = await fetch('/api/profile/disconnect-telegram', { method: 'POST', headers: authHeaders() });
-      if (res.ok) {
-        window.closeModal('modalDisconnectTg');
-        loadProfile();
+      const errEl = document.getElementById('tgDisconnectError');
+      errEl.style.display = 'none';
+      try {
+        const res = await fetch('/api/profile/disconnect-telegram', { method: 'POST', headers: authHeaders() });
+        if (res.ok) {
+          window.closeModal('modalDisconnectTg');
+          loadProfile();
+          return;
+        }
+        let msg = 'Не получилось отключить Telegram. Попробуй ещё раз.';
+        try { const d = await res.json(); if (d.message) msg = d.message; } catch (e) { /* без тела */ }
+        errEl.textContent = msg;
+      } catch (e) {
+        errEl.textContent = 'Нет связи с сервером. Попробуй ещё раз.';
       }
+      errEl.style.display = 'block';
     };
 
     // ---- DELETE ACCOUNT ----

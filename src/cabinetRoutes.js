@@ -15,6 +15,7 @@ import { getUserAccess } from './utils/access.js';
 import { hadTrial, startTrial, rowsHadTrial } from './utils/trial.js';
 import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } from './cabinet/categories.js';
 import { updateTransaction } from './cabinet/historyEdit.js';
+import { createLinkToken, disconnectTelegram, botLinkUrl, botUsername, LINK_TTL_MS } from './accounts/linkTelegram.js';
 
 const webBot = createWebBotAdapter();
 
@@ -90,14 +91,14 @@ router.post('/api/auth/telegram', async (req, res) => {
     // Ищем пользователя по telegram_id
     const { data: users, error } = await supabase
       .from('users')
-      .select('id, external_id, channel')
+      .select('id, external_id, channel, status')
       .eq('external_id', telegramId)
       .eq('channel', 'telegram')
       .limit(1);
 
     if (error) throw error;
 
-    if (!users?.length) {
+    if (!users?.length || ['deleted', 'merged'].includes(users[0].status ?? 'active')) {
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -681,7 +682,7 @@ router.get('/api/profile', requireAuth, async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, external_id, channel, created_at, tg_username, web_username, email, status')
+      .select('id, external_id, channel, created_at, tg_username, web_username, email, status, password_hash')
       .eq('id', req.userId)
       .single();
     if (error || !user) return res.status(404).json({ error: 'User not found' });
@@ -708,6 +709,10 @@ router.get('/api/profile', requireAuth, async (req, res) => {
       web_username: user.web_username,
       email: user.email,
       username: user.web_username || user.tg_username || user.email || null,
+      telegram_connected: user.channel === 'telegram',
+      // Telegram можно отключить только если остаётся вход по почте и паролю
+      can_disconnect_telegram: !!user.password_hash,
+      bot_username: botUsername(),
       subscription: activeSub || null,
       last_subscription: lastExpiredSub,
       had_trial_before: hadTrialBefore,
@@ -792,14 +797,36 @@ router.post('/api/profile/activate-trial', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.post('/api/profile/disconnect-telegram', requireAuth, async (req, res) => {
   try {
-    const { error } = await supabase
-      .from('users')
-      .update({ external_id: null, channel: null, tg_username: null })
-      .eq('id', req.userId);
-    if (error) throw error;
-    res.json({ ok: true });
+    const r = await disconnectTelegram(supabase, req.userId);
+    if (r.ok) return res.json({ ok: true });
+    if (r.reason === 'no_login') {
+      return res.status(409).json({
+        error: 'no_login',
+        message: 'Отключить Telegram нельзя: у этого аккаунта нет входа по почте и паролю, и ты потеряешь доступ. Сначала зарегистрируйся на сайте через почту.',
+      });
+    }
+    if (r.reason === 'no_user') return res.status(404).json({ error: 'User not found' });
+    throw new Error(r.reason);
   } catch (err) {
     console.error('[cabinet] disconnect-telegram error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/profile/telegram-link
+// Создаёт одноразовую ссылку (15 минут) для подключения Telegram к этому аккаунту.
+// В боте человек нажимает «Старт» и подтверждает; если в боте уже были данные, они переносятся сюда.
+// ──────────────────────────────────────────
+router.post('/api/profile/telegram-link', requireAuth, async (req, res) => {
+  try {
+    const r = await createLinkToken(supabase, req.userId);
+    if (r.ok) return res.json({ url: botLinkUrl(r.token), expires_in: Math.round(LINK_TTL_MS / 1000) });
+    if (r.reason === 'already_connected') return res.status(409).json({ error: 'already_connected', message: 'Telegram уже подключён' });
+    if (r.reason === 'no_user') return res.status(404).json({ error: 'User not found' });
+    throw new Error(r.reason);
+  } catch (err) {
+    console.error('[cabinet] telegram-link error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -906,66 +933,6 @@ router.get('/api/bot/poll', requireAuth, async (req, res) => {
     res.json({ messages: [] });
   } catch (err) {
     console.error('[cabinet] /api/bot/poll error:', err.message);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ──────────────────────────────────────────
-// POST /api/profile/merge-telegram
-// Привязывает Telegram к существующему веб-аккаунту.
-// Если такой telegram_id уже есть у другого юзера — делает merge.
-// ──────────────────────────────────────────
-router.post('/api/profile/merge-telegram', requireAuth, async (req, res) => {
-  try {
-    const { telegram_id, tg_username } = req.body;
-    if (!telegram_id) return res.status(400).json({ error: 'Missing telegram_id' });
-
-    const currentUserId = req.userId;
-    const telegramIdStr = String(telegram_id);
-
-    // Ищем существующего юзера с этим telegram_id (не текущего)
-    const { data: existingTgUser } = await supabase
-      .from('users')
-      .select('id, external_id, channel')
-      .eq('external_id', telegramIdStr)
-      .eq('channel', 'telegram')
-      .neq('id', currentUserId)
-      .maybeSingle();
-
-    if (!existingTgUser) {
-      // Первый контакт — просто привязываем Telegram к текущему аккаунту
-      await supabase
-        .from('users')
-        .update({ external_id: telegramIdStr, channel: 'telegram', tg_username: tg_username || null })
-        .eq('id', currentUserId);
-      return res.json({ ok: true, merged: false });
-    }
-
-    // Коллизия: existingTgUser (Y) уже имеет этот telegram_id, текущий юзер (X) — веб
-    const Y = existingTgUser.id;
-    const X = currentUserId;
-
-    // Переносим все данные Y на X
-    await supabase.from('transactions').update({ user_id: X }).eq('user_id', Y);
-    await supabase.from('goals').update({ user_id: X }).eq('user_id', Y);
-    await supabase.from('budget').update({ user_id: X }).eq('user_id', Y);
-    await supabase.from('subscriptions').update({ user_id: X }).eq('user_id', Y);
-
-    // Помечаем Y как merged
-    await supabase
-      .from('users')
-      .update({ status: 'merged', merged_into: X })
-      .eq('id', Y);
-
-    // Обновляем X: привязываем настоящий telegram_id
-    await supabase
-      .from('users')
-      .update({ external_id: telegramIdStr, channel: 'telegram', tg_username: tg_username || null })
-      .eq('id', X);
-
-    res.json({ ok: true, merged: true });
-  } catch (err) {
-    console.error('[cabinet] merge-telegram error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

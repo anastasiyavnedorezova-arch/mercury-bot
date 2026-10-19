@@ -3,6 +3,7 @@ import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { inTz } from '../utils/dateTz.js';
+import { findUserIdByExternalId } from '../utils/findUser.js';
 
 // ── Вспомогательные функции ───────────────────────────────────────────────────
 
@@ -42,14 +43,7 @@ function progressBar(percent) {
   return '█'.repeat(filled) + '░'.repeat(10 - filled) + ` ${Math.round(percent)}%`;
 }
 
-async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .single();
-  return data?.id ?? null;
-}
+const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
 async function getSpentThisMonth(userId) {
   const { data: cats } = await supabase

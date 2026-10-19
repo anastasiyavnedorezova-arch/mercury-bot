@@ -16,6 +16,7 @@ import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
 import { todayStr } from '../utils/dateTz.js';
+import { findUserIdByExternalId } from '../utils/findUser.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -34,14 +35,7 @@ const MANUAL_ERROR_KEYBOARD = {
   },
 };
 
-async function getUserId(externalId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(externalId))
-    .single();
-  return data?.id ?? null;
-}
+const getUserId = (externalId) => findUserIdByExternalId(supabase, externalId);
 
 // Ищет категорию по названию среди системных и категорий самого пользователя
 // (своя категория приоритетнее системной). Не найдена — «Остальное».

@@ -1,6 +1,7 @@
 import { supabase } from '../db.js';
 import { showConsentScreen } from './onboarding.js';
 import { showMainMenu } from './menu.js';
+import { handleLinkStart } from './linkTelegram.js';
 
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
 
@@ -10,6 +11,10 @@ export async function handleStart(bot, msg) {
   const telegramId = String(msg.from.id);
   const chatId = msg.chat.id;
   const username = msg.from.username || msg.from.first_name || telegramId;
+
+  // Ссылка «Подключить Telegram» из профиля на сайте: /start link_…
+  const payload = (msg.text ?? '').split(/\s+/)[1];
+  if (payload?.startsWith('link_') && await handleLinkStart(bot, msg, payload, { db: supabase })) return;
 
   const { data: existing } = await supabase
     .from('users')

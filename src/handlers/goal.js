@@ -4,6 +4,7 @@ import { userStates } from '../state.js';
 import { calculateMonthlyPayment } from '../utils/goalCalc.js';
 import { parseAmount, parseAmountStrict } from '../utils/parseAmount.js';
 import { applyGoalSaved, isGoalStateExpired } from '../utils/goalEdit.js';
+import { findUserIdByExternalId } from '../utils/findUser.js';
 
 // ── Константы и форматирование ────────────────────────────────────────────────
 
@@ -61,14 +62,7 @@ function parseRuDate(text) {
 
 // ── DB-хелперы ────────────────────────────────────────────────────────────────
 
-async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .single();
-  return data?.id ?? null;
-}
+const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
 async function getActiveGoals(userId) {
   const { data } = await supabase

@@ -3,6 +3,7 @@ import { getUserAccess } from '../utils/access.js';
 import { showBudget } from './budget.js';
 import { showGoal } from './goal.js';
 import { inTz } from '../utils/dateTz.js';
+import { findUserIdByExternalId } from '../utils/findUser.js';
 
 // ── Константы ─────────────────────────────────────────────────────────────────
 
@@ -67,14 +68,7 @@ function formatNum(n) {
 
 // ── DB-хелперы ────────────────────────────────────────────────────────────────
 
-async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .single();
-  return data?.id ?? null;
-}
+const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
 // Расходы по нeсистемным категориям текущего месяца (для прогноза, как в budget.js)
 async function getBudgetSpent(userId) {

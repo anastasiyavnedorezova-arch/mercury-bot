@@ -6,6 +6,7 @@ import { showSubscription } from './subscription.js';
 import { getUserAccess } from '../utils/access.js';
 import { recordHint } from '../utils/botTexts.js';
 import { startTrial, hadTrial } from '../utils/trial.js';
+import { findUserIdByExternalId } from '../utils/findUser.js';
 
 const STEP1_INTRO =
   `Привет! Я Финник — твой личный финансовый помощник 👋\n\n` +
@@ -139,14 +140,7 @@ export async function requireTerms(bot, telegramId, chatId) {
   return true;
 }
 
-async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', telegramId)
-    .maybeSingle();
-  return data?.id ?? null;
-}
+const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
 export async function handleOnboardingCallback(bot, query) {
   const chatId = query.message.chat.id;

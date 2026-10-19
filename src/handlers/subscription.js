@@ -6,15 +6,9 @@ import { grantSubscription } from '../utils/grantSubscription.js';
 import { yookassaConfigured } from '../payments/yookassa.js';
 import { findRecentPaidSubscription } from '../payments/process.js';
 import { PLANS, askPromo, continueWithoutPromo, handlePromoMessage } from './subscriptionPromo.js';
+import { findUserIdByExternalId } from '../utils/findUser.js';
 
-async function getUserId(telegramId) {
-  const { data } = await supabase
-    .from('users')
-    .select('id')
-    .eq('external_id', String(telegramId))
-    .single();
-  return data?.id ?? null;
-}
+const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
 function formatDate(isoStr) {
   const d = inTz(new Date(isoStr));
