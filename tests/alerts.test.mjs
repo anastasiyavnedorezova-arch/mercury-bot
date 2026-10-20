@@ -57,6 +57,8 @@ test('текст для Telegram: проблема, подсказка, восс
     { kind: 'alert', name: 'backup', detail: 'последняя успешная копия 30 ч назад', since },
     { kind: 'recovered', name: 'db', since },
   ], now);
+  assert.match(t, /^Проект: Финник\n/);
+  assert.match(buildTelegramText([{ kind: 'alert', name: 'db', detail: 'x', since }], now, 'Рецепторика'), /^Проект: Рецепторика\n/);
   assert.match(t, /🔴 Не работает: Ночная копия базы/);
   assert.match(t, /последняя успешная копия 30 ч назад/);
   assert.match(t, /finnik-backup\.sh/);
@@ -144,7 +146,8 @@ test('расход ИИ: тревога с 80% общего предела (ло
 test('скрипт проверки: два канала, тест-режим Telegram, подключён alert-setup', () => {
   const s = read('scripts/healthcheck.mjs');
   assert.match(s, /--test-telegram/);
-  assert.match(s, /sendTelegramAlert\(buildTelegramText/);
+  assert.match(s, /sendTelegramAlert\(buildTelegramText\(actions, now, project\)/);
+  assert.match(s, /ALERT_PROJECT/);
   assert.match(s, /!r\.ok && !tg\.ok/);               // откат состояния, только если не дошёл ни один путь
   assert.match(read('tools/alert-setup.mjs'), /getUpdates/);
   assert.doesNotMatch(read('tools/alert-setup.mjs'), /console\.(log|error)\([^)]*token/);

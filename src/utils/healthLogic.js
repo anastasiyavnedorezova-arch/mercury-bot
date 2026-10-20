@@ -82,10 +82,10 @@ const fmtMsk = (ms) =>
   new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', dateStyle: 'short', timeStyle: 'short' }).format(new Date(ms));
 
 // Короткое сообщение для Telegram из тех же событий
-export function buildTelegramText(actions, now) {
+export function buildTelegramText(actions, now, project = 'Финник') {
   const problems = actions.filter((a) => a.kind !== 'recovered');
   const fixed = actions.filter((a) => a.kind === 'recovered');
-  const lines = [];
+  const lines = [`Проект: ${project}`, ''];
   for (const a of problems) {
     lines.push(`${a.kind === 'reminder' ? '🔴 Всё ещё не работает' : '🔴 Не работает'}: ${labelOf(a.name)}`);
     if (a.detail) lines.push(`Что видим: ${a.detail}`);

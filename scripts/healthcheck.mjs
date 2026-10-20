@@ -15,6 +15,8 @@ import { alertConfigured, sendTelegramAlert } from '../src/utils/alertTelegram.j
 const stateDir = process.env.STATE_DIRECTORY || '/var/lib/finnik-health';
 const stateFile = process.env.HEALTHCHECK_STATE_FILE || path.join(stateDir, 'state.json');
 const to = process.env.ADMIN_NOTIFY_EMAIL || process.env.MAIL_FROM_EMAIL;
+// Название проекта в сообщениях Telegram: один бот оповещений может обслуживать несколько проектов (ALERT_PROJECT)
+const project = (process.env.ALERT_PROJECT || '').trim() || 'Финник';
 
 function loadState() {
   try { return JSON.parse(fs.readFileSync(stateFile, 'utf8')); } catch { return { checks: {} }; }
@@ -39,7 +41,7 @@ async function main() {
   }
 
   if (process.argv.includes('--test-telegram')) {
-    const r = await sendTelegramAlert('🧪 Финник: тест оповещений. Если ты видишь это сообщение, тревоги будут приходить сюда.');
+    const r = await sendTelegramAlert(`🧪 Проект: ${project}. Тест оповещений. Если ты видишь это сообщение, тревоги будут приходить сюда.`);
     console.log('[health] test telegram:', r.ok ? 'отправлено' : `не отправлено (${r.error})`);
     process.exit(r.ok ? 0 : 1);
   }
@@ -57,7 +59,7 @@ async function main() {
     const what = actions.map((a) => a.kind + ':' + a.name).join(', ');
     const [r, tg] = await Promise.all([
       to ? sendEmail({ to, ...mail }) : Promise.resolve({ ok: false, error: 'no_recipient' }),
-      alertConfigured() ? sendTelegramAlert(buildTelegramText(actions, now)) : Promise.resolve({ ok: false, skipped: true, error: 'не настроен' }),
+      alertConfigured() ? sendTelegramAlert(buildTelegramText(actions, now, project)) : Promise.resolve({ ok: false, skipped: true, error: 'не настроен' }),
     ]);
     console.log(`[health] письмо (${what}): ${r.ok ? 'отправлено' : 'НЕ отправлено (' + (r.error || r.status || 'skipped') + ')'}`);
     console.log(`[health] Telegram (${what}): ${tg.ok ? 'отправлено' : tg.skipped ? 'пропущено (не настроен)' : 'НЕ отправлено (' + tg.error + ')'}`);
