@@ -3,7 +3,7 @@
 // Чек уходит на email из профиля. Если в профиле его нет (например, вход через Telegram), берём email из запроса
 // и пробуем сохранить его в профиль (если он занят другим аккаунтом, сохранение пропускаем: для чека это не важно).
 import { Router } from 'express';
-import { requireAuth } from '../authMiddleware.js';
+import { requireAuth as requireJwt, requireActiveAccount } from '../authMiddleware.js';
 import { baseUrl } from '../emails/config.js';
 import { createPayment, isPlanMonths } from './yookassa.js';
 import { checkPromo, normalizeCode, priceWithPromo, tooManyChecks, PROMO_MESSAGES } from './promo.js';
@@ -20,6 +20,7 @@ const ERRORS = {
 
 export function createPaymentRouter({ db, create = createPayment }) {
   const router = Router();
+  const requireAuth = [requireJwt, requireActiveAccount(db)];
 
   router.post('/api/promo/check', requireAuth, async (req, res) => {
     try {

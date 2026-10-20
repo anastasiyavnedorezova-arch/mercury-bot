@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { isWebAccount } from './auth/authCore.js';
 import { supabase } from './db.js';
-import { requireAuth } from './authMiddleware.js';
+import { requireAuth as requireJwt, requireActiveAccount } from './authMiddleware.js';
 import { createWebBotAdapter, getWebChatQueue, clearWebChatQueue, waitForNewMessage } from './webBotAdapter.js';
 import { handleMessage } from './handlers/message.js';
 import { showMainMenu } from './handlers/menu.js';
@@ -20,6 +20,9 @@ import { createLinkToken, disconnectTelegram, botLinkUrl, botUsername, LINK_TTL_
 const webBot = createWebBotAdapter();
 
 const router = Router();
+
+// Сеанс должен быть с действующим токеном и с действующим (не удалённым, не объединённым) аккаунтом.
+const requireAuth = [requireJwt, requireActiveAccount(supabase)];
 
 // ──────────────────────────────────────────
 // Хелпер: возвращает chatId для веб-чата

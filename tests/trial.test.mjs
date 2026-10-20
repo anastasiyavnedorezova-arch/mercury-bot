@@ -40,7 +40,8 @@ test('pickSubscription: действующий доступ с самой поз
     { status: 'expired', ends_at: iso(-30) },
   ];
   assert.equal(pickSubscription(rows, now).status, 'active');
-  assert.equal(pickSubscription([{ status: 'expired', ends_at: iso(-30) }, { status: 'expired', ends_at: iso(-3) }], now).ends_at, iso(-3).slice(0, 10) + pickSubscription([{ status: 'expired', ends_at: iso(-3) }], now).ends_at.slice(10));
+  const threeDaysAgo = iso(-3);   // одно значение: иначе две отметки времени могли отличаться на миллисекунду
+  assert.equal(pickSubscription([{ status: 'expired', ends_at: iso(-30) }, { status: 'expired', ends_at: threeDaysAgo }], now).ends_at, threeDaysAgo);
   assert.equal(pickSubscription([{ status: 'trial', ends_at: iso(-1) }], now).status, 'trial'); // закончился по дате, но ещё не помечен
   assert.equal(pickSubscription([], now).status, 'free');
   assert.equal(pickSubscription(null, now).status, 'free');
