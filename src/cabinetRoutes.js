@@ -16,6 +16,7 @@ import { hadTrial, startTrial, rowsHadTrial } from './utils/trial.js';
 import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } from './cabinet/categories.js';
 import { updateTransaction } from './cabinet/historyEdit.js';
 import { rateLimit, userKey } from './utils/httpLimits.js';
+import { displayMessage } from './utils/messageText.js';
 import { createLinkToken, disconnectTelegram, botLinkUrl, botUsername, LINK_TTL_MS } from './accounts/linkTelegram.js';
 
 const webBot = createWebBotAdapter();
@@ -337,7 +338,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
         .limit(1)
         .maybeSingle(),
       supabase.from('transactions')
-        .select('id, type, amount, comment, transaction_date, categories(name)')
+        .select('id, type, amount, comment, raw_message, transaction_date, categories(name)')
         .eq('user_id', req.userId)
         .gte('transaction_date', monthStart)
         .order('transaction_date', { ascending: false }),
@@ -403,7 +404,7 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
       id: t.id,
       type: t.type,
       amount: t.amount,
-      comment: t.comment,
+      comment: displayMessage(t, t.categories?.name),
       date: t.transaction_date,
       category: t.categories?.name || 'Другое',
     }));
@@ -451,7 +452,7 @@ router.get('/api/history', requireAuth, async (req, res) => {
     const { data, error, count } = await supabase
       .from('transactions')
       .select(
-        'id, transaction_date, type, amount, comment, categories(name)',
+        'id, transaction_date, type, amount, comment, raw_message, categories(name)',
         { count: 'exact' }
       )
       .eq('user_id', req.userId)
@@ -467,7 +468,7 @@ router.get('/api/history', requireAuth, async (req, res) => {
         transaction_date: t.transaction_date,
         type: t.type,
         amount: t.amount,
-        comment: t.comment,
+        comment: displayMessage(t, t.categories?.name),
         category: t.categories?.name || 'Другое',
       })),
       total: count,

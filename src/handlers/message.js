@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { reserveAi, denyAi } from '../utils/aiLimit.js';
+import { parseWithRetry } from '../utils/llmRetry.js';
 import { replyIfQuota } from '../utils/openaiErrors.js';
 import 'dotenv/config';
 import { supabase } from '../db.js';
@@ -176,16 +177,16 @@ async function callFaqLLM(question, bot) {
   return response.choices[0].message.content.trim();
 }
 
-async function callLLM(userText, userCategories = []) {
+async function callLLM(userText, userCategories = [], { retryHint } = {}) {
   const today = todayStr();
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
       { role: 'system', content: getSystemPrompt(userCategories) },
       // Дата и сообщение — на разных строках: в записи «Сегодня 2026-09-27. 3917 …» модель могла принять «27. 3917» за число
-      { role: 'user', content: `Сегодня ${today}.\nСообщение пользователя: ${userText}` },
+      { role: 'user', content: `Сегодня ${today}.\nСообщение пользователя: ${userText}${retryHint ? `\n\n${retryHint}` : ''}` },
     ],
-    temperature: 0,
+    temperature: retryHint ? 0.3 : 0,
     max_tokens: 1500,
   });
   const raw = response.choices[0].message.content.trim();
@@ -587,7 +588,7 @@ export async function handleMessage(bot, msg) {
         .eq('is_active', true);
       userCategories = data ?? [];
     }
-    parsed = await callLLM(effectiveText, userCategories);
+    parsed = await parseWithRetry((opts) => callLLM(effectiveText, userCategories, opts), effectiveText);
   } catch (err) {
     console.error('OpenAI error:', err.message);
     if (await replyIfQuota(err, bot, chatId)) return;
