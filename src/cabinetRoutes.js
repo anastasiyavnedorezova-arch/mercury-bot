@@ -15,6 +15,7 @@ import { getUserAccess } from './utils/access.js';
 import { hadTrial, startTrial, rowsHadTrial } from './utils/trial.js';
 import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } from './cabinet/categories.js';
 import { updateTransaction } from './cabinet/historyEdit.js';
+import { rateLimit, userKey } from './utils/httpLimits.js';
 import { createLinkToken, disconnectTelegram, botLinkUrl, botUsername, LINK_TTL_MS } from './accounts/linkTelegram.js';
 
 const webBot = createWebBotAdapter();
@@ -23,6 +24,27 @@ const router = Router();
 
 // Сеанс должен быть с действующим токеном и с действующим (не удалённым, не объединённым) аккаунтом.
 const requireAuth = [requireJwt, requireActiveAccount(supabase)];
+
+// Ограничения частоты (см. utils/httpLimits.js). Лимиты ставятся после проверки входа, чтобы считать по человеку.
+const limitTelegramLogin = rateLimit({ name: 'telegram-login', windowMs: 15 * 60_000, max: 30 });
+const limitFeedback = [
+  rateLimit({ name: 'feedback-user', windowMs: 60 * 60_000, max: 5, key: userKey, message: 'Слишком много обращений. Попробуй чуть позже.' }),
+  rateLimit({ name: 'feedback-ip', windowMs: 60 * 60_000, max: 20, message: 'Слишком много обращений. Попробуй чуть позже.' }),
+];
+const limitTelegramLink = rateLimit({ name: 'telegram-link', windowMs: 60 * 60_000, max: 10, key: userKey, message: 'Слишком часто. Подожди немного и попробуй снова.' });
+// Веб-чат: 30 сообщений в минуту. Лишнее сообщение не доходит до ИИ; человек получает ответ бота в чате (индикатор «печатает» не зависает).
+const limitChatSend = rateLimit({
+  name: 'chat-send', windowMs: 60_000, max: 30, key: userKey,
+  onLimited: async (req, res) => {
+    try {
+      const chatId = await getOrCreateWebChatId(req.userId);
+      await webBot.sendMessage(chatId, 'Ты пишешь очень часто 🙂 Подожди минутку и отправь ещё раз.');
+    } catch (e) {
+      console.error('[webchat] limit notice error:', e.message);
+    }
+    res.json({ ok: true });
+  },
+});
 
 // ──────────────────────────────────────────
 // Хелпер: возвращает chatId для веб-чата
@@ -59,7 +81,7 @@ async function getOrCreateWebChatId(userId) {
 // Принимает данные Telegram Login Widget,
 // проверяет HMAC-SHA256, возвращает JWT.
 // ──────────────────────────────────────────
-router.post('/api/auth/telegram', async (req, res) => {
+router.post('/api/auth/telegram', limitTelegramLogin, async (req, res) => {
   try {
     const { hash, ...data } = req.body;
     if (!hash) return res.status(400).json({ error: 'Missing hash' });
@@ -648,7 +670,7 @@ router.delete('/api/categories/:id', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/api/feedback', requireAuth, async (req, res) => {
+router.post('/api/feedback', requireAuth, limitFeedback, async (req, res) => {
   try {
     const { email, subject, message } = req.body;
     if (!email || !message) {
@@ -821,7 +843,7 @@ router.post('/api/profile/disconnect-telegram', requireAuth, async (req, res) =>
 // Создаёт одноразовую ссылку (15 минут) для подключения Telegram к этому аккаунту.
 // В боте человек нажимает «Старт» и подтверждает; если в боте уже были данные, они переносятся сюда.
 // ──────────────────────────────────────────
-router.post('/api/profile/telegram-link', requireAuth, async (req, res) => {
+router.post('/api/profile/telegram-link', requireAuth, limitTelegramLink, async (req, res) => {
   try {
     const r = await createLinkToken(supabase, req.userId);
     if (r.ok) return res.json({ url: botLinkUrl(r.token), expires_in: Math.round(LINK_TTL_MS / 1000) });
@@ -887,7 +909,7 @@ router.post('/api/bot/init', requireAuth, async (req, res) => {
 // POST /api/bot/send
 // Пользователь отправляет сообщение в веб-чат.
 // ──────────────────────────────────────────
-router.post('/api/bot/send', requireAuth, async (req, res) => {
+router.post('/api/bot/send', requireAuth, limitChatSend, async (req, res) => {
   try {
     const { text } = req.body;
     if (!text || !text.trim()) return res.status(400).json({ error: 'Empty message' });

@@ -13,6 +13,7 @@ import { fetchPayment } from './payments/yookassa.js';
 import { sendLetter } from './emails/send.js';
 import { maySendTo } from './emails/config.js';
 import { addSeoRoutes } from './seo.js';
+import { rateLimit } from './utils/httpLimits.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,7 +98,8 @@ export function startWebhookServer(bot) {
   });
 
   // ЮKassa: уведомление «платёж прошёл». Платёж перепроверяется запросом в ЮKassa (см. payments/process.js).
-  app.post('/webhook/yookassa', async (req, res) => {
+  // 120 в минуту с одного IP: ЮKassa шлёт десятки уведомлений, а лишний шум не должен нагружать запросы в ЮKassa
+  app.post('/webhook/yookassa', rateLimit({ name: 'yookassa-webhook', windowMs: 60_000, max: 120 }), async (req, res) => {
     try {
       const event = req.body;
       console.log('[webhook] yookassa:', event?.event, event?.object?.id);

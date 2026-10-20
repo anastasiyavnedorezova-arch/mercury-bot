@@ -1378,6 +1378,7 @@
       try {
         const res = await fetch('/api/profile/telegram-link', { method: 'POST', headers: authHeaders() });
         if (res.status === 409) { window.closeModal('modalConnectTg'); loadProfile(); return; }
+        if (res.status === 429) { text.textContent = 'Слишком часто. Закрой окно, подожди немного и попробуй снова 🙏'; return; }
         if (!res.ok) throw new Error('http ' + res.status);
         const d = await res.json();
         text.textContent = 'Нажми «Открыть Telegram», затем «Старт» и «Подключить» в боте. Ссылка действует 15 минут. Если в боте у тебя уже есть записи, они перейдут в этот аккаунт. Это окно закроется само, когда всё получится.';

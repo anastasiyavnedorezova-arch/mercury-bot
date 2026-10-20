@@ -6,6 +6,7 @@ import { Router } from 'express';
 import { requireAuth as requireJwt, requireActiveAccount } from '../authMiddleware.js';
 import { baseUrl } from '../emails/config.js';
 import { createPayment, isPlanMonths } from './yookassa.js';
+import { rateLimit, userKey } from '../utils/httpLimits.js';
 import { checkPromo, normalizeCode, priceWithPromo, tooManyChecks, PROMO_MESSAGES } from './promo.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,9 +19,14 @@ const ERRORS = {
   yookassa_error: [502, 'Не удалось создать платёж. Попробуй ещё раз.'],
 };
 
-export function createPaymentRouter({ db, create = createPayment }) {
+export function createPaymentRouter({ db, create = createPayment, limits = {} }) {
   const router = Router();
   const requireAuth = [requireJwt, requireActiveAccount(db)];
+  // Каждое нажатие «Оплатить» создаёт платёж в ЮKassa: ограничиваем и по человеку, и по IP (после проверки входа).
+  const payLimits = [
+    rateLimit({ name: 'pay-user', windowMs: 10 * 60_000, max: 10, key: userKey, ...(limits.payUser || {}) }),
+    rateLimit({ name: 'pay-ip', windowMs: 60 * 60_000, max: 40, ...(limits.payIp || {}) }),
+  ];
 
   router.post('/api/promo/check', requireAuth, async (req, res) => {
     try {
@@ -34,7 +40,7 @@ export function createPaymentRouter({ db, create = createPayment }) {
     }
   });
 
-  router.post('/api/pay', requireAuth, async (req, res) => {
+  router.post('/api/pay', requireAuth, payLimits, async (req, res) => {
     try {
       const months = Number(req.body?.months);
       if (!isPlanMonths(months)) return res.status(400).json({ error: 'bad_months', message: ERRORS.bad_months[1] });

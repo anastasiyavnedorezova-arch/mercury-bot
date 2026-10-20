@@ -516,6 +516,12 @@
         })
       });
       if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
+      if (res.status === 429) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Отправить';
+        showError(emailField, errorEmail, 'Ты уже отправил несколько обращений. Попробуй чуть позже.');
+        return;
+      }
       if (!res.ok) throw new Error('Server error');
 
       emailField.disabled   = true;

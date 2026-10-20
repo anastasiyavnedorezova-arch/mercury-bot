@@ -8,6 +8,7 @@
 import crypto from 'crypto';
 import express from 'express';
 import { maskEmail } from '../utils/email.js';
+import { createFailureGuard } from '../utils/httpLimits.js';
 
 const sha = (s) => crypto.createHash('sha256').update(String(s)).digest();
 
@@ -107,10 +108,13 @@ export async function handleEvents(db, body) {
   return result;
 }
 
-export function createRusenderRouter({ db }) {
+export function createRusenderRouter({ db, guard = createFailureGuard({ name: 'rusender-secret' }) }) {
   const router = express.Router();
   router.post('/webhook/rusender/:secret', async (req, res) => {
-    if (!secretOk(req.params.secret)) return res.status(404).send('Not found');
+    // Секрет в адресе нельзя перебирать: после 20 неверных попыток за час с одного IP отвечаем так же, как на неверный секрет
+    const ip = req.ip || 'unknown';
+    if (guard.blocked(ip)) return res.status(404).send('Not found');
+    if (!secretOk(req.params.secret)) { guard.fail(ip); return res.status(404).send('Not found'); }
     try {
       const r = await handleEvents(db, req.body);
       res.json({ ok: true, ...r });
