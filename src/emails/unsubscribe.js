@@ -55,11 +55,11 @@ function confirmPage(u, t) {
 }
 
 function donePage(u, t) {
-  return page('Вы отписались', `<h1>Готово, ты отписался 👌</h1>
+  return page('Письма отключены', `<h1>Готово, письма отключены 👌</h1>
 <p>Писем о возможностях «Финник · Деньги» больше не будет. Важные сообщения о сроке доступа продолжат приходить.</p>
 <form method="post" action="/unsubscribe">
 <input type="hidden" name="u" value="${escapeHtml(u)}"><input type="hidden" name="t" value="${escapeHtml(t)}"><input type="hidden" name="action" value="resubscribe">
-<p class="small">Передумал? <button class="green" type="submit">Вернуть письма</button></p></form>`);
+<p class="small">Если захочешь вернуться: <button class="green" type="submit">Вернуть письма</button></p></form>`);
 }
 
 function resubPage() {

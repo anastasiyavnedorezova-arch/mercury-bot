@@ -14,8 +14,8 @@ const ERRORS = {
   bad_months: [400, 'Неизвестный тариф.'],
   no_email: [400, 'Чтобы оплатить, нужен email: на него придёт чек.'],
   bad_email: [400, 'Введи корректный email, например ivan@gmail.com'],
-  not_configured: [503, 'Оплата временно недоступна. Попробуйте позже.'],
-  yookassa_error: [502, 'Не удалось создать платёж. Попробуйте ещё раз.'],
+  not_configured: [503, 'Оплата временно недоступна. Попробуй позже.'],
+  yookassa_error: [502, 'Не удалось создать платёж. Попробуй ещё раз.'],
 };
 
 export function createPaymentRouter({ db, create = createPayment }) {
@@ -81,7 +81,7 @@ export function createPaymentRouter({ db, create = createPayment }) {
       res.json({ url: r.url });
     } catch (e) {
       console.error('[pay] error:', e.message);
-      res.status(500).json({ error: 'internal', message: 'Не удалось создать платёж. Попробуйте ещё раз.' });
+      res.status(500).json({ error: 'internal', message: 'Не удалось создать платёж. Попробуй ещё раз.' });
     }
   });
   return router;

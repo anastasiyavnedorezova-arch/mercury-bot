@@ -39,7 +39,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
     res.setHeader('Retry-After', String(sec));
     return res.status(429).json({
       error: 'too_many_requests',
-      message: 'Слишком много попыток. Попробуйте через несколько минут.',
+      message: 'Слишком много попыток. Попробуй через несколько минут.',
       retry_after: sec,
     });
   }
@@ -71,14 +71,14 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       const b = req.body ?? {};
       const email = normalizeEmail(b.email);
       if (!email) return res.status(400).json({ error: 'validation', field: 'email', message: 'Обязательное поле' });
-      if (!isValidEmail(email)) return res.status(400).json({ error: 'validation', field: 'email', message: 'Введите корректный e-mail' });
+      if (!isValidEmail(email)) return res.status(400).json({ error: 'validation', field: 'email', message: 'Введи корректный e-mail' });
       const pwErr = validatePassword(b.password);
       if (pwErr) return res.status(400).json({ error: 'validation', field: 'password', message: pwErr });
       if (b.terms_accepted !== true || b.consent_pd_accepted !== true) {
         return res.status(400).json({ error: 'validation', field: 'terms', message: 'Нужно принять условия и дать согласие на обработку данных' });
       }
 
-      const takenMsg = 'Этот e-mail уже зарегистрирован. Войдите или восстановите пароль.';
+      const takenMsg = 'Этот e-mail уже зарегистрирован. Войди или восстанови пароль.';
       if ((await findWebAccounts(email)).length) return res.status(409).json({ error: 'email_taken', message: takenMsg });
 
       const passwordHash = await hashPassword(b.password);
@@ -116,7 +116,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       res.status(201).json({ token: signToken({ id, external_id: id }) });
     } catch (err) {
       console.error('[auth] register error:', err.message);
-      res.status(500).json({ error: 'internal', message: 'Не удалось создать аккаунт. Попробуйте ещё раз.' });
+      res.status(500).json({ error: 'internal', message: 'Не удалось создать аккаунт. Попробуй ещё раз.' });
     }
   });
 
@@ -128,7 +128,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       const email = normalizeEmail(b.email);
       const password = typeof b.password === 'string' ? b.password : '';
       if (!email || !password) {
-        return res.status(400).json({ error: 'validation', message: 'Укажите e-mail и пароль' });
+        return res.status(400).json({ error: 'validation', message: 'Укажи e-mail и пароль' });
       }
 
       const ipKey = ip;
@@ -152,7 +152,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       res.json({ token: signToken(user) });
     } catch (err) {
       console.error('[auth] login error:', err.message);
-      res.status(500).json({ error: 'internal', message: 'Не удалось войти. Попробуйте ещё раз.' });
+      res.status(500).json({ error: 'internal', message: 'Не удалось войти. Попробуй ещё раз.' });
     }
   });
 
@@ -166,7 +166,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       L.forgotIp.record(ip);
 
       const email = normalizeEmail(req.body?.email);
-      if (!isValidEmail(email)) return res.status(400).json({ error: 'validation', field: 'email', message: 'Введите корректный e-mail' });
+      if (!isValidEmail(email)) return res.status(400).json({ error: 'validation', field: 'email', message: 'Введи корректный e-mail' });
 
       // Лимит на один адрес: сверх лимита письмо молча не отправляется
       if (L.forgotEmail.retryAfterSec(email)) return res.json({ ok: true });
@@ -193,7 +193,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       res.json({ ok: true });
     } catch (err) {
       console.error('[auth] forgot error:', err.message);
-      res.status(500).json({ error: 'internal', message: 'Не удалось отправить письмо. Попробуйте ещё раз.' });
+      res.status(500).json({ error: 'internal', message: 'Не удалось отправить письмо. Попробуй ещё раз.' });
     }
   });
 
@@ -206,7 +206,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       L.resetIp.record(ip);
 
       const { token, password } = req.body ?? {};
-      const invalid = () => res.status(400).json({ error: 'invalid_token', message: 'Ссылка недействительна или устарела. Запросите новое письмо.' });
+      const invalid = () => res.status(400).json({ error: 'invalid_token', message: 'Ссылка недействительна или устарела. Запроси новое письмо.' });
       if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) return invalid();
       const pwErr = validatePassword(password);
       if (pwErr) return res.status(400).json({ error: 'validation', field: 'password', message: pwErr });
@@ -245,7 +245,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
       res.json({ ok: true });
     } catch (err) {
       console.error('[auth] reset error:', err.message);
-      res.status(500).json({ error: 'internal', message: 'Не удалось сохранить пароль. Попробуйте ещё раз.' });
+      res.status(500).json({ error: 'internal', message: 'Не удалось сохранить пароль. Попробуй ещё раз.' });
     }
   });
 

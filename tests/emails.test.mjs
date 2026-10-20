@@ -111,7 +111,7 @@ test('отписка: открытие ссылки ничего не меняе
 
     const post = await fetch(`${srv.base}/unsubscribe`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: `u=${id}&t=${t}` });
     assert.equal(post.status, 200);
-    assert.match(await post.text(), /ты отписался/);
+    assert.match(await post.text(), /письма отключены/);
     const f = await flagOf(id);
     assert.equal(f.a, false);
     assert.ok(f.at);
