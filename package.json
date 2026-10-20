@@ -26,5 +26,10 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8"
+  },
+  "overrides": {
+    "request": {
+      "form-data": "^4.0.6"
+    }
   }
 }
