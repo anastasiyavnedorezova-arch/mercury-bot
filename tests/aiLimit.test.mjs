@@ -80,13 +80,17 @@ test('AI_LIMITS=off полностью отключает проверку', asy
   assert.equal(await used('u-off'), 0);
 });
 
-test('тексты отказа: про лимит и про перегрузку, с выходом через ручную запись', async () => {
-  assert.match(aiLimitText({ reason: 'user', limit: 50 }), /50 в сутки/);
-  assert.match(aiLimitText({ reason: 'global', limit: 3000 }), /перегружен/);
+test('текст отказа: без слов про лимиты и сутки, одинаковый для человека и для общего предела, с кнопкой ручной записи', async () => {
+  const user = aiLimitText({ reason: 'user', limit: 50 });
+  assert.equal(user, aiLimitText({ reason: 'global', limit: 3000 }));
+  assert.equal(user, 'Ой, мне надо немного отдохнуть 😔 Пока я перезагружаюсь, добавь запись вручную, пожалуйста 🙏');
+  assert.doesNotMatch(user, /лимит|сутк|\d|полноч/i);
   const sent = [];
   await denyAi({ sendMessage: async (...a) => sent.push(a) }, 7, { reason: 'user', limit: 50 });
   assert.equal(sent[0][0], 7);
+  assert.equal(sent[0][1], user);
   assert.equal(sent[0][2].reply_markup.inline_keyboard[0][0].callback_data, 'manual:start');
+  assert.match(sent[0][2].reply_markup.inline_keyboard[0][0].text, /вручную/);
 });
 
 test('подключено: текст, FAQ, голос, выписка и правки выписки проходят через лимит; у ответов ИИ есть потолок длины', () => {
