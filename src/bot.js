@@ -207,11 +207,9 @@ startScheduler(bot);
 console.log('[email] config:', JSON.stringify(emailConfigStatus()));
 console.log('[endpoints]', JSON.stringify(endpointsStatus()));
 console.log('[db] driver:', dbDriver);
-if (dbDriver === 'postgres') {
-  supabase.ping()
-    .then(() => console.log('[db] postgres connection OK'))
-    .catch((e) => console.error('[db] postgres connection FAILED:', e.message));
-}
+supabase.ping()
+  .then(() => console.log('[db] postgres connection OK'))
+  .catch((e) => console.error('[db] postgres connection FAILED:', e.message));
 startWebhookServer(bot);
 
 bot.on('polling_error', (error) => {

@@ -1,17 +1,12 @@
 import 'dotenv/config';
-import { createClient } from '@supabase/supabase-js';
 import { createPgDb } from './db/pgClient.js';
 
-// Если задан DATABASE_URL — работаем с собственным PostgreSQL (российский сервер).
-// Если не задан — как раньше, через Supabase (Railway). Переключение делается только переменной окружения.
-export const dbDriver = process.env.DATABASE_URL ? 'postgres' : 'supabase';
+// База данных — собственный PostgreSQL, адрес берётся из DATABASE_URL.
+export const dbDriver = 'postgres';
 
-function createSupabase() {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
-    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY are required when DATABASE_URL is not set');
-  }
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required');
 }
 
-// Имя `supabase` сохранено, чтобы не менять вызовы supabase.from(...) по всему проекту.
-export const supabase = dbDriver === 'postgres' ? createPgDb(process.env.DATABASE_URL) : createSupabase();
+// Имя `supabase` осталось от прежней базы: так названа переменная в вызовах supabase.from(...) по всему проекту.
+export const supabase = createPgDb(process.env.DATABASE_URL);

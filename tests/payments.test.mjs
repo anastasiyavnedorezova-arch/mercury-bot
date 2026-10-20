@@ -11,8 +11,7 @@ import { createPaymentRouter } from '../src/payments/routes.js';
 import { paymentsReady, maySendTo } from '../src/emails/config.js';
 
 process.env.JWT_SECRET = 'test-secret';
-process.env.SUPABASE_URL ||= 'http://localhost:1';   // grantSubscription подключает db.js; боевой базы в тестах нет
-process.env.SUPABASE_SERVICE_KEY ||= 'x';
+process.env.DATABASE_URL ||= 'postgres://test:test@127.0.0.1:1/test';   // grantSubscription подключает db.js; боевой базы в тестах нет
 const { grantSubscription } = await import('../src/utils/grantSubscription.js');
 
 let ctx;

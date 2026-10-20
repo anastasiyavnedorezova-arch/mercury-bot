@@ -25,7 +25,7 @@ function monthsWord(n) {
 
 export function startWebhookServer(bot) {
   const app = express();
-  // За прокси (nginx / Railway): настоящий IP клиента нужен для ограничения попыток входа
+  // За прокси (nginx): настоящий IP клиента нужен для ограничения попыток входа
   app.set('trust proxy', 1);
   app.use(express.json());
   app.use((req, res, next) => {

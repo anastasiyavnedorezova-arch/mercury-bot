@@ -319,7 +319,7 @@ test('миграция: e-mail веб-аккаунтов уникален на �
   assert.equal((await ctx.db.from('users').insert({ external_id: 'q4', channel: 'telegram', email: e })).error, null);
 });
 
-test('requireAuth: принимает токены с userId и токены первой версии входа с id в поле sub', async () => {
+test('requireAuth: принимает токены с userId; токены с id только в поле sub (первая версия входа) отклоняются', async () => {
   const { requireAuth } = await import('../src/authMiddleware.js');
   process.env.JWT_SECRET = SECRET;
   const run = (payload) => {
@@ -331,7 +331,9 @@ test('requireAuth: принимает токены с userId и токены п�
     return { nexted, status, userId: req.userId };
   };
   assert.deepEqual(run({ userId: 'u1', telegramId: '5' }), { nexted: true, status: 200, userId: 'u1' });
-  assert.equal(run({ sub: 'u2', email: 'a@b.ru' }).userId, 'u2');
+  const oldSub = run({ sub: 'u2', email: 'a@b.ru' });     // допуск sub убран 20.10.2026
+  assert.equal(oldSub.nexted, false);
+  assert.equal(oldSub.status, 401);
   const bad = run({ foo: 1 });                           // токен без id пользователя отклоняется
   assert.equal(bad.nexted, false);
   assert.equal(bad.status, 401);

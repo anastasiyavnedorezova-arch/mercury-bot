@@ -622,7 +622,7 @@ export async function handleMessage(bot, msg) {
       await bot.sendMessage(chatId, parsed.message, MANUAL_ERROR_KEYBOARD);
       return;
     }
-    // Сырой ответ модели попадает в лог Railway — так видно, почему запись не распозналась
+    // Сырой ответ модели попадает в лог сервера — так видно, почему запись не распозналась
     console.log('[llm] не распознано', JSON.stringify({ text: effectiveText, result: parsed }));
     if (parsed.error === 'no_amount') {
       await bot.sendMessage(chatId, TEXTS.noAmount, MANUAL_ERROR_KEYBOARD);

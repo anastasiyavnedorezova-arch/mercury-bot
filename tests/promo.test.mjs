@@ -12,8 +12,7 @@ import { normalizeCode, priceWithPromo, checkPromo, recordRedemption, CODE_RE } 
 import { createPromo, setPromoActive, listPromos, describePromo, endOfDayMsk } from '../src/payments/promoAdmin.js';
 
 process.env.JWT_SECRET = 'test-secret';
-process.env.SUPABASE_URL ||= 'http://localhost:1';
-process.env.SUPABASE_SERVICE_KEY ||= 'x';
+process.env.DATABASE_URL ||= 'postgres://test:test@127.0.0.1:1/test';
 const { grantSubscription } = await import('../src/utils/grantSubscription.js');
 
 let ctx;

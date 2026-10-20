@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/bot.js",
-    "migrate": "node migrate.js",
     "test": "node --test tests/pgClient.test.mjs tests/auth.test.mjs tests/health.test.mjs tests/legal.test.mjs tests/plans.test.mjs tests/stubs.test.mjs tests/trial.test.mjs tests/botTexts.test.mjs tests/emails.test.mjs tests/chain.test.mjs tests/payments.test.mjs tests/cabinet.test.mjs tests/chatHistory.test.mjs tests/brand.test.mjs tests/landing.test.mjs tests/landingWidget.test.mjs tests/promo.test.mjs tests/botPromo.test.mjs tests/accountLink.test.mjs tests/historyText.test.mjs tests/refunds.test.mjs"
   },
   "keywords": [],
@@ -16,7 +15,6 @@
     "node": "20.x"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.100.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
