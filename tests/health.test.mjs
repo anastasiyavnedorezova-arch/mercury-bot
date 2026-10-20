@@ -129,9 +129,9 @@ test('checkApp и runChecks: SKIP и FORCE_FAIL', async () => {
   try {
     const env = { PORT: String(s.address().port) };
     assert.equal((await checkApp(env)).ok, true);
-    const res = await runChecks({ ...env, HEALTHCHECK_SKIP: 'db,telegram,openai' });
+    const res = await runChecks({ ...env, HEALTHCHECK_SKIP: 'db,telegram,openai,backup,disk,cert,ai_usage' });
     assert.deepEqual(res, [{ name: 'app', ok: true }]);
-    const forced = await runChecks({ ...env, HEALTHCHECK_SKIP: 'db,openai', HEALTHCHECK_FORCE_FAIL: 'telegram' });
+    const forced = await runChecks({ ...env, HEALTHCHECK_SKIP: 'db,openai,backup,disk,cert,ai_usage', HEALTHCHECK_FORCE_FAIL: 'telegram' });
     assert.equal(forced.find((r) => r.name === 'telegram').ok, false);
     assert.equal(forced.find((r) => r.name === 'app').ok, true);
   } finally { s.close(); }

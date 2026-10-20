@@ -60,6 +60,10 @@ const LABELS = {
   db: 'База данных',
   telegram: 'Связь бота с Telegram',
   openai: 'Связь бота с OpenAI',
+  backup: 'Ночная копия базы',
+  disk: 'Место на диске',
+  cert: 'Сертификат сайта',
+  ai_usage: 'Расход ИИ за сегодня',
 };
 export const labelOf = (name) => LABELS[name] || name;
 
@@ -68,10 +72,30 @@ const HINTS = {
   openai: 'Бот не сможет распознавать записи. Сначала проверьте ретранслятор в Нидерландах (relay.finnikbot.ru) и ключ OpenAI.',
   app: 'Приложение не отвечает на самом сервере. Проверьте: systemctl status finnik.',
   db: 'Приложение не достаёт до базы. Проверьте: systemctl status postgresql.',
+  backup: 'Свежей копии базы нет. Посмотрите: tail /var/log/finnik-backup.log, затем запустите /usr/local/bin/finnik-backup.sh вручную.',
+  disk: 'Диск почти заполнен. Посмотрите: df -h и du -sh /var/log /root/backups.',
+  cert: 'Сертификат скоро истечёт. Проверьте: certbot certificates и certbot renew --dry-run.',
+  ai_usage: 'Общий дневной предел запросов к ИИ почти исчерпан. Посмотрите, кто тратит: node --env-file=/etc/finnik-prod.env tools/ai-usage.mjs (в /opt/finnik/app). Если рост от рекламы — поднимите AI_GLOBAL_DAILY_LIMIT, если нет — найдите источник.',
 };
 
 const fmtMsk = (ms) =>
   new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', dateStyle: 'short', timeStyle: 'short' }).format(new Date(ms));
+
+// Короткое сообщение для Telegram из тех же событий
+export function buildTelegramText(actions, now) {
+  const problems = actions.filter((a) => a.kind !== 'recovered');
+  const fixed = actions.filter((a) => a.kind === 'recovered');
+  const lines = [];
+  for (const a of problems) {
+    lines.push(`${a.kind === 'reminder' ? '🔴 Всё ещё не работает' : '🔴 Не работает'}: ${labelOf(a.name)}`);
+    if (a.detail) lines.push(`Что видим: ${a.detail}`);
+    if (HINTS[a.name]) lines.push(HINTS[a.name]);
+    lines.push(`С ${fmtMsk(a.since)} МСК`, '');
+  }
+  for (const a of fixed) lines.push(`🟢 Снова работает: ${labelOf(a.name)} (проблема с ${fmtMsk(a.since)} МСК)`, '');
+  lines.push(`Проверка: ${fmtMsk(now)} МСК`);
+  return lines.join('\n').slice(0, 3900);
+}
 
 // Собирает одно письмо из всех событий запуска
 export function buildEmail(actions, now) {
