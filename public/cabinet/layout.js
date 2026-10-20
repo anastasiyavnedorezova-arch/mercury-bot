@@ -34,28 +34,25 @@ function plural(n) {
   return n%10===1&&n%100!==11 ? 'день' : [2,3,4].includes(n%10)&&![12,13,14].includes(n%100) ? 'дня' : 'дней';
 }
 
+// Строка тарифа показывается всегда: без неё высота шапки меняется после загрузки и строка «скачет»
+function subParts(subscription) {
+  if (!subscription) return { lbl: 'Подписка не активна', chip: '' };
+  const d = fmtDate(subscription.ends_at);
+  const dl = daysLeft(subscription.ends_at);
+  const chip = dl <= 30 ? `<span class="lk-badge">${dl} ${plural(dl)}</span>` : '';
+  const lbl = subscription.status === 'trial' ? `Пробный период до ${d}` : `Подписка до ${d}`;
+  return { lbl, chip };
+}
+
 export function renderHeader({username, subscription}) {
   const name = username || 'Пользователь';
-  let subHtml = '';
-  if (subscription) {
-    const d = fmtDate(subscription.ends_at);
-    const dl = daysLeft(subscription.ends_at);
-    const chip = dl <= 30 ? `<span class="lk-badge">${dl} ${plural(dl)}</span>` : '';
-    const lbl = subscription.status === 'trial' ? `Пробный период до ${d}` : `Подписка до ${d}`;
-    subHtml = `<div class="lk-header__sub"><span class="lk-header__sub-text">${lbl}</span>${chip}</div>`;
-  }
+  const { lbl, chip } = subParts(subscription);
+  const subHtml = `<div class="lk-header__sub"><span class="lk-header__sub-text">${lbl}</span>${chip}</div>`;
   const _lkUserInfo = document.getElementById('lkUserInfo');
   if (_lkUserInfo) _lkUserInfo.innerHTML =
     `<div class="lk-header__username">Кабинет: <strong>${name}</strong></div>${subHtml}`;
 
-  let drawerSub = '';
-  if (subscription) {
-    const d = fmtDate(subscription.ends_at);
-    const dl = daysLeft(subscription.ends_at);
-    const chip = dl <= 30 ? `<span class="lk-badge">${dl} ${plural(dl)}</span>` : '';
-    const lbl = subscription.status === 'trial' ? `Пробный период до ${d}` : `Подписка до ${d}`;
-    drawerSub = `<div class="lk-drawer__sub"><span class="lk-drawer__sub-text">${lbl}</span>${chip}</div>`;
-  }
+  const drawerSub = `<div class="lk-drawer__sub"><span class="lk-drawer__sub-text">${lbl}</span>${chip}</div>`;
   const _drawerUserInfo = document.getElementById('drawerUserInfo');
   if (_drawerUserInfo) _drawerUserInfo.innerHTML =
     `<div class="lk-drawer__name">Кабинет: <strong>${name}</strong></div>${drawerSub}`;
@@ -66,7 +63,9 @@ export function renderHeader({username, subscription}) {
   if (document.getElementById('lk-layout-css')) return;
   const s = document.createElement('style');
   s.id = 'lk-layout-css';
-  s.textContent = '@media (max-width: 768px) { .lk-logo--desktop { display: none !important; } .lk-logo--mobile { display: block !important; } }';
+  s.textContent = '@media (max-width: 768px) { .lk-logo--desktop { display: none !important; } .lk-logo--mobile { display: block !important; } }'
+    // Мобильная шапка: имя сверху, тариф всегда строкой под ним (не переносится «как получится»)
+    + ' @media (max-width: 900px) { .lk-header__user { flex-direction: column; align-items: flex-start; justify-content: flex-start; align-self: center; min-height: 38px; flex-wrap: nowrap; gap: 1px; } .lk-header__sub { min-height: 16px; flex-wrap: nowrap; } .lk-header__username { gap: 4px; } .lk-header__username, .lk-header__sub-text { max-width: 100%; overflow: hidden; text-overflow: ellipsis; } }';
   document.head.appendChild(s);
 })();
 
