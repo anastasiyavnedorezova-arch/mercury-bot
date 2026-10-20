@@ -3,6 +3,8 @@ import path from 'path';
 import https from 'https';
 import OpenAI from 'openai';
 import { handleMessage } from './message.js';
+import { supabase } from '../db.js';
+import { reserveAi, denyAi } from '../utils/aiLimit.js';
 import { telegramFileUrl } from '../utils/endpoints.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -24,6 +26,9 @@ export async function handleVoiceMessage(bot, msg) {
   const chatId = msg.chat.id;
 
   try {
+    const gate = await reserveAi(supabase, msg.from.id, 'voice');
+    if (!gate.ok) { await denyAi(bot, chatId, gate); return; }
+
     await bot.sendChatAction(chatId, 'typing');
 
     const fileId = msg.voice.file_id;
@@ -51,7 +56,7 @@ export async function handleVoiceMessage(bot, msg) {
 
     await bot.sendMessage(chatId, `🎤 Распознал: "${text}"`);
 
-    await handleMessage(bot, { ...msg, text });
+    await handleMessage(bot, { ...msg, text, fromVoice: true });
 
   } catch (err) {
     console.error('[voice] Error:', err.message);

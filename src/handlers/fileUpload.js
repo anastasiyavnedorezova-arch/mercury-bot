@@ -7,6 +7,7 @@ import { userStates } from '../state.js';
 import { getUserAccess } from '../utils/access.js';
 import { saveTransaction } from './message.js';
 import { todayStr } from '../utils/dateTz.js';
+import { reserveAi, denyAi } from '../utils/aiLimit.js';
 import { telegramFileUrl } from '../utils/endpoints.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -196,6 +197,9 @@ export async function handleFileUpload(bot, msg, fileType) {
     return;
   }
 
+  const gate = await reserveAi(supabase, telegramId, 'statement');
+  if (!gate.ok) { await denyAi(bot, chatId, gate); return; }
+
   await bot.sendChatAction(chatId, 'typing');
   await bot.sendMessage(chatId, '📄 Анализирую выписку, подожди немного...');
 
@@ -326,6 +330,9 @@ export async function handleFileTextResponse(bot, msg) {
 
   if (!state?.awaitingFileConfirmation) return false;
 
+  const gate = await reserveAi(supabase, telegramId, 'correction');
+  if (!gate.ok) { await denyAi(bot, chatId, gate); return true; }
+
   await bot.sendChatAction(chatId, 'typing');
 
   const correctionPrompt = `У пользователя есть список транзакций на подтверждение.
@@ -371,6 +378,7 @@ applyToAll — если пользователь говорит "остальн�
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: correctionPrompt }],
       temperature: 0,
+      max_tokens: 3000,
     });
     const raw = response.choices[0].message.content.trim();
     const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { reserveAi, denyAi } from '../utils/aiLimit.js';
 import 'dotenv/config';
 import { supabase } from '../db.js';
 import { getSystemPrompt } from '../prompts/system_prompt.js';
@@ -169,6 +170,7 @@ async function callFaqLLM(question, bot) {
       { role: 'user', content: question },
     ],
     temperature: 0.3,
+    max_tokens: 600,
   });
   return response.choices[0].message.content.trim();
 }
@@ -183,6 +185,7 @@ async function callLLM(userText, userCategories = []) {
       { role: 'user', content: `Сегодня ${today}.\nСообщение пользователя: ${userText}` },
     ],
     temperature: 0,
+    max_tokens: 1500,
   });
   const raw = response.choices[0].message.content.trim();
   // Иногда модель оборачивает JSON в ```json … ``` — убираем ограждение
@@ -472,6 +475,8 @@ export async function handleMessage(bot, msg) {
   // FAQ-вопрос
   if (state?.awaitingQuestion) {
     userStates.delete(telegramId);
+    const faqGate = await reserveAi(supabase, telegramId, 'faq');
+    if (!faqGate.ok) { await denyAi(bot, chatId, faqGate); return; }
     try {
       const answer = await callFaqLLM(text, bot);
       await bot.sendMessage(chatId, answer, {
@@ -561,6 +566,12 @@ export async function handleMessage(bot, msg) {
   }
 
   // ── Обычный поток через LLM ───────────────────────────────────────────────
+
+  // Дневной лимит запросов к ИИ (голосовое уже учтено при распознавании)
+  if (!msg.fromVoice) {
+    const gate = await reserveAi(supabase, telegramId, 'text');
+    if (!gate.ok) { await denyAi(bot, chatId, gate); return; }
+  }
 
   let parsed;
   try {
