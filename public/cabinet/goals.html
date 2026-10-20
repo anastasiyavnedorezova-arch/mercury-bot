@@ -489,7 +489,7 @@
   <div class="modal">
     <button class="modal-close-btn" onclick="window.closeModal('modal-delete-goal')">&#10005;</button>
     <div class="modal-title">Удалить цель</div>
-    <div class="modal-body" id="modal-delete-goal-body">Вы уверены, что хотите удалить эту цель?</div>
+    <div class="modal-body" id="modal-delete-goal-body">Точно хочешь удалить эту цель?</div>
     <div class="modal-actions modal-footer-delete" style="justify-content:flex-end;">
       <button class="btn btn-secondary btn-sm" onclick="window.closeModal('modal-delete-goal')">Отмена</button>
       <button class="btn btn-danger-text btn-sm btn-delete-primary" onclick="window.confirmDeleteGoal()">Удалить</button>
@@ -501,8 +501,8 @@
 <div class="modal-overlay" id="modalChooseGoal" style="display:none;">
   <div class="modal" style="max-width:500px;">
     <button class="modal-close-btn" onclick="closeModal('modalChooseGoal')">&#10005;</button>
-    <div class="modal-title">Выберите одну цель</div>
-    <div class="modal-body">Подписка закончилась. Выберите одну цель, которую хотите видеть.</div>
+    <div class="modal-title">Выбери одну цель</div>
+    <div class="modal-body">Подписка закончилась. Выбери одну цель, которую хочешь видеть.</div>
     <div class="modal-radio-list" id="chooseGoalList"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary btn-sm" onclick="closeModal('modalChooseGoal')">Отмена</button>
@@ -554,7 +554,7 @@
   function openDeleteGoalModal(goalId, goalName) {
     _deleteGoalId = goalId;
     var body = document.getElementById('modal-delete-goal-body');
-    if (body) body.innerHTML = 'Вы уверены, что хотите удалить цель <strong>«' + escH(goalName) + '»</strong>? Это действие нельзя отменить.';
+    if (body) body.innerHTML = 'Точно хочешь удалить цель <strong>«' + escH(goalName) + '»</strong>? Это действие нельзя отменить.';
     openModal('modal-delete-goal');
   }
 
@@ -575,7 +575,7 @@
     } catch(e) {
       console.error('[goals] delete error:', e);
       if (btn) { btn.disabled = false; btn.textContent = 'Удалить'; }
-      alert('Ошибка при удалении. Попробуйте ещё раз.');
+      alert('Ошибка при удалении. Попробуй ещё раз.');
     }
   }
 
@@ -612,7 +612,7 @@
   // ── Card helpers ─────────────────────────────────────────
   function expiredBanner() {
     return '<div class="expired-banner">' +
-      '<div class="expired-text"><strong>У вас закончилась подписка.</strong> Для доступа ко всем целям оплатите подписку.</div>' +
+      '<div class="expired-text"><strong>У тебя закончилась подписка.</strong> Для доступа ко всем целям оплати подписку.</div>' +
       '<a href="#" class="btn btn-accent btn-sm" onclick="event.preventDefault(); window.openBotWidget();">Оплатить подписку</a>' +
     '</div>';
   }

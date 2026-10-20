@@ -366,7 +366,7 @@
 
         <button class="btn btn--primary" id="btnLogin">Войти</button>
 
-        <p class="reg-link">Нет аккаунта? <a href="/cabinet/register">Зарегистрируйтесь здесь</a></p>
+        <p class="reg-link">Нет аккаунта? <a href="/cabinet/register">Зарегистрируйся здесь</a></p>
 
         <div class="divider"></div>
 
@@ -395,14 +395,14 @@
         <div class="card__title" style="text-align:left;">Восстановление пароля</div>
 
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <p class="helper-text" style="color:#6B7280;font-size:14px;">Укажите e-mail, на который выслать ссылку для смены пароля</p>
+          <p class="helper-text" style="color:#6B7280;font-size:14px;">Укажи e-mail, на который выслать ссылку для смены пароля</p>
           <div class="field">
             <input class="field__input" id="resetEmail" type="email" placeholder="E-mail" autocomplete="email"/>
             <span class="field__hint" id="resetEmailHint"></span>
           </div>
         </div>
 
-        <p class="helper-text">Перейдите по ссылке из письма и задайте новый пароль. Если письмо не пришло, проверьте папку «Спам» или повторите запрос через минуту.</p>
+        <p class="helper-text">Перейди по ссылке из письма и задай новый пароль. Если письмо не пришло, проверь папку «Спам» или повтори запрос через минуту.</p>
 
         <div style="display:flex;justify-content:flex-end;gap:12px;">
           <button class="btn btn--secondary" id="btnResetBack" style="width:auto;padding:10px 20px;height:40px;font-size:14px;border-radius:10px;">Вернуться назад</button>
@@ -415,7 +415,7 @@
         <div style="text-align:center;padding:24px 0;display:flex;flex-direction:column;align-items:center;gap:16px;">
           <div style="font-size:48px;">📬</div>
           <div class="card__title">Письмо отправлено!</div>
-          <p class="helper-text" style="text-align:center;color:#6B7280;">Проверьте почту и перейдите по ссылке из письма. Если письмо не пришло, посмотрите папку «Спам»</p>
+          <p class="helper-text" style="text-align:center;color:#6B7280;">Проверь почту и перейди по ссылке из письма. Если письмо не пришло, посмотри папку «Спам»</p>
           <button class="btn btn--primary" id="btnBackToLogin" style="margin-top:8px;">Вернуться ко входу</button>
         </div>
       </div>
@@ -430,7 +430,7 @@
         <span class="modal__title">Выход из аккаунта</span>
         <button class="modal__close" id="btnModalClose" aria-label="Закрыть">✕</button>
       </div>
-      <div class="modal__body">Вы уверены, что хотите выйти из аккаунта на этом устройстве?</div>
+      <div class="modal__body">Точно хочешь выйти из аккаунта на этом устройстве?</div>
       <div class="modal__actions">
         <button class="btn btn--secondary" id="btnLogoutCancel">Отменить</button>
         <button class="btn btn--dark"      id="btnLogoutConfirm">Выйти</button>
@@ -511,7 +511,7 @@
 
     if (errorCode || errorDesc) {
       showPanel('reset');
-      showToast('Ссылка недействительна или устарела. Запросите новое письмо.', 5000);
+      showToast('Ссылка недействительна или устарела. Запроси новое письмо.', 5000);
       return;
     }
 
@@ -536,9 +536,9 @@
 
   function waitText(res) {
     const sec = parseInt(res.headers.get('Retry-After') || '', 10);
-    if (!sec) return 'Слишком много попыток. Попробуйте позже.';
+    if (!sec) return 'Слишком много попыток. Попробуй позже.';
     const min = Math.ceil(sec / 60);
-    return min <= 1 ? 'Слишком много попыток. Попробуйте через минуту.' : 'Слишком много попыток. Попробуйте через ' + min + ' мин.';
+    return min <= 1 ? 'Слишком много попыток. Попробуй через минуту.' : 'Слишком много попыток. Попробуй через ' + min + ' мин.';
   }
 
   // ══════════════════════════════════
@@ -559,7 +559,7 @@
     if (!loginEmail.value.trim()) {
       setErr(loginEmail, loginEmailHint, 'Обязательное поле'); hasError = true;
     } else if (!isValidEmail(loginEmail.value)) {
-      setErr(loginEmail, loginEmailHint, 'Введите корректный e-mail'); hasError = true;
+      setErr(loginEmail, loginEmailHint, 'Введи корректный e-mail'); hasError = true;
     }
     if (!loginPassword.value) {
       setErr(loginPassword, loginPasswordHint, 'Обязательное поле'); hasError = true;
@@ -595,7 +595,7 @@
         setErr(loginEmail, loginEmailHint, err.message);
         loginEmail.focus();
       } else {
-        setErr(loginPassword, loginPasswordHint, offline ? 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.' : (err.message || 'Неверный e-mail или пароль'));
+        setErr(loginPassword, loginPasswordHint, offline ? 'Нет связи с сервером. Проверь интернет и попробуй ещё раз.' : (err.message || 'Неверный e-mail или пароль'));
       }
     }
   });
@@ -622,7 +622,7 @@
       setErr(resetEmail, resetEmailHint, 'Обязательное поле'); return;
     }
     if (!isValidEmail(resetEmail.value)) {
-      setErr(resetEmail, resetEmailHint, 'Введите корректный e-mail'); return;
+      setErr(resetEmail, resetEmailHint, 'Введи корректный e-mail'); return;
     }
 
     const btn = document.getElementById('btnResetSend');
@@ -632,12 +632,12 @@
     try {
       const { res } = await postJson('/api/auth/forgot', { email: resetEmail.value.trim().toLowerCase() });
       if (res.status === 429) throw new Error(waitText(res));
-      if (!res.ok) throw new Error('Ошибка. Попробуйте ещё раз.');
+      if (!res.ok) throw new Error('Ошибка. Попробуй ещё раз.');
       showPanel('reset-success');
     } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Отправить письмо';
-      setErr(resetEmail, resetEmailHint, err instanceof TypeError ? 'Нет связи с сервером. Попробуйте ещё раз.' : (err.message || 'Ошибка. Попробуйте ещё раз.'));
+      setErr(resetEmail, resetEmailHint, err instanceof TypeError ? 'Нет связи с сервером. Попробуй ещё раз.' : (err.message || 'Ошибка. Попробуй ещё раз.'));
     }
   });
 
@@ -673,7 +673,7 @@
       Object.keys(localStorage).filter(k => k.includes('auth')).forEach(k => localStorage.removeItem(k));
     } catch {}
     closeLogoutModal();
-    showToast('👋 Вы вышли из аккаунта');
+    showToast('👋 Выход выполнен');
     setTimeout(() => window.location.href = '/cabinet/login', 1200);
   });
 </script>

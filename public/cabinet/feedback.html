@@ -354,7 +354,7 @@
         <!-- Email -->
         <div class="field-group">
           <input class="form-input" type="email" id="fieldEmail"
-            placeholder="Ваш e-mail*" autocomplete="email" inputmode="email"/>
+            placeholder="Твой e-mail*" autocomplete="email" inputmode="email"/>
           <span class="field-error" id="errorEmail"></span>
         </div>
 
@@ -367,14 +367,14 @@
         <!-- Message -->
         <div class="field-group">
           <textarea class="form-input" id="fieldMessage"
-            placeholder="Напишите ваш вопрос*"></textarea>
+            placeholder="Напиши свой вопрос*"></textarea>
           <span class="field-error" id="errorMessage"></span>
         </div>
 
       </div>
 
       <p class="success-message" id="successMsg">
-        Ваше сообщение отправлено. Обычно мы отвечаем в течение 24 рабочих часов, но стараемся как можно быстрее.
+        Твоё сообщение отправлено. Обычно мы отвечаем в течение 24 рабочих часов, но стараемся как можно быстрее.
       </p>
 
       <div class="form-actions" id="formActions">
@@ -474,7 +474,7 @@
   emailField.addEventListener('blur', function() {
     var val = emailField.value.trim();
     if (val.length === 0) showError(emailField, errorEmail, 'Обязательное поле для заполнения');
-    else if (!isValidEmail(val)) showError(emailField, errorEmail, 'Введите корректный e-mail');
+    else if (!isValidEmail(val)) showError(emailField, errorEmail, 'Введи корректный e-mail');
     else clearError(emailField, errorEmail);
   });
   messageField.addEventListener('blur', function() {
@@ -489,7 +489,7 @@
     if (emailVal.length === 0) {
       showError(emailField, errorEmail, 'Обязательное поле для заполнения'); valid = false;
     } else if (!isValidEmail(emailVal)) {
-      showError(emailField, errorEmail, 'Введите корректный e-mail'); valid = false;
+      showError(emailField, errorEmail, 'Введи корректный e-mail'); valid = false;
     } else {
       clearError(emailField, errorEmail);
     }
@@ -528,7 +528,7 @@
     } catch(e) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Отправить';
-      showError(emailField, errorEmail, 'Ошибка отправки. Попробуйте ещё раз.');
+      showError(emailField, errorEmail, 'Ошибка отправки. Попробуй ещё раз.');
     }
   });
 

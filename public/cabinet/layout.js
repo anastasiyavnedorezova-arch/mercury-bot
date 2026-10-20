@@ -153,7 +153,7 @@ export function initLogoutModal() {
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15 5L5 15M5 5L15 15" stroke="#9CA3AF" stroke-width="1.8" stroke-linecap="round"/></svg>
           </button>
           <h2 class="logout-modal__title">Выход из аккаунта</h2>
-          <p class="logout-modal__text">Вы уверены, что хотите выйти из аккаунта на этом устройстве?</p>
+          <p class="logout-modal__text">Точно хочешь выйти из аккаунта на этом устройстве?</p>
           <div class="logout-modal__actions">
             <button class="logout-modal__btn logout-modal__btn--dark" id="logoutModalConfirmBtn">Выйти</button>
             <button class="logout-modal__btn logout-modal__btn--sec" id="logoutModalCancelBtn">Отменить</button>

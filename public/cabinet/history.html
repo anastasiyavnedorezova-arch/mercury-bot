@@ -1191,7 +1191,7 @@
     var isInc = r.type === 'income';
     var amt = Math.abs(parseFloat(r.amount)||0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('deleteDetail').innerHTML =
-      '<p style="font-weight:400;margin-bottom:12px;">Вы уверены, что хотите удалить эту запись?</p>'+
+      '<p style="font-weight:400;margin-bottom:12px;">Точно хочешь удалить эту запись?</p>'+
       '<p style="font-weight:700;">'+
         '📅 Дата: ' + escH(fmtDateRow(r.transaction_date)) + '<br>' +
         '📌 Тип: ' + (isInc ? 'Доход' : 'Расход') + '<br>' +

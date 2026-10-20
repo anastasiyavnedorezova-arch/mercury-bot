@@ -603,7 +603,7 @@
       <!-- DANGER ZONE -->
       <div class="danger-zone">
         <button class="delete-btn" onclick="openModal('modalDeleteAccount')">Удалить аккаунт</button>
-        <span class="danger-desc">Удаление аккаунта безвозвратно уничтожит все записи по вашему аккаунту. Это действие невозможно отменить.</span>
+        <span class="danger-desc">Удаление аккаунта безвозвратно уничтожит все записи по твоему аккаунту. Это действие невозможно отменить.</span>
       </div>
 
       <!-- DOCS BLOCK -->
@@ -672,7 +672,7 @@
     <h2 class="modal-title">Оформление подписки</h2>
     <div class="sub-description">
       Подписка для тех, кто хочет полный контроль над финансами.<br>
-      После оплаты вам дополнительно будут доступны:<br><br>
+      После оплаты тебе дополнительно будут доступны:<br><br>
       <b>Финансовые цели:</b><br>
       ✓ До 3 целей одновременно<br>
       ✓ Выбор расчёта: с учётом инфляции или доходности<br><br>
@@ -764,7 +764,7 @@
 <div class="modal-overlay" id="modalRenew">
   <div class="modal-box">
     <button class="modal-close" onclick="closeModal('modalRenew')">✕</button>
-    <h2 class="modal-title">Выберите тариф</h2>
+    <h2 class="modal-title">Выбери тариф</h2>
     <div class="promo-box">
       <button type="button" class="promo-toggle" onclick="togglePromo(this)">У меня есть промокод</button>
       <div class="promo-row">
@@ -870,7 +870,7 @@
     <div class="modal-fields">
       <div>
         <div class="modal-field-label">Имя</div>
-        <input class="modal-input" type="text" id="editName" placeholder="Ваше имя"/>
+        <input class="modal-input" type="text" id="editName" placeholder="Твоё имя"/>
       </div>
       <div>
         <div class="modal-field-label">E-mail</div>
@@ -929,9 +929,9 @@
     <button class="modal-close" onclick="closeModal('modalDeleteAccount')">✕</button>
     <h2 class="modal-title">Удалить аккаунт?</h2>
     <div class="delete-warn">
-      <b>Это действие необратимо.</b> Все ваши данные — записи о расходах и доходах, финансовые цели, история бюджета — будут безвозвратно удалены. Восстановить их будет невозможно.
+      <b>Это действие необратимо.</b> Все твои данные — записи о расходах и доходах, финансовые цели, история бюджета — будут безвозвратно удалены. Восстановить их будет невозможно.
     </div>
-    <p style="font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:24px">Вы уверены, что хотите удалить аккаунт?</p>
+    <p style="font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:24px">Точно хочешь удалить аккаунт?</p>
     <div class="modal-actions">
       <button class="modal-btn-secondary" onclick="closeModal('modalDeleteAccount')">Отменить</button>
       <button class="modal-btn-danger" onclick="confirmDeleteAccount()">Да, удалить</button>
@@ -945,9 +945,9 @@
     <button class="modal-close" onclick="closeModal('modalDisconnectTg')">✕</button>
     <h2 class="modal-title">Отключить Telegram?</h2>
     <div class="delete-warn">
-      <b>Обратите внимание.</b> После отключения новые записи из Telegram-бота перестанут попадать в этот личный кабинет. Исторические данные сохранятся, но синхронизация прекратится.
+      <b>Обрати внимание.</b> После отключения новые записи из Telegram-бота перестанут попадать в этот личный кабинет. Исторические данные сохранятся, но синхронизация прекратится.
     </div>
-    <p style="font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:24px">Вы уверены, что хотите отвязать Telegram от аккаунта?</p>
+    <p style="font-size:14px;line-height:22px;color:var(--color-text-second);margin-bottom:24px">Точно хочешь отвязать Telegram от аккаунта?</p>
     <p id="tgDisconnectError" style="display:none;font-size:14px;line-height:22px;color:var(--color-error-main);margin:-12px 0 20px"></p>
     <div class="modal-actions">
       <button class="modal-btn-secondary" onclick="closeModal('modalDisconnectTg')">Отменить</button>
@@ -1123,10 +1123,10 @@
         } else if (data.error === 'no_email' || data.error === 'bad_email') {
           askPayEmail(months, data.error === 'bad_email' ? data.message : '');
         } else {
-          showPayError(data.message || 'Не удалось создать платёж. Попробуйте ещё раз.');
+          showPayError(data.message || 'Не удалось создать платёж. Попробуй ещё раз.');
         }
       } catch (e) {
-        showPayError('Не удалось создать платёж. Проверьте интернет и попробуйте ещё раз.');
+        showPayError('Не удалось создать платёж. Проверь интернет и попробуй ещё раз.');
       }
       buttons.forEach(b => { b.disabled = false; });
       if (btn) btn.textContent = oldText;
@@ -1301,7 +1301,7 @@
           } catch (e) { /* пробуем дальше */ }
           if (tries >= 12) {
             clearInterval(timer);
-            showToast('Оплата обрабатывается. Если подписка не появилась через несколько минут, напишите нам через «Обратную связь».', 'warn');
+            showToast('Оплата обрабатывается. Если подписка не появилась через несколько минут, напиши нам через «Обратную связь».', 'warn');
           }
         }, 5000);
       }
@@ -1326,7 +1326,7 @@
       const email = document.getElementById('editEmail').value.trim();
       const errorEl = document.getElementById('editEmailError');
       if (email && !isValidEmail(email)) {
-        errorEl.textContent = 'Введите корректный e-mail';
+        errorEl.textContent = 'Введи корректный e-mail';
         errorEl.style.display = 'block';
         return;
       }
@@ -1341,7 +1341,7 @@
         loadProfile();
       } else {
         const data = await res.json();
-        errorEl.textContent = data.error === 'Invalid email format' ? 'Введите корректный e-mail' : 'Ошибка сохранения';
+        errorEl.textContent = data.error === 'Invalid email format' ? 'Введи корректный e-mail' : 'Ошибка сохранения';
         errorEl.style.display = 'block';
       }
     };
