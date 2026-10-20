@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { reserveAi, denyAi } from '../utils/aiLimit.js';
+import { replyIfQuota } from '../utils/openaiErrors.js';
 import 'dotenv/config';
 import { supabase } from '../db.js';
 import { getSystemPrompt } from '../prompts/system_prompt.js';
@@ -489,6 +490,7 @@ export async function handleMessage(bot, msg) {
       });
     } catch (err) {
       console.error('FAQ LLM error:', err.message);
+      if (await replyIfQuota(err, bot, chatId)) return;
       await bot.sendMessage(chatId, TEXTS.faqFailed);
     }
     return;
@@ -588,6 +590,7 @@ export async function handleMessage(bot, msg) {
     parsed = await callLLM(effectiveText, userCategories);
   } catch (err) {
     console.error('OpenAI error:', err.message);
+    if (await replyIfQuota(err, bot, chatId)) return;
     await bot.sendMessage(chatId, TEXTS.processingError);
     return;
   }

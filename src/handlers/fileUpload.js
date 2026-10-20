@@ -8,6 +8,7 @@ import { getUserAccess } from '../utils/access.js';
 import { saveTransaction } from './message.js';
 import { todayStr } from '../utils/dateTz.js';
 import { reserveAi, denyAi } from '../utils/aiLimit.js';
+import { replyIfQuota } from '../utils/openaiErrors.js';
 import { telegramFileUrl } from '../utils/endpoints.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -237,6 +238,7 @@ export async function handleFileUpload(bot, msg, fileType) {
     console.log(`[fileUpload] Found ${rawTransactions.length} transactions for user ${telegramId}`);
   } catch (err) {
     console.error('[fileUpload] Vision error:', err.message);
+    if (await replyIfQuota(err, bot, chatId)) return;
     await bot.sendMessage(chatId,
       'Не смог распознать выписку. Попробуй скриншот или другой файл 🙏');
     return;
@@ -385,6 +387,7 @@ applyToAll — если пользователь говорит "остальн�
     parsed = JSON.parse(cleaned);
   } catch (err) {
     console.error('[fileUpload] Correction LLM error:', err.message);
+    if (await replyIfQuota(err, bot, chatId)) return true;
     await bot.sendMessage(chatId,
       'Не смог разобрать правки. Попробуй написать иначе или используй кнопки 🙏',
       CONFIRM_KEYBOARD);

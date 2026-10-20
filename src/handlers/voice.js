@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import { handleMessage } from './message.js';
 import { supabase } from '../db.js';
 import { reserveAi, denyAi } from '../utils/aiLimit.js';
+import { replyIfQuota } from '../utils/openaiErrors.js';
 import { telegramFileUrl } from '../utils/endpoints.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -60,6 +61,7 @@ export async function handleVoiceMessage(bot, msg) {
 
   } catch (err) {
     console.error('[voice] Error:', err.message);
+    if (await replyIfQuota(err, bot, chatId)) return;
     await bot.sendMessage(chatId,
       'Не смог обработать голосовое. Попробуй написать текстом 🤔');
   }
