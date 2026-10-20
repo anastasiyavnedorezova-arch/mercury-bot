@@ -123,9 +123,18 @@ export function certDaysLeft(validTo, now = Date.now()) {
   const t = Date.parse(validTo);
   return Number.isFinite(t) ? Math.floor((t - now) / 86400e3) : null;
 }
+// Сайт и ретранслятор: HEALTH_CERT_HOST — список через запятую (по умолчанию оба)
+export const CERT_HOSTS_DEFAULT = 'finnikbot.ru,relay.finnikbot.ru';
 export async function checkCert(env = process.env, now = Date.now()) {
   const name = 'cert';
-  const host = env.HEALTH_CERT_HOST || 'finnikbot.ru';
+  const hosts = (env.HEALTH_CERT_HOST || CERT_HOSTS_DEFAULT).split(',').map((h) => h.trim()).filter(Boolean);
+  const results = await Promise.all(hosts.map((h) => checkCertHost(h, env, now)));
+  const bad = results.filter((r) => !r.ok);
+  return bad.length ? { name, ok: false, detail: bad.map((r) => r.detail).join('; ') } : { name, ok: true };
+}
+
+async function checkCertHost(host, env, now) {
+  const name = 'cert';
   try {
     const validTo = await new Promise((resolve, reject) => {
       // Проверку подлинности отключаем: нас интересует только срок, и просроченный сертификат тоже надо уметь прочитать
@@ -138,11 +147,11 @@ export async function checkCert(env = process.env, now = Date.now()) {
       socket.on('error', reject);
     });
     const days = certDaysLeft(validTo, now);
-    if (days === null) return { name, ok: false, detail: 'не удалось прочитать срок сертификата' };
+    if (days === null) return { name, ok: false, detail: `не удалось прочитать срок сертификата ${host}` };
     if (days < CERT_MIN_DAYS) return { name, ok: false, detail: `сертификат ${host} истекает через ${Math.max(days, 0)} дн.` };
     return { name, ok: true };
   } catch (err) {
-    return { name, ok: false, detail: err?.message === 'timeout' ? 'сайт не ответил по https за 10 секунд' : 'не удалось проверить сертификат сайта' };
+    return { name, ok: false, detail: err?.message === 'timeout' ? `${host} не ответил по https за 10 секунд` : `не удалось проверить сертификат ${host}` };
   }
 }
 

@@ -10,7 +10,7 @@ import { makeDb } from './helpers/testDb.mjs';
 import { alertConfigured, sendTelegramAlert } from '../src/utils/alertTelegram.js';
 import { buildTelegramText, buildEmail, labelOf } from '../src/utils/healthLogic.js';
 import {
-  parseLastBackupOk, checkBackup, checkCert, diskUsedPercent, checkDisk, certDaysLeft, ALL_CHECKS, BACKUP_MAX_AGE_H,
+  parseLastBackupOk, checkBackup, checkCert, CERT_HOSTS_DEFAULT, diskUsedPercent, checkDisk, certDaysLeft, ALL_CHECKS, BACKUP_MAX_AGE_H,
 } from '../src/utils/healthChecks.js';
 
 const read = (p) => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
@@ -65,7 +65,8 @@ test('текст для Telegram: проблема, подсказка, восс
   assert.match(t, /🟢 Снова работает: База данных/);
   assert.ok(t.length < 3900);
   assert.equal(labelOf('disk'), 'Место на диске');
-  assert.match(buildEmail([{ kind: 'alert', name: 'cert', detail: 'x', since }], now).subject, /Сертификат сайта/);
+  assert.match(labelOf('cert'), /ретранслятор/);
+  assert.match(buildEmail([{ kind: 'alert', name: 'cert', detail: 'x', since }], now).subject, /Сертификаты/);
 });
 
 test('копия базы: разбор лога и свежесть', async () => {
@@ -117,9 +118,17 @@ test('сертификат: настоящее TLS-соединение — св
     assert.equal((await checkCert({ HEALTH_CERT_HOST: '127.0.0.1', HEALTH_CERT_PORT: String(fresh.address().port) })).ok, true);
     const r = await checkCert({ HEALTH_CERT_HOST: '127.0.0.1', HEALTH_CERT_PORT: String(soon.address().port) });
     assert.equal(r.ok, false); assert.match(r.detail, /истекает через [45] дн/);
+    // несколько адресов через запятую: в тревоге названы все проблемные
+    const port = String(soon.address().port);
+    const both = await checkCert({ HEALTH_CERT_HOST: '127.0.0.1,localhost', HEALTH_CERT_PORT: port });
+    assert.equal(both.ok, false); assert.match(both.detail, /127\.0\.0\.1 истекает/); assert.match(both.detail, /localhost истекает/);
   } finally { fresh.close(); soon.close(); }
   const down = await checkCert({ HEALTH_CERT_HOST: '127.0.0.1', HEALTH_CERT_PORT: '1' });
   assert.equal(down.ok, false); assert.match(down.detail, /не удалось проверить сертификат/);
+});
+
+test('сертификаты: по умолчанию проверяются и сайт, и ретранслятор', () => {
+  assert.deepEqual(CERT_HOSTS_DEFAULT.split(','), ['finnikbot.ru', 'relay.finnikbot.ru']);
 });
 
 test('все проверки зарегистрированы и подписаны по-русски', () => {

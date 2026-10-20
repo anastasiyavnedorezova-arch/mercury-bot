@@ -1,0 +1,9 @@
+[Unit]
+Description=Finnik external watch (site reachability, alerts to Telegram)
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/finnik-watch.sh
+StateDirectory=finnik-watch
+TimeoutStartSec=60

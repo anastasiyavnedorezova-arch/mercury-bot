@@ -62,7 +62,7 @@ const LABELS = {
   openai: 'Связь бота с OpenAI',
   backup: 'Ночная копия базы',
   disk: 'Место на диске',
-  cert: 'Сертификат сайта',
+  cert: 'Сертификаты (сайт и ретранслятор)',
   ai_usage: 'Расход ИИ за сегодня',
 };
 export const labelOf = (name) => LABELS[name] || name;
@@ -74,7 +74,7 @@ const HINTS = {
   db: 'Приложение не достаёт до базы. Проверьте: systemctl status postgresql.',
   backup: 'Свежей копии базы нет. Посмотрите: tail /var/log/finnik-backup.log, затем запустите /usr/local/bin/finnik-backup.sh вручную.',
   disk: 'Диск почти заполнен. Посмотрите: df -h и du -sh /var/log /root/backups.',
-  cert: 'Сертификат скоро истечёт. Проверьте: certbot certificates и certbot renew --dry-run.',
+  cert: 'Сертификат скоро истечёт или недоступен. Проверьте: certbot certificates и certbot renew --dry-run на том сервере, о котором речь (сайт — основной сервер, relay.finnikbot.ru — ретранслятор).',
   ai_usage: 'Общий дневной предел запросов к ИИ почти исчерпан. Посмотрите, кто тратит: node --env-file=/etc/finnik-prod.env tools/ai-usage.mjs (в /opt/finnik/app). Если рост от рекламы — поднимите AI_GLOBAL_DAILY_LIMIT, если нет — найдите источник.',
 };
 

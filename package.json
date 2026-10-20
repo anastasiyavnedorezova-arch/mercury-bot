@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/bot.js",
-    "test": "node --test tests/pgClient.test.mjs tests/auth.test.mjs tests/health.test.mjs tests/legal.test.mjs tests/plans.test.mjs tests/stubs.test.mjs tests/trial.test.mjs tests/botTexts.test.mjs tests/emails.test.mjs tests/chain.test.mjs tests/payments.test.mjs tests/cabinet.test.mjs tests/chatHistory.test.mjs tests/brand.test.mjs tests/landing.test.mjs tests/landingWidget.test.mjs tests/promo.test.mjs tests/botPromo.test.mjs tests/accountLink.test.mjs tests/historyText.test.mjs tests/grantManual.test.mjs tests/activeAccount.test.mjs tests/stickySidebar.test.mjs tests/historyColumns.test.mjs tests/aiLimit.test.mjs tests/alerts.test.mjs tests/cabinetTy.test.mjs tests/serverTy.test.mjs tests/refunds.test.mjs"
+    "test": "node --test tests/pgClient.test.mjs tests/auth.test.mjs tests/health.test.mjs tests/legal.test.mjs tests/plans.test.mjs tests/stubs.test.mjs tests/trial.test.mjs tests/botTexts.test.mjs tests/emails.test.mjs tests/chain.test.mjs tests/payments.test.mjs tests/cabinet.test.mjs tests/chatHistory.test.mjs tests/brand.test.mjs tests/landing.test.mjs tests/landingWidget.test.mjs tests/promo.test.mjs tests/botPromo.test.mjs tests/accountLink.test.mjs tests/historyText.test.mjs tests/grantManual.test.mjs tests/activeAccount.test.mjs tests/stickySidebar.test.mjs tests/historyColumns.test.mjs tests/aiLimit.test.mjs tests/alerts.test.mjs tests/relayWatch.test.mjs tests/cabinetTy.test.mjs tests/serverTy.test.mjs tests/refunds.test.mjs"
   },
   "keywords": [],
   "author": "",
