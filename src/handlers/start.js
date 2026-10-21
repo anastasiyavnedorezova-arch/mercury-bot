@@ -2,6 +2,7 @@ import { supabase } from '../db.js';
 import { showConsentScreen } from './onboarding.js';
 import { showMainMenu } from './menu.js';
 import { handleLinkStart } from './linkTelegram.js';
+import { parseStartPayload } from '../utils/utm.js';
 
 const BOT_START_TIME = Math.floor(Date.now() / 1000);
 
@@ -24,10 +25,13 @@ export async function handleStart(bot, msg) {
     .single();
 
   if (!existing) {
+    // Ссылка на бота с сайта несёт источник перехода: /start u_yandex_cpc_brand1
+    const utm = parseStartPayload(payload);
     await supabase.from('users').insert({
       external_id: telegramId,
       channel: 'telegram',
       tg_username: username,
+      ...(utm ? { utm: JSON.stringify(utm) } : {}),
     });
     await showConsentScreen(bot, chatId);
     return;

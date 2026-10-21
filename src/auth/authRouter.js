@@ -10,6 +10,7 @@ import {
 import { createRateLimiter } from './rateLimit.js';
 import { maskEmail } from '../utils/email.js';
 import { startTrial } from '../utils/trial.js';
+import { sanitizeUtm } from '../utils/utm.js';
 
 const DEFAULT_LIMITS = {
   loginIp:       { windowMs: 15 * 60_000, max: 30 }, // неудачных входов с одного IP
@@ -98,6 +99,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
         terms_accepted_at: nowIso,
         terms_version: '2.0',
         email_letters_accepted: b.email_letters_accepted === true,
+        utm: (() => { const u = sanitizeUtm(b.utm); return u ? JSON.stringify(u) : null; })(),
         created_at: nowIso,
         last_active_at: nowIso,
       });

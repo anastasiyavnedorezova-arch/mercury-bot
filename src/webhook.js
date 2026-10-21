@@ -32,7 +32,7 @@ export function startWebhookServer(bot) {
   app.use((req, res, next) => {
     if (req.path.startsWith('/cabinet')) {
       res.setHeader('Content-Security-Policy',
-        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org; frame-src https://oauth.telegram.org; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self'"
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://mc.yandex.ru https://yastatic.net; frame-src https://oauth.telegram.org; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://mc.yandex.ru https://mc.yandex.com"
       );
     }
     next();

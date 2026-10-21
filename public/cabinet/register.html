@@ -638,7 +638,8 @@
           telegram:               telegram || null,
           email_letters_accepted: newsChecked,
           terms_accepted:         true,
-          consent_pd_accepted:    true
+          consent_pd_accepted:    true,
+          utm:                    (window.finnikConsent && window.finnikConsent.getUtm()) || null
         })
       });
       let data = {};
@@ -660,6 +661,7 @@
       }
 
       localStorage.setItem('mercury_token', data.token);
+      if (window.finnikGoal) window.finnikGoal('register');
 
       showSuccess();
 
@@ -685,5 +687,6 @@
   }
 </script>
 <script src="/js/pw-toggle.js" defer></script>
+<script src="/js/consent.js" defer></script>
 </body>
 </html>

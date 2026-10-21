@@ -1109,6 +1109,7 @@
       buttons.forEach(b => { b.disabled = true; });
       const oldText = btn ? btn.textContent : '';
       if (btn) btn.textContent = 'Переходим к оплате…';
+      if (window.finnikGoal) window.finnikGoal('pay_start');
       try {
         const payload = { months };
         if (email) payload.email = email;
@@ -1295,6 +1296,7 @@
             if (d && d.subscription && d.subscription.status === 'active') {
               clearInterval(timer);
               renderProfile(d);
+              if (window.finnikGoal) window.finnikGoal('paid');
               showToast('Оплата прошла, подписка активна. Спасибо!', 'success', 10000);
               return;
             }
@@ -1433,5 +1435,6 @@
   }); // DOMContentLoaded
 </script>
 
+<script src="/js/consent.js" defer></script>
 </body>
 </html>
