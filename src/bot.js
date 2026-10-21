@@ -21,6 +21,7 @@ import { startWebhookServer } from './webhook.js';
 import { userStates } from './state.js';
 import { supabase, dbDriver } from './db.js';
 import { dispatchCallbackQuery } from './handlers/callbackDispatcher.js';
+import { collectStats, formatStats, parseStatsCommand } from './utils/stats.js';
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, telegramBotOptions({ polling: true }));
 
@@ -122,6 +123,21 @@ bot.onText(/\/activate (.+)/, async (msg, match) => {
     );
   } else {
     await bot.sendMessage(msg.chat.id, `❌ Ошибка: ${result.reason}`);
+  }
+});
+
+// Цифры для владельца: /stats или /stats 7 (число дней, до 365). Только ADMIN_TELEGRAM_ID.
+bot.onText(/^\/stats(?:@\w+)?(?:\s+\d{1,3})?\s*$/, async (msg) => {
+  if (msg.date < BOT_START_TIME) return;
+  if (!process.env.ADMIN_TELEGRAM_ID || msg.chat.id.toString() !== process.env.ADMIN_TELEGRAM_ID) return;
+  const cmd = parseStatsCommand(msg.text);
+  if (!cmd) return;
+  try {
+    const data = await collectStats(supabase, cmd);
+    await bot.sendMessage(msg.chat.id, formatStats(data));
+  } catch (err) {
+    console.error('[stats] ошибка:', err.message);
+    await bot.sendMessage(msg.chat.id, 'Не получилось собрать цифры, подробности в логе.');
   }
 });
 
