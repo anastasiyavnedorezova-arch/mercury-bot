@@ -37,20 +37,23 @@ function daysWord(n) {
 
 // ── DB-хелперы ────────────────────────────────────────────────────────────────
 
-async function getActiveUsers() {
+// Пользователи Telegram с согласием, активные за последние 30 дней. Колонки `username` в базе нет (есть tg_username),
+// из-за запроса к ней напоминания про бюджет и «давно не писал» молча пропускали всех.
+export async function getActiveUsers(db = supabase) {
   const thirtyDaysAgo = addDays(new Date(), -30).toISOString();
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('users')
-    .select('id, external_id, username')
+    .select('id, external_id, last_active_at')
     .eq('channel', 'telegram')
     .not('terms_accepted_at', 'is', null)
     .gte('last_active_at', thirtyDaysAgo);
 
   if (error) {
     // last_active_at может отсутствовать — fallback: все пользователи с согласием
-    const { data: allUsers } = await supabase
+    console.error('[notifications] getActiveUsers:', error.message);
+    const { data: allUsers } = await db
       .from('users')
-      .select('id, external_id, username')
+      .select('id, external_id')
       .eq('channel', 'telegram')
       .not('terms_accepted_at', 'is', null);
     return allUsers ?? [];

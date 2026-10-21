@@ -177,9 +177,7 @@ router.get('/api/me', requireAuth, async (req, res) => {
 
     const sub = subRows?.[0] ?? null;
 
-    console.log('[api/me] userId:', req.userId);
-    console.log('[api/me] sub data:', JSON.stringify(sub));
-    console.log('[api/me] sub error:', subError?.message);
+    if (subError) console.error('[api/me] sub error:', subError.message);
 
     const username = user.web_username || user.tg_username || user.email || null;
     res.json({ ...user, username, subscription: sub ?? null });

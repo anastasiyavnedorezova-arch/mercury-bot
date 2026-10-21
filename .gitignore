@@ -3,3 +3,9 @@
 node_modules/
 .DS_Store
 *.log
+
+# Копии базы и архивы с данными людей в репозиторий не попадают
+*.dump
+*.backup
+*.backup.gz
+db_cluster-*
