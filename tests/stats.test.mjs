@@ -77,12 +77,14 @@ test('воронка, источники и деньги считаются ве
   assert.equal(s.cohort.reduce((x, r) => x + r.regs, 0), 5);
 
   const text = formatStats(s);
-  assert.match(text, /Регистраций: 5/);
-  assert.match(text, /Сделали первую запись: 3 \(60%\)/);
-  assert.match(text, /Оплатили: 1 \(20%\)/);
-  assert.match(text, /yandex \/ cpc \/ brand: 3 рег · 2 с записью · 1 оплатили · 399 ₽/);
-  assert.match(text, /сайт: blog: 1 рег/);
-  assert.match(text, /без метки: 1 рег/);
+  assert.match(text, /Регистраций= 5/);
+  assert.match(text, /За сутки= \d+, за 7 дн\.= \d+, за 30 дн\.= 5/);
+  assert.match(text, /Всего зарегистрировано= 6/);
+  assert.match(text, /Сделали первую запись= 3 \(60%\)/);
+  assert.match(text, /Оплатили= 1 \(20%\)/);
+  assert.match(text, /yandex \/ cpc \/ brand= 3 рег, 2 с записью, 1 оплатили, 399 ₽/);
+  assert.match(text, /сайт: blog= 1 рег/);
+  assert.match(text, /без метки= 1 рег/);
 });
 
 test('траты на ИИ: среднее на человека в активный день', async () => {
@@ -98,7 +100,7 @@ test('пустая база: без ошибок и деления на ноль
   try {
     const s = await collectStats(empty.db, { days: 30 });
     const text = formatStats(s);
-    assert.match(text, /Регистраций: 0/);
+    assert.match(text, /Регистраций= 0/);
     assert.match(text, /\(—\)/);
     assert.match(text, /пока никого/);
     assert.match(text, /данных пока нет/);

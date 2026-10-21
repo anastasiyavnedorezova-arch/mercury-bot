@@ -93,34 +93,34 @@ export function formatStats(s, { maxSources = 10 } = {}) {
   lines.push(`📊 Финник — цифры (последние ${s.days} дн.)`);
   lines.push('');
   lines.push('Люди');
-  lines.push(`Всего зарегистрировано: ${s.users.total}`);
-  lines.push(`За сутки: ${s.users.d1} · за 7 дн.: ${s.users.d7} · за ${s.days} дн.: ${s.users.dn}`);
-  lines.push(`Сейчас на триале: ${s.now.trial_now} · с оплаченной подпиской: ${s.now.paying_now}`);
+  lines.push(`Всего зарегистрировано= ${s.users.total}`);
+  lines.push(`За сутки= ${s.users.d1}, за 7 дн.= ${s.users.d7}, за ${s.days} дн.= ${s.users.dn}`);
+  lines.push(`Сейчас на триале= ${s.now.trial_now}, с оплаченной подпиской= ${s.now.paying_now}`);
   lines.push('');
   lines.push(`Воронка (зарегистрировались за ${s.days} дн.)`);
-  lines.push(`Регистраций: ${regs}`);
-  lines.push(`Сделали первую запись: ${recs} (${pct(recs, regs)})`);
-  lines.push(`Оплатили: ${paid} (${pct(paid, regs)})`);
+  lines.push(`Регистраций= ${regs}`);
+  lines.push(`Сделали первую запись= ${recs} (${pct(recs, regs)})`);
+  lines.push(`Оплатили= ${paid} (${pct(paid, regs)})`);
   lines.push('');
   lines.push('Деньги');
-  lines.push(`За ${s.days} дн.: ${s.pay.n} платежей на ${rub(s.pay.rub)}`);
-  lines.push(`За всё время: ${s.pay.n_all} платежей на ${rub(s.pay.rub_all)}`);
+  lines.push(`За ${s.days} дн.= ${s.pay.n} платежей на ${rub(s.pay.rub)}`);
+  lines.push(`За всё время= ${s.pay.n_all} платежей на ${rub(s.pay.rub_all)}`);
   lines.push('');
   lines.push(`По источникам (зарегистрировались за ${s.days} дн.)`);
   if (!s.cohort.length) lines.push('пока никого');
   const shown = s.cohort.slice(0, maxSources);
   for (const r of shown) {
-    lines.push(`${sourceLabel(r)}: ${r.regs} рег · ${r.recs} с записью · ${r.paid} оплатили · ${rub(r.rub)}`);
+    lines.push(`${sourceLabel(r)}= ${r.regs} рег, ${r.recs} с записью, ${r.paid} оплатили, ${rub(r.rub)}`);
   }
   if (s.cohort.length > shown.length) {
     const rest = s.cohort.slice(shown.length).reduce((a, r) => a + r.regs, 0);
-    lines.push(`ещё ${s.cohort.length - shown.length} источников: ${rest} рег`);
+    lines.push(`ещё ${s.cohort.length - shown.length} источников= ${rest} рег`);
   }
   lines.push('');
   if (s.ai && s.ai.person_days > 0) {
-    lines.push(`ИИ за 7 дн.: в среднем ${(s.ai.weights / s.ai.person_days).toFixed(1).replace('.', ',')} запросов на человека в активный день (всего ${s.ai.weights})`);
+    lines.push(`ИИ за 7 дн.= в среднем ${(s.ai.weights / s.ai.person_days).toFixed(1).replace('.', ',')} запросов на человека в активный день (всего ${s.ai.weights})`);
   } else {
-    lines.push('ИИ за 7 дн.: данных пока нет');
+    lines.push('ИИ за 7 дн.= данных пока нет');
   }
   lines.push('');
   lines.push('В цифры входят и твои тестовые аккаунты. Возвраты (статус refunded) и бесплатные выдачи не считаются выручкой.');
