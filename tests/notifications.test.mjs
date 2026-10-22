@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 import { makeDb } from './helpers/testDb.mjs';
 
 process.env.DATABASE_URL ||= 'postgres://test:test@127.0.0.1:1/test'; // db.js подключается лениво; боевой базы в тестах нет
-const { getActiveUsers } = await import('../src/notifications/index.js');
+const { getActiveUsers, countNotifications } = await import('../src/notifications/index.js');
 
 let ctx;
 before(async () => { ctx = await makeDb(); });
@@ -76,4 +76,31 @@ test('сторож: простые select в коде просят только 
 test('код напоминаний не просит колонку username', () => {
   const src = fs.readFileSync(new URL('../src/notifications/index.js', import.meta.url), 'utf8');
   assert.ok(!/select\('[^']*\busername\b/.test(src));
+});
+
+test('countNotifications: считает только уведомления нужного типа и не старше указанной даты', async () => {
+  const u = await addUser({});
+  const other = await addUser({});
+  const ins = async (userId, type, sent) => {
+    const { error } = await ctx.db.from('notifications').insert({ user_id: userId, type, sent_at: sent });
+    assert.ifError(error);
+  };
+  await ins(u, 'activity_reminder', daysAgo(2));
+  await ins(u, 'activity_reminder', daysAgo(10));
+  await ins(u, 'activity_reminder', daysAgo(40)); // старше 30 дней — не считается
+  await ins(u, 'budget_reminder', daysAgo(1));     // другой тип
+  await ins(other, 'activity_reminder', daysAgo(1)); // другой человек
+  assert.equal(await countNotifications(u, 'activity_reminder', daysAgo(30), ctx.db), 2);
+  assert.equal(await countNotifications(other, 'activity_reminder', daysAgo(30), ctx.db), 1);
+  assert.equal(await countNotifications(u, 'trial_ending_3', daysAgo(30), ctx.db), 0);
+});
+
+test('countNotifications: при ошибке базы бросает исключение, а не возвращает 0', async () => {
+  const broken = { from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ gte: async () => ({ count: null, error: { message: 'boom' } }) }) }) }) }) };
+  await assert.rejects(() => countNotifications('x', 'activity_reminder', daysAgo(30), broken), /boom/);
+});
+
+test('код напоминаний не просит у notifications колонку created_at', () => {
+  const src = fs.readFileSync(new URL('../src/notifications/index.js', import.meta.url), 'utf8');
+  assert.ok(!/'created_at'/.test(src));
 });

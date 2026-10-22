@@ -290,7 +290,7 @@ test('runChain: запись (транзакция) останавливает �
   const lazy = await user({ created_at: ago(3 * D) });
   const active = await user({ created_at: ago(3 * D) });
   await addTrial(lazy, 27 * D); await addTrial(active, 27 * D);
-  await ctx.query("INSERT INTO public.email_log (user_id, letter, status, sent_at) SELECT id, 'welcome', 'sent', now() - interval '3 days' FROM public.users");
+  await ctx.query("INSERT INTO public.email_log (user_id, letter, status, sent_at) SELECT id, 'welcome', 'sent', $1::timestamptz - interval '3 days' FROM public.users", [NOW.toISOString()]); // от условного «сейчас» теста, а не от настоящей даты
   const g = (await ctx.query("INSERT INTO public.category_groups (name, type) VALUES ('g','expense') RETURNING id")).rows[0].id;
   const c = (await ctx.query("INSERT INTO public.categories (group_id, name, type) VALUES ($1,'c','expense') RETURNING id", [g])).rows[0].id;
   await ctx.query("INSERT INTO public.transactions (user_id, category_id, type, amount, transaction_date) VALUES ($1,$2,'expense',100,'2026-10-19')", [active, c]);

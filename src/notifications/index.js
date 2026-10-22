@@ -81,13 +81,17 @@ async function hasNotification(userId, type, month = null) {
   return !!data;
 }
 
-async function countNotifications(userId, type, sinceIso) {
-  const { count } = await supabase
+// Сколько уведомлений такого типа отправлено с указанной даты. В таблице notifications время отправки лежит в колонке
+// sent_at (created_at там нет). Раньше запрос падал, счётчик всегда был 0, и ограничение «не больше 4 напоминаний
+// о записи расходов за 30 дней» не работало. При ошибке базы бросаем исключение: лучше пропустить человека, чем написать ему лишний раз.
+export async function countNotifications(userId, type, sinceIso, db = supabase) {
+  const { count, error } = await db
     .from('notifications')
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('type', type)
-    .gte('created_at', sinceIso);
+    .gte('sent_at', sinceIso);
+  if (error) throw new Error(`countNotifications: ${error.message}`);
   return count ?? 0;
 }
 
