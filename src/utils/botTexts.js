@@ -1,4 +1,5 @@
 // Общие тексты и хелперы бота (Telegram и веб-чат)
+import { CUSTOM_LOCKED_NOTE } from './categoryAccess.js';
 
 // ── Маркетплейсы ─────────────────────────────────────────────────────────
 // Уточняющий вопрос «что пришло с маркетплейса» уместен только если пользователь
@@ -104,7 +105,8 @@ export function goalProgressLine(goal) {
 export function buildConfirmationText(item) {
   const opener = pick(OPENERS[item.type] ?? OPENERS.expense);
   const progress = item.type === 'goal' && item.goal ? `\n📊 ${goalProgressLine(item.goal)}` : '';
-  return `${opener}\n${entryLine(item)}\n📅 ${formatRuDate(item.transaction_date)}${progress}`;
+  const note = item.category_locked ? `\n${CUSTOM_LOCKED_NOTE}` : '';
+  return `${opener}\n${entryLine(item)}\n📅 ${formatRuDate(item.transaction_date)}${progress}${note}`;
 }
 
 export function buildMultiConfirmationText(items) {
@@ -115,10 +117,11 @@ export function buildMultiConfirmationText(items) {
   const goals = new Map();
   for (const i of items) if (i.type === 'goal' && i.goal) goals.set(i.goal.id, i.goal);
   const progress = [...goals.values()].map((g) => `\n📊 «${g.name}»: ${goalProgressLine(g).replace('Накоплено ', '')}`).join('');
+  const note = items.some((i) => i.category_locked) ? `\n${CUSTOM_LOCKED_NOTE}` : '';
   if (dates.length === 1) {
-    return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)}`).join('\n')}\n📅 ${formatRuDate(dates[0])}${progress}`;
+    return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)}`).join('\n')}\n📅 ${formatRuDate(dates[0])}${progress}${note}`;
   }
-  return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)} · ${formatRuDate(i.transaction_date)}`).join('\n')}${progress}`;
+  return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)} · ${formatRuDate(i.transaction_date)}`).join('\n')}${progress}${note}`;
 }
 
 // Вопрос «на какую цель?» — когда целей несколько и из сообщения не понятно, какая нужна.

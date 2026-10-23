@@ -486,7 +486,7 @@ router.get('/api/history', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.put('/api/history/:id', requireAuth, async (req, res) => {
   try {
-    const r = await updateTransaction(supabase, req.userId, req.params.id, req.body);
+    const r = await updateTransaction(supabase, req.userId, req.params.id, req.body, await getUserAccess(req.userId));
     res.status(r.status).json(r.json);
   } catch (err) {
     console.error('[cabinet] PUT /api/history/:id error:', err.message);
@@ -603,7 +603,7 @@ router.get('/api/categories', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.post('/api/categories', requireAuth, async (req, res) => {
   try {
-    const r = await createUserCategory(supabase, req.userId, req.body);
+    const r = await createUserCategory(supabase, req.userId, req.body, await getUserAccess(req.userId));
     res.status(r.status).json(r.json);
   } catch (err) {
     console.error('[cabinet] POST /api/categories error:', err.message);

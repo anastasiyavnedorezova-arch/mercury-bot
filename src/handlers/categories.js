@@ -1,6 +1,8 @@
 import { supabase } from '../db.js';
 import { userStates } from '../state.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
+import { getUserAccess } from '../utils/access.js';
+import { customCategoriesAllowed, CUSTOM_CREATE_LOCKED_TEXT, CUSTOM_MY_LOCKED_TEXT } from '../utils/categoryAccess.js';
 
 const MENU_KEYBOARD = {
   reply_markup: {
@@ -9,6 +11,16 @@ const MENU_KEYBOARD = {
 };
 
 const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
+
+// Свои категории создают только с пробным периодом или подпиской
+const LOCKED_KEYBOARD = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: 'Оформить подписку', callback_data: 'menu:subscription' }],
+      [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+    ],
+  },
+};
 
 export async function showCategories(bot, chatId, telegramId) {
   const userId = await getUserId(telegramId);
@@ -49,6 +61,7 @@ async function showMyCategories(bot, chatId, telegramId) {
       text += `• ${cat.name} (${cat.type === 'expense' ? 'расход' : 'доход'})\n`;
       keyboard.push([{ text: `🗑 Удалить «${cat.name}»`, callback_data: `delete_category:${cat.id}` }]);
     }
+    if (!customCategoriesAllowed(await getUserAccess(userId))) text += `\n${CUSTOM_MY_LOCKED_TEXT}`;
     keyboard.push([
       { text: '➕ Добавить категорию', callback_data: 'add_category' },
       { text: '☰ Главное меню', callback_data: 'menu:main' },
@@ -115,6 +128,11 @@ export async function handleCategoriesCallback(bot, query) {
   // ── Добавить категорию: шаг 1 — выбор типа ──────────────────────────────
 
   if (action === 'add_category') {
+    const uid = await getUserId(telegramId);
+    if (uid && !customCategoriesAllowed(await getUserAccess(uid))) {
+      await bot.sendMessage(chatId, CUSTOM_CREATE_LOCKED_TEXT, LOCKED_KEYBOARD);
+      return;
+    }
     await bot.sendMessage(chatId, 'Это расход или доход?', {
       reply_markup: {
         inline_keyboard: [
@@ -249,6 +267,12 @@ export async function handleCategoryNameState(bot, msg) {
   if (!userId) {
     userStates.delete(telegramId);
     await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start 🙏');
+    return true;
+  }
+
+  if (!customCategoriesAllowed(await getUserAccess(userId))) {
+    userStates.delete(telegramId);
+    await bot.sendMessage(chatId, CUSTOM_CREATE_LOCKED_TEXT, LOCKED_KEYBOARD);
     return true;
   }
 

@@ -1,6 +1,8 @@
 // Логика API категорий кабинета. Вынесена из cabinetRoutes.js, чтобы её можно было проверить тестами на настоящей базе.
 // Каждая функция возвращает { status, json } — маршрут просто отправляет это клиенту.
 
+import { customCategoriesAllowed, CUSTOM_CREATE_LOCKED_MESSAGE } from '../utils/categoryAccess.js';
+
 export const NAME_MAX = 40;
 export const HINT_MAX = 120;
 const ICON_MAX_UNITS = 16; // эмодзи с модификаторами занимают несколько символов UTF-16
@@ -74,7 +76,8 @@ async function nameTaken(db, userId, name, exceptId = null) {
   return (data || []).some((c) => c.id !== exceptId && String(c.name).trim().toLowerCase() === low);
 }
 
-export async function createUserCategory(db, userId, body = {}) {
+export async function createUserCategory(db, userId, body = {}, access = 'active') {
+  if (!customCategoriesAllowed(access)) return fail(403, CUSTOM_CREATE_LOCKED_MESSAGE);
   const name = typeof body.name === 'string' ? body.name.trim() : '';
   const type = body.type;
   if (!name || !type) return fail(400, 'Укажи название и тип категории');

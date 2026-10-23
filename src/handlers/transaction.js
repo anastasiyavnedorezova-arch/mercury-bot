@@ -3,9 +3,7 @@ import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
 import { syncTxGoalLink } from '../utils/goalProgress.js';
 import { buildGoalPickKeyboard } from '../utils/botTexts.js';
-
-const PAYWALL_TEXT =
-  'Редактирование доступно в подписке. Хочешь активировать 30 дней бесплатно? 💛';
+import { listPickableCategories, findPickableCategory } from '../utils/categoryAccess.js';
 
 const TYPE_RU = { expense: 'расход', income: 'доход', goal: 'цель' };
 
@@ -44,18 +42,6 @@ async function getUserId(telegramId) {
     .eq('external_id', String(telegramId))
     .single();
   return data?.id ?? null;
-}
-
-// Возвращает false и отправляет paywall-сообщение, если доступ 'free'.
-async function checkAccess(bot, chatId, telegramId) {
-  const userId = await getUserId(telegramId);
-  if (!userId) return false;
-  const access = await getUserAccess(userId);
-  if (access === 'free') {
-    await bot.sendMessage(chatId, PAYWALL_TEXT);
-    return false;
-  }
-  return true;
 }
 
 // Вызывается из handleMessage когда state.awaitingTxEdit установлен.
@@ -127,7 +113,6 @@ export async function handleTransactionCallback(bot, query) {
 
   if (verb === 'edit') {
     const txId = parts[2];
-    if (!(await checkAccess(bot, chatId, telegramId))) return;
 
     await bot.sendMessage(chatId, 'Что хочешь исправить?', {
       reply_markup: {
@@ -150,7 +135,6 @@ export async function handleTransactionCallback(bot, query) {
 
   if (verb === 'amount') {
     const txId = parts[2];
-    if (!(await checkAccess(bot, chatId, telegramId))) return;
 
     userStates.set(telegramId, { awaitingTxEdit: 'amount', transactionId: txId });
     await bot.sendMessage(chatId, 'Напиши новую сумму числом 👇');
@@ -161,7 +145,6 @@ export async function handleTransactionCallback(bot, query) {
 
   if (verb === 'category') {
     const txId = parts[2];
-    if (!(await checkAccess(bot, chatId, telegramId))) return;
 
     userStates.set(telegramId, { awaitingTxCategoryEdit: true, transactionId: txId });
 
@@ -198,11 +181,11 @@ export async function handleTransactionCallback(bot, query) {
     const state = userStates.get(telegramId);
     if (!state?.awaitingTxCategoryEdit) return;
 
-    const { data: cats } = await supabase
-      .from('categories')
-      .select('id, name')
-      .eq('group_id', groupId)
-      .order('name');
+    // Только системные категории и свои (свои — с пробным периодом или подпиской); чужие не показываем
+    const userId = await getUserId(telegramId);
+    const cats = userId
+      ? await listPickableCategories(supabase, userId, await getUserAccess(userId), groupId)
+      : [];
 
     if (!cats?.length) {
       await bot.sendMessage(chatId, 'В этой группе нет категорий 🙏');
@@ -235,7 +218,14 @@ export async function handleTransactionCallback(bot, query) {
     const txId = state.transactionId;
     userStates.delete(telegramId);
 
-    await supabase.from('transactions').update({ category_id: categoryId }).eq('id', txId);
+    const userId = await getUserId(telegramId);
+    const picked = userId ? await findPickableCategory(supabase, userId, await getUserAccess(userId), categoryId) : null;
+    if (!picked) {
+      await bot.sendMessage(chatId, 'Эта категория недоступна 🙏 Выбери системную категорию или оформи подписку, тогда заработают и свои.');
+      return;
+    }
+
+    await supabase.from('transactions').update({ category_id: picked.id }).eq('id', txId).eq('user_id', userId);
     // «Цель» ↔ другая категория: привязка к цели должна совпадать с категорией
     const link = await syncTxGoalLink(supabase, txId);
     await fetchAndShowTx(bot, chatId, txId);
@@ -252,7 +242,6 @@ export async function handleTransactionCallback(bot, query) {
 
   if (verb === 'date') {
     const txId = parts[2];
-    if (!(await checkAccess(bot, chatId, telegramId))) return;
 
     userStates.set(telegramId, { awaitingTxEdit: 'date', transactionId: txId });
     await bot.sendMessage(
@@ -266,7 +255,6 @@ export async function handleTransactionCallback(bot, query) {
 
   if (verb === 'type') {
     const txId = parts[2];
-    if (!(await checkAccess(bot, chatId, telegramId))) return;
 
     await bot.sendMessage(chatId, 'Выбери тип операции:', {
       reply_markup: {
@@ -295,7 +283,6 @@ export async function handleTransactionCallback(bot, query) {
 
   if (verb === 'delete') {
     const txId = parts[2];
-    if (!(await checkAccess(bot, chatId, telegramId))) return;
 
     await bot.sendMessage(chatId, 'Удалить эту запись безвозвратно?', {
       reply_markup: {

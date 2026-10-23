@@ -2,6 +2,7 @@
 // Категорию берём по id (его присылает страница); если id нет — ищем по названию и типу.
 // Если категорию найти не удалось, оставляем прежнюю: пустая категория базе не подходит.
 import { isUuid } from './categories.js';
+import { canUseCategory, CUSTOM_EDIT_LOCKED_MESSAGE } from '../utils/categoryAccess.js';
 
 const fail = (status, message) => ({ status, json: { error: message, message } });
 
@@ -33,7 +34,9 @@ async function findCategory(db, userId, { category_id, category }, type) {
   return null;
 }
 
-export async function updateTransaction(db, userId, id, body = {}) {
+// access — результат getUserAccess. На free запись нельзя перевести в свою категорию; если категория не меняется
+// (человек правит только сумму или дату), запись сохраняется как есть.
+export async function updateTransaction(db, userId, id, body = {}, access = 'active') {
   if (!isUuid(id)) return fail(404, 'Запись не найдена');
   const { type, amount, transaction_date } = body;
 
@@ -50,7 +53,14 @@ export async function updateTransaction(db, userId, id, body = {}) {
   const cat = await findCategory(db, userId, body, type);
   if (cat) {
     if (cat.type !== type) return fail(400, 'Категория не подходит к типу записи');
-    update.category_id = cat.id;
+    if (!canUseCategory(cat, userId, access)) {
+      const { data: cur, error: curErr } = await db.from('transactions').select('category_id').eq('id', id).eq('user_id', userId).maybeSingle();
+      if (curErr) throw curErr;
+      if (!cur) return fail(404, 'Запись не найдена');
+      if (cur.category_id !== cat.id) return fail(403, CUSTOM_EDIT_LOCKED_MESSAGE);
+    } else {
+      update.category_id = cat.id;
+    }
   }
 
   const { data, error } = await db.from('transactions').update(update).eq('id', id).eq('user_id', userId).select('id');

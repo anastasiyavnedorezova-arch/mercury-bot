@@ -8,6 +8,7 @@ import { getSystemPrompt } from '../prompts/system_prompt.js';
 import { userStates } from '../state.js';
 import { requireTerms } from './onboarding.js';
 import { getUserAccess } from '../utils/access.js';
+import { resolveCategory, applyCategoryScope, customCategoriesAllowed } from '../utils/categoryAccess.js';
 import { handleTxEditState } from './transaction.js';
 import { handleGoalState } from './goal.js';
 import { handleBudgetState } from './budget.js';
@@ -43,35 +44,12 @@ const MANUAL_ERROR_KEYBOARD = {
 
 const getUserId = (externalId) => findUserIdByExternalId(supabase, externalId);
 
-// Ищет категорию по названию среди системных и категорий самого пользователя
-// (своя категория приоритетнее системной). Не найдена — «Остальное».
-// Раньше поиск шёл по имени среди ВСЕХ пользователей через .single(): при одинаковых названиях
-// у разных людей запись уходила в «Остальное» или в чужую категорию.
-async function resolveCategory(userId, name) {
-  const { data: rows } = await supabase
-    .from('categories')
-    .select('id, name, user_id')
-    .eq('name', name)
-    .eq('is_active', true);
-  const list = rows ?? [];
-  const found = list.find((r) => r.user_id === userId) ?? list.find((r) => r.user_id === null);
-  if (found) return { id: found.id, name: found.name };
-
-  console.warn('[resolveCategory] Category not found:', name, '— falling back to Остальное');
-  const { data: fallback } = await supabase
-    .from('categories')
-    .select('id, name')
-    .eq('name', 'Остальное')
-    .is('user_id', null)
-    .limit(1)
-    .maybeSingle();
-  return { id: fallback?.id ?? null, name: fallback?.name ?? 'Остальное' };
-}
-
 // goalId — только для взноса на цель (type=goal): к какой цели он относится
 export async function saveTransaction(userId, parsed, rawMessage, goalId = null) {
-  const category = await resolveCategory(userId, parsed.category);
+  const access = await getUserAccess(userId);
+  const category = await resolveCategory(supabase, userId, parsed.category, access);
   parsed.category_saved = category.name; // категория, которая реально попала в базу — её показываем пользователю
+  if (category.lockedFrom) parsed.category_locked = category.lockedFrom; // своя категория закрыта тарифом free: скажем об этом пользователю
   const { data, error } = await supabase.from('transactions').insert({
     user_id: userId,
     type: parsed.type,
@@ -598,10 +576,8 @@ export async function handleManualCallback(bot, query) {
 async function matchCategoryName(externalId, text) {
   const userId = await getUserId(externalId);
   if (!userId) return null;
-  const { data } = await supabase
-    .from('categories')
-    .select('name')
-    .or(`user_id.is.null,user_id.eq.${userId}`)
+  const access = await getUserAccess(userId);
+  const { data } = await applyCategoryScope(supabase.from('categories').select('name'), userId, access)
     .eq('is_active', true);
   const t = String(text ?? '').trim().toLowerCase();
   return (data ?? []).find((c) => c.name.toLowerCase() === t)?.name ?? null;
@@ -735,10 +711,8 @@ export async function handleMessage(bot, msg) {
     if (pureAmount === null && trimmed.length > 1 && /^[а-яА-ЯёЁa-zA-Z\s,.-]+$/.test(trimmed)) {
       const userId = await getUserId(telegramId);
       if (userId) {
-        const { data: matchedCat } = await supabase
-          .from('categories')
-          .select('name')
-          .or(`user_id.is.null,user_id.eq.${userId}`)
+        const accessNow = await getUserAccess(userId);
+        const { data: matchedCat } = await applyCategoryScope(supabase.from('categories').select('name'), userId, accessNow)
           .eq('is_active', true)
           .ilike('name', trimmed)
           .maybeSingle();
@@ -773,7 +747,8 @@ export async function handleMessage(bot, msg) {
   try {
     const userId = await getUserId(telegramId);
     let userCategories = [];
-    if (userId) {
+    // Свои категории модели показываем только с пробным периодом или подпиской: на free записи в них не пишутся
+    if (userId && customCategoriesAllowed(await getUserAccess(userId))) {
       const { data } = await supabase
         .from('categories')
         .select('name, type, synonyms')
