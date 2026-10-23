@@ -135,7 +135,7 @@ export async function dispatchCallbackQuery(bot, query) {
       await bot.answerCallbackQuery(query.id);
       // «Главное меню» закрывает незаконченный диалог про цель, иначе следующее сообщение примут за ответ на его вопрос
       const st = userStates.get(query.from.id);
-      if (st?.awaitingGoal || st?.awaitingGoalEdit) userStates.delete(query.from.id);
+      if (st?.awaitingGoal || st?.awaitingGoalEdit || st?.awaitingFeedback || st?.awaitingFeedbackEmail) userStates.delete(query.from.id);
       await showMainMenu(bot, query.message.chat.id);
       return;
     }
