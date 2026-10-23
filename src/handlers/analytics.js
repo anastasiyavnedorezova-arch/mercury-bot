@@ -4,6 +4,7 @@ import { showBudget } from './budget.js';
 import { showGoal } from './goal.js';
 import { inTz } from '../utils/dateTz.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
+import { getContributions, goalSaved } from '../utils/goalProgress.js';
 
 // ── Константы ─────────────────────────────────────────────────────────────────
 
@@ -407,9 +408,10 @@ async function showMonthlyReport(bot, chatId, userId) {
 
   const { data: goals } = await supabase
     .from('goals')
-    .select('name, future_value, initial_saved')
+    .select('id, name, future_value, initial_saved')
     .eq('user_id', userId)
     .eq('status', 'active')
+    .order('created_at', { ascending: false })
     .limit(1);
 
   let text = `📊 Аналитика за ${monthName}\n\n`;
@@ -426,18 +428,7 @@ async function showMonthlyReport(bot, chatId, userId) {
 
   if (goals?.[0]) {
     const g = goals[0];
-    const { data: catData } = await supabase
-      .from('categories').select('id').eq('name', 'Цель').single();
-
-    let goalTxTotal = 0;
-    if (catData?.id) {
-      const { data: goalTxs } = await supabase
-        .from('transactions').select('amount')
-        .eq('user_id', userId).eq('category_id', catData.id);
-      goalTxTotal = goalTxs?.reduce((s, t) => s + t.amount, 0) ?? 0;
-    }
-
-    const accumulated = (g.initial_saved ?? 0) + goalTxTotal;
+    const accumulated = goalSaved(g, await getContributions(supabase, userId));
     const percent = Math.min(100, Math.round((accumulated / g.future_value) * 100));
     text += `\n🎯 Прогресс по цели «${g.name}»: ${percent}%`;
   }

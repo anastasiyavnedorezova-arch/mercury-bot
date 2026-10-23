@@ -5,6 +5,7 @@ import { calculateMonthlyPayment } from '../utils/goalCalc.js';
 import { parseAmount, parseAmountStrict } from '../utils/parseAmount.js';
 import { applyGoalSaved, isGoalStateExpired } from '../utils/goalEdit.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
+import { getContributions, goalSaved } from '../utils/goalProgress.js';
 
 // ── Константы и форматирование ────────────────────────────────────────────────
 
@@ -490,23 +491,8 @@ export async function handleGoalState(bot, msg) {
 // ── Прогресс по цели ──────────────────────────────────────────────────────────
 
 async function showGoalProgress(bot, chatId, userId, goal) {
-  const { data: catData } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('name', 'Цель')
-    .single();
-
-  let totalGoalTx = 0;
-  if (catData?.id) {
-    const { data: txData } = await supabase
-      .from('transactions')
-      .select('amount')
-      .eq('user_id', userId)
-      .eq('category_id', catData.id);
-    totalGoalTx = txData?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0;
-  }
-
-  const accumulated = (goal.initial_saved ?? 0) + totalGoalTx;
+  // Накоплено = стартовая сумма + взносы именно на ЭТУ цель
+  const accumulated = goalSaved(goal, await getContributions(supabase, userId));
   const percent = Math.min(100, Math.round((accumulated / goal.future_value) * 100));
   const remaining = Math.max(0, goal.future_value - accumulated);
 

@@ -619,7 +619,9 @@
 
   function renderGoalCard(g, faded) {
     var target = parseFloat(g.future_value) || parseFloat(g.target_amount) || 0;
-    var saved = parseFloat(g.initial_saved) || 0;
+    // saved считает сервер: стартовая сумма + взносы именно на эту цель
+    var saved = parseFloat(g.saved);
+    if (isNaN(saved)) saved = parseFloat(g.initial_saved) || 0;
     var pct = target > 0 ? Math.min(100, Math.round(saved / target * 100)) : 0;
     var months = monthsUntil(g.target_date);
     var monthly = g.monthly_payment ? parseFloat(g.monthly_payment) : Math.max(0, (target - saved) / months);

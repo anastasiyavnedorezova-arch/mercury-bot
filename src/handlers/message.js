@@ -17,7 +17,9 @@ import { handleSubscriptionEmailState, handleSubscriptionPromoState } from './su
 import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
-import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
+import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
+import { getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
+import { isGoalStateExpired } from '../utils/goalEdit.js';
 import { todayStr } from '../utils/dateTz.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 
@@ -65,7 +67,8 @@ async function resolveCategory(userId, name) {
   return { id: fallback?.id ?? null, name: fallback?.name ?? 'Остальное' };
 }
 
-export async function saveTransaction(userId, parsed, rawMessage) {
+// goalId — только для взноса на цель (type=goal): к какой цели он относится
+export async function saveTransaction(userId, parsed, rawMessage, goalId = null) {
   const category = await resolveCategory(userId, parsed.category);
   parsed.category_saved = category.name; // категория, которая реально попала в базу — её показываем пользователю
   const { data, error } = await supabase.from('transactions').insert({
@@ -76,6 +79,7 @@ export async function saveTransaction(userId, parsed, rawMessage) {
     comment: parsed.comment ?? null,
     transaction_date: parsed.transaction_date,
     raw_message: rawMessage,
+    goal_id: parsed.type === 'goal' ? goalId : null,
   }).select('id').single();
 
   if (error) {
@@ -216,6 +220,33 @@ function inlineKeyboard(options) {
   return { inline_keyboard: rows };
 }
 
+const NO_GOAL_KEYBOARD = {
+  reply_markup: {
+    inline_keyboard: [
+      [{ text: '🎯 Поставить цель', callback_data: 'goal:new' }],
+      [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+    ],
+  },
+};
+
+// Подсчитывает накопленное по целям после сохранения и дописывает в записи (для текста подтверждения).
+async function attachGoalInfoSafe(userId, goals, entries) {
+  try {
+    const contributions = await getContributions(supabase, userId);
+    for (const { item, goalId } of entries) {
+      const goal = goals.find((g) => g.id === goalId);
+      if (goal) attachGoalInfo(item, goal, contributions);
+    }
+  } catch (err) {
+    console.error('[goalProgress] attach failed:', err.message);
+  }
+}
+
+async function askGoalPick(bot, chatId, telegramId, userId, items, rawMessage, goals) {
+  userStates.set(telegramId, { awaitingGoalPick: true, userId, items, rawMessage, createdAt: Date.now() });
+  await bot.sendMessage(chatId, buildGoalPickText(items[0]), buildGoalPickKeyboard(goals));
+}
+
 async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
   const userId = await getUserId(telegramId);
   if (!userId) {
@@ -226,34 +257,119 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
   const access = await getUserAccess(userId);
   console.log(`[access] telegramId=${telegramId} userId=${userId} access=${access}`);
 
-  if (Array.isArray(parsed)) {
-    let savedCount = 0;
+  const isMulti = Array.isArray(parsed);
+  const items = isMulti ? parsed : [parsed];
+  // Взнос на цель: одна цель — берём её; несколько — по названию в тексте, иначе спрашиваем кнопками
+  const goals = items.some(isGoalItem) ? await getActiveGoals(supabase, userId) : [];
+  const { toSave, pending, dropped } = planGoalContributions(goals, items, rawMessage);
+
+  if (toSave.length > 0) {
     const ids = [];
-    for (const item of parsed) {
-      const id = await saveTransaction(userId, item, rawMessage);
-      ids.push(id);
-      if (id !== null) savedCount++;
+    for (const { item, goalId } of toSave) {
+      ids.push(await saveTransaction(userId, item, rawMessage, goalId));
     }
-    if (savedCount === 0) {
-      await bot.sendMessage(chatId,
-        TEXTS.saveFailedMany,
-        MENU_KEYBOARD
-      );
-      return;
+    const savedEntries = toSave.filter((_, k) => ids[k] !== null);
+    if (savedEntries.some((e) => e.goalId)) await attachGoalInfoSafe(userId, goals, savedEntries);
+
+    if (savedEntries.length === 0) {
+      await bot.sendMessage(chatId, isMulti ? TEXTS.saveFailedMany : TEXTS.saveFailed, MENU_KEYBOARD);
+    } else if (isMulti) {
+      await bot.sendMessage(chatId, buildMultiConfirmationText(toSave.map((e) => e.item)), buildMultiKeyboard(ids));
+    } else {
+      await sendConfirmation(bot, chatId, toSave[0].item, ids[0], access);
     }
-    const text = buildMultiConfirmationText(parsed);
-    await bot.sendMessage(chatId, text, buildMultiKeyboard(ids));
-  } else {
-    const txId = await saveTransaction(userId, parsed, rawMessage);
-    if (txId === null) {
-      await bot.sendMessage(chatId,
-        TEXTS.saveFailed,
-        MENU_KEYBOARD
-      );
-      return;
-    }
-    await sendConfirmation(bot, chatId, parsed, txId, access);
   }
+
+  if (dropped > 0) {
+    await bot.sendMessage(chatId, TEXTS.goalNone, NO_GOAL_KEYBOARD);
+  }
+  if (pending.length > 0) {
+    await askGoalPick(bot, chatId, telegramId, userId, pending, rawMessage, goals);
+  }
+}
+
+// Ответ на «На какую цель?»: кнопка (goal:contrib:<id>) или название цели текстом.
+async function finishGoalPick(bot, chatId, telegramId, state, goalId) {
+  const goals = await getActiveGoals(supabase, state.userId);
+  const goal = goals.find((g) => g.id === goalId);
+  if (!goal) {
+    userStates.delete(telegramId);
+    await bot.sendMessage(chatId, TEXTS.goalPickStale, MENU_KEYBOARD);
+    return;
+  }
+
+  // Исправление уже записанного взноса: только привязываем его к цели
+  if (state.linkTxId) {
+    userStates.delete(telegramId);
+    await supabase.from('transactions').update({ goal_id: goal.id, type: 'goal' }).eq('id', state.linkTxId).eq('user_id', state.userId);
+    await bot.sendMessage(chatId, `Готово, взнос привязан к цели «${goal.name}» 🎯`, MENU_KEYBOARD);
+    return;
+  }
+
+  const item = state.items.shift();
+  if (!item) {
+    userStates.delete(telegramId);
+    await bot.sendMessage(chatId, TEXTS.goalPickStale, MENU_KEYBOARD);
+    return;
+  }
+  const access = await getUserAccess(state.userId);
+  const txId = await saveTransaction(state.userId, item, state.rawMessage, goal.id);
+  if (txId === null) {
+    userStates.delete(telegramId);
+    await bot.sendMessage(chatId, TEXTS.saveFailed, MENU_KEYBOARD);
+    return;
+  }
+  await attachGoalInfoSafe(state.userId, goals, [{ item, goalId: goal.id }]);
+  await sendConfirmation(bot, chatId, item, txId, access);
+
+  if (state.items.length > 0) {
+    await askGoalPick(bot, chatId, telegramId, state.userId, state.items, state.rawMessage, goals);
+  } else {
+    userStates.delete(telegramId);
+  }
+}
+
+export async function handleGoalContribCallback(bot, query) {
+  const chatId = query.message.chat.id;
+  const telegramId = query.from.id;
+  await bot.answerCallbackQuery(query.id);
+
+  const state = userStates.get(telegramId);
+  if (query.data === 'goal:contrib_cancel') {
+    if (state?.awaitingGoalPick) userStates.delete(telegramId);
+    await bot.sendMessage(chatId, TEXTS.goalPickCancelled, MENU_KEYBOARD);
+    return;
+  }
+  if (!state?.awaitingGoalPick || isGoalStateExpired(state)) {
+    if (state?.awaitingGoalPick) userStates.delete(telegramId);
+    await bot.sendMessage(chatId, TEXTS.goalPickStale, MENU_KEYBOARD);
+    return;
+  }
+  await finishGoalPick(bot, chatId, telegramId, state, query.data.split(':')[2]);
+}
+
+// Пока бот ждёт выбор цели: название цели текстом — это ответ; любое другое сообщение — новая запись,
+// а ожидающий взнос снимаем (и честно говорим об этом, чтобы он не пропал молча).
+async function handleGoalPickText(bot, msg) {
+  const telegramId = msg.from.id;
+  const chatId = msg.chat.id;
+  const state = userStates.get(telegramId);
+  if (!state?.awaitingGoalPick) return false;
+
+  const text = String(msg.text ?? '').trim();
+  const goals = await getActiveGoals(supabase, state.userId);
+  const hit = text && !/\d/.test(text)
+    ? goals.find((g) => g.name.trim().toLowerCase() === text.toLowerCase()) ?? matchGoalByText(goals, text)
+    : null;
+  if (hit) {
+    await finishGoalPick(bot, chatId, telegramId, state, hit.id);
+    return true;
+  }
+
+  userStates.delete(telegramId);
+  const what = state.linkTxId ? 'Взнос не привязан к цели' : 'Взнос на цель не записал — не выбрана цель';
+  await bot.sendMessage(chatId, `${what} 🙈 Если нужно, напиши ещё раз.`);
+  return false;
 }
 
 export async function handleCategorySelection(bot, chatId, telegramId, category) {
@@ -281,6 +397,11 @@ export async function handleCategorySelection(bot, chatId, telegramId, category)
     comment: null,
     transaction_date: state.transaction_date ?? todayStr(),
   };
+
+  if (isGoalItem(parsed)) {
+    await processAndSave(bot, chatId, telegramId, normalizeGoalItem(parsed), state.rawMessage);
+    return true;
+  }
 
   const txId = await saveTransaction(userId, parsed, state.rawMessage);
   await sendConfirmation(bot, chatId, parsed, txId, access);
@@ -445,6 +566,7 @@ export async function handleMessage(bot, msg) {
 
   // Состояния с приоритетом (правки выписки, редактирование транзакции и т.д.)
   if (await handleFileTextResponse(bot, msg)) return;
+  if (await handleGoalPickText(bot, msg)) return;
   if (await handleTxEditState(bot, msg)) return;
   if (await handleGoalState(bot, msg)) return;
   if (await handleBudgetState(bot, msg)) return;

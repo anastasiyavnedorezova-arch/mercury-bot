@@ -84,24 +84,52 @@ function categoryLabel(item) {
 
 function entryLine(item) {
   const emoji = LINE_EMOJI[item.type] ?? '💸';
-  if (item.type === 'goal') return `${emoji} ${formatRub(item.amount)} ₽ — в копилку`;
+  if (item.type === 'goal') {
+    return item.goal?.name
+      ? `${emoji} ${formatRub(item.amount)} ₽ — на цель «${item.goal.name}»`
+      : `${emoji} ${formatRub(item.amount)} ₽ — в копилку`;
+  }
   const sign = item.type === 'income' ? '+' : '';
   return `${emoji} ${sign}${formatRub(item.amount)} ₽ — ${categoryLabel(item)}`;
 }
 
+// «Накоплено 12 000 из 150 000 ₽ (8%)» — после взноса на цель
+export function goalProgressLine(goal) {
+  if (!goal) return '';
+  return goal.target > 0
+    ? `Накоплено ${formatRub(goal.saved)} из ${formatRub(goal.target)} ₽ (${goal.percent}%)`
+    : `Накоплено ${formatRub(goal.saved)} ₽`;
+}
+
 export function buildConfirmationText(item) {
   const opener = pick(OPENERS[item.type] ?? OPENERS.expense);
-  return `${opener}\n${entryLine(item)}\n📅 ${formatRuDate(item.transaction_date)}`;
+  const progress = item.type === 'goal' && item.goal ? `\n📊 ${goalProgressLine(item.goal)}` : '';
+  return `${opener}\n${entryLine(item)}\n📅 ${formatRuDate(item.transaction_date)}${progress}`;
 }
 
 export function buildMultiConfirmationText(items) {
   const n = items.length;
   const head = `Записал ${n} ${plural(n, 'запись', 'записи', 'записей')} ✅`;
   const dates = [...new Set(items.map((i) => i.transaction_date))];
+  // По одной строке прогресса на каждую цель (берём последнее значение — оно уже со всеми взносами)
+  const goals = new Map();
+  for (const i of items) if (i.type === 'goal' && i.goal) goals.set(i.goal.id, i.goal);
+  const progress = [...goals.values()].map((g) => `\n📊 «${g.name}»: ${goalProgressLine(g).replace('Накоплено ', '')}`).join('');
   if (dates.length === 1) {
-    return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)}`).join('\n')}\n📅 ${formatRuDate(dates[0])}`;
+    return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)}`).join('\n')}\n📅 ${formatRuDate(dates[0])}${progress}`;
   }
-  return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)} · ${formatRuDate(i.transaction_date)}`).join('\n')}`;
+  return `${head}\n${items.map((i, k) => `${k + 1}. ${entryLine(i)} · ${formatRuDate(i.transaction_date)}`).join('\n')}${progress}`;
+}
+
+// Вопрос «на какую цель?» — когда целей несколько и из сообщения не понятно, какая нужна.
+export function buildGoalPickText(item) {
+  return `На какую цель отложить ${formatRub(item.amount)} ₽? 🎯`;
+}
+
+export function buildGoalPickKeyboard(goals) {
+  const rows = goals.map((g) => [{ text: `🎯 ${g.name}`.slice(0, 60), callback_data: `goal:contrib:${g.id}` }]);
+  rows.push([{ text: 'Не записывать', callback_data: 'goal:contrib_cancel' }]);
+  return { reply_markup: { inline_keyboard: rows } };
 }
 
 // Кнопки «Исправить / Удалить» для каждой записи из сообщения с несколькими записями.
@@ -139,5 +167,8 @@ export const TEXTS = {
   processingError: 'Что-то пошло не так на моей стороне 😔 Попробуй ещё раз через минутку',
   saveFailed: 'Не получилось сохранить запись 😔 Попробуй ещё раз, а если повторится — напиши нам через «Обратную связь»',
   saveFailedMany: 'Не получилось сохранить записи 😔 Попробуй ещё раз, а если повторится — напиши нам через «Обратную связь»',
+  goalNone: 'Чтобы откладывать на цель, сначала создай её 🎯 Это займёт минуту — я посчитаю, сколько нужно откладывать в месяц.',
+  goalPickStale: 'Этот вопрос уже устарел 🙈 Напиши сумму ещё раз, например: «на цель 5000»',
+  goalPickCancelled: 'Хорошо, взнос не записываю 👌',
   faqFailed: 'Не получилось ответить 😔 Попробуй задать вопрос ещё раз 🙏',
 };

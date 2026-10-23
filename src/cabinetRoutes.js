@@ -17,6 +17,7 @@ import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } fr
 import { updateTransaction } from './cabinet/historyEdit.js';
 import { rateLimit, userKey } from './utils/httpLimits.js';
 import { displayMessage } from './utils/messageText.js';
+import { getContributions, goalSaved } from './utils/goalProgress.js';
 import { createLinkToken, disconnectTelegram, botLinkUrl, botUsername, LINK_TTL_MS } from './accounts/linkTelegram.js';
 
 const webBot = createWebBotAdapter();
@@ -237,7 +238,9 @@ router.get('/api/goals', requireAuth, async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json({ data });
+    // saved = стартовая сумма + взносы именно на эту цель (то же число, что в боте и на Дашборде)
+    const contributions = await getContributions(supabase, req.userId);
+    res.json({ data: (data || []).map((g) => ({ ...g, saved: goalSaved(g, contributions) })) });
   } catch (err) {
     console.error('[cabinet] /api/goals error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -356,27 +359,8 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
     const transactions = txRes.data || [];
     const goals = goalsRes.data || [];
 
-    // Находим category_id категории «Цель» (системная, user_id IS NULL)
-    let goalCategoryId = null;
-    const { data: catData } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('name', 'Цель')
-      .is('user_id', null)
-      .limit(1)
-      .maybeSingle();
-    goalCategoryId = catData?.id ?? null;
-
-    // Сумма всех целевых транзакций пользователя
-    let totalGoalTx = 0;
-    if (goalCategoryId) {
-      const { data: goalTxData } = await supabase
-        .from('transactions')
-        .select('amount')
-        .eq('user_id', req.userId)
-        .eq('category_id', goalCategoryId);
-      totalGoalTx = goalTxData?.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) ?? 0;
-    }
+    // Взносы по целям: у каждой цели свои (transactions.goal_id)
+    const contributions = await getContributions(supabase, req.userId);
 
     // Баланс текущего месяца
     let income = 0, expenses = 0;
@@ -407,10 +391,10 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
       category: t.categories?.name || 'Другое',
     }));
 
-    // Цели: saved = initial_saved + все целевые транзакции (как в боте)
+    // Цели: saved = initial_saved + взносы на эту цель (как в боте)
     const goalsWithSaved = goals.map(g => {
       const target = parseFloat(g.future_value) || parseFloat(g.target_amount) || 0;
-      const saved = (parseFloat(g.initial_saved) || 0) + totalGoalTx;
+      const saved = goalSaved(g, contributions);
       const percent = target > 0 ? Math.min(100, Math.round((saved / target) * 100)) : 0;
       return {
         id: g.id,

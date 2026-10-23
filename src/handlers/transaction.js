@@ -1,6 +1,8 @@
 import { supabase } from '../db.js';
 import { getUserAccess } from '../utils/access.js';
 import { userStates } from '../state.js';
+import { syncTxGoalLink } from '../utils/goalProgress.js';
+import { buildGoalPickKeyboard } from '../utils/botTexts.js';
 
 const PAYWALL_TEXT =
   'Редактирование доступно в подписке. Хочешь активировать 30 дней бесплатно? 💛';
@@ -234,7 +236,15 @@ export async function handleTransactionCallback(bot, query) {
     userStates.delete(telegramId);
 
     await supabase.from('transactions').update({ category_id: categoryId }).eq('id', txId);
+    // «Цель» ↔ другая категория: привязка к цели должна совпадать с категорией
+    const link = await syncTxGoalLink(supabase, txId);
     await fetchAndShowTx(bot, chatId, txId);
+    if (link.status === 'needs_pick') {
+      userStates.set(telegramId, { awaitingGoalPick: true, userId: link.userId, linkTxId: txId, createdAt: Date.now() });
+      await bot.sendMessage(chatId, 'К какой цели относится этот взнос? 🎯', buildGoalPickKeyboard(link.goals));
+    } else if (link.status === 'no_goals') {
+      await bot.sendMessage(chatId, 'Целей пока нет, поэтому взнос ни к какой не привязан. Поставь цель в разделе «Моя цель» 🎯');
+    }
     return;
   }
 
@@ -275,7 +285,8 @@ export async function handleTransactionCallback(bot, query) {
     const type = parts[2]; // 'expense' или 'income'
     const txId = parts[3];
 
-    await supabase.from('transactions').update({ type }).eq('id', txId);
+    // Расход/доход — это уже не взнос на цель: привязку снимаем
+    await supabase.from('transactions').update({ type, goal_id: null }).eq('id', txId);
     await fetchAndShowTx(bot, chatId, txId);
     return;
   }

@@ -6,7 +6,7 @@ import { handleHistoryCallback } from './history.js';
 import { handleAnalyticsCallback } from './analytics.js';
 import { handleSubscriptionCallback } from './subscription.js';
 import { handleCategoriesCallback } from './categories.js';
-import { handleCategorySelection, handleManualCallback } from './message.js';
+import { handleCategorySelection, handleManualCallback, handleGoalContribCallback } from './message.js';
 import { showMainMenu, handleMenuCallback } from './menu.js';
 import { handleTransactionCallback } from './transaction.js';
 import { handleFileCallback } from './fileUpload.js';
@@ -41,6 +41,12 @@ export async function dispatchCallbackQuery(bot, query) {
   // Для всех остальных кнопок — жёсткая проверка согласия
   if (await requireTerms(bot, query.from.id, query.message.chat.id)) {
     await bot.answerCallbackQuery(query.id);
+    return;
+  }
+
+  // Выбор цели для взноса («На какую цель?»)
+  if (action.startsWith('goal:contrib')) {
+    await handleGoalContribCallback(bot, query);
     return;
   }
 
