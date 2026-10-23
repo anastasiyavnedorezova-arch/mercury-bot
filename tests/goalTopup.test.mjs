@@ -95,6 +95,7 @@ test('код кабинета: кнопка, окно ввода суммы и �
   const page = read('public/cabinet/goals.html');
   assert.ok(page.includes('window.openTopUpModal') && page.includes('id="modal-topup"') && page.includes("'/contribute'"));
   assert.ok(page.includes("(faded ? '' : '<button class=\"btn btn-primary btn-sm\" onclick=\"window.openTopUpModal"), 'у неактивных карточек кнопки нет');
+  assert.ok(page.includes('class="goal-trash-btn"') && !/>Удалить<\/button>' \+\s*\n\s*'<button class="btn btn-mini-dark/.test(page), 'в карточке цели удаление — иконка-корзина, а не текст');
   const route = read('src/cabinetRoutes.js');
   assert.ok(route.includes("router.post('/api/goals/:id/contribute', requireAuth, limitGoalTopUp"));
   assert.ok(route.includes("=== 'free'") && route.includes('addGoalContribution'));
