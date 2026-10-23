@@ -27,11 +27,13 @@ test('оферта: без цен (они на сайте), пробный пе�
   assert.match(t, /пропорционально неиспользованному/);
 });
 
-test('политика и согласие: без названий компаний и стран, но с честным указанием передачи за пределы РФ', () => {
+test('политика и согласие: без названий компаний, но с названием стран, куда идёт передача за пределы РФ', () => {
   for (const d of ['privacy', 'consent']) {
     const t = read(`public/legal/${d}.html`);
-    assert.ok(!/OpenAI|США|Timeweb|Robokassa|Робокасс|RuSender|Яндекс|Hostkey/i.test(t), `${d}: названия компаний или стран`);
-    assert.match(t, /за пределами Российской Федерации/, d);
+    assert.ok(!/OpenAI|Timeweb|Robokassa|Робокасс|RuSender|Яндекс|Hostkey/i.test(t), `${d}: названия компаний`);
+    assert.match(t, /за пределы Российской Федерации|за пределами Российской Федерации/, d);
+    assert.match(t, /Нидерланды/, `${d}: страна relay-сервера`);
+    assert.match(t, /США/, `${d}: страна распознавания`);
   }
   assert.match(read('public/legal/privacy.html'), /территории Российской Федерации/);
   assert.match(read('public/legal/privacy.html'), /30 дней/);
@@ -73,8 +75,8 @@ test('регистрация: две отдельные обязательные
 test('бот: текст согласия честно говорит про OpenAI и новые документы', () => {
   const t = read('src/handlers/onboarding.js');
   assert.ok(!/не\s+передаются третьим лицам/.test(t));
-  assert.ok(!/OpenAI|США/.test(t));
-  assert.match(t, /за пределами России/);
+  assert.ok(!/OpenAI/.test(t));
+  assert.match(t, /за пределами России \(Нидерланды, США\)/);
   assert.match(t, /finnikbot\.ru\/legal\/offer/);
   assert.match(t, /finnikbot\.ru\/legal\/consent/);
 });
