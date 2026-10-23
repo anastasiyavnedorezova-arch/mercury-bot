@@ -6,7 +6,7 @@ import { handleHistoryCallback } from './history.js';
 import { handleAnalyticsCallback } from './analytics.js';
 import { handleSubscriptionCallback } from './subscription.js';
 import { handleCategoriesCallback } from './categories.js';
-import { handleCategorySelection, handleManualCallback, handleGoalContribCallback } from './message.js';
+import { handleCategorySelection, handleManualCallback, handleGoalContribCallback, handleGoalTopupCallback } from './message.js';
 import { showMainMenu, handleMenuCallback } from './menu.js';
 import { handleTransactionCallback } from './transaction.js';
 import { handleFileCallback } from './fileUpload.js';
@@ -47,6 +47,12 @@ export async function dispatchCallbackQuery(bot, query) {
   // Выбор цели для взноса («На какую цель?»)
   if (action.startsWith('goal:contrib')) {
     await handleGoalContribCallback(bot, query);
+    return;
+  }
+
+  // «Пополнить» цель: спрашиваем сумму и записываем взнос на эту цель
+  if (action.startsWith('goal:topup')) {
+    await handleGoalTopupCallback(bot, query);
     return;
   }
 

@@ -15,6 +15,7 @@ import { getUserAccess } from './utils/access.js';
 import { hadTrial, startTrial, rowsHadTrial } from './utils/trial.js';
 import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } from './cabinet/categories.js';
 import { updateTransaction } from './cabinet/historyEdit.js';
+import { addGoalContribution } from './cabinet/goalContribution.js';
 import { rateLimit, userKey } from './utils/httpLimits.js';
 import { displayMessage } from './utils/messageText.js';
 import { getContributions, goalSaved } from './utils/goalProgress.js';
@@ -33,6 +34,7 @@ const limitFeedback = [
   rateLimit({ name: 'feedback-user', windowMs: 60 * 60_000, max: 5, key: userKey, message: 'Слишком много обращений. Попробуй чуть позже.' }),
   rateLimit({ name: 'feedback-ip', windowMs: 60 * 60_000, max: 20, message: 'Слишком много обращений. Попробуй чуть позже.' }),
 ];
+const limitGoalTopUp = rateLimit({ name: 'goal-topup', windowMs: 60_000, max: 20, key: userKey, message: 'Слишком часто. Подожди минутку и попробуй снова.' });
 const limitTelegramLink = rateLimit({ name: 'telegram-link', windowMs: 60 * 60_000, max: 10, key: userKey, message: 'Слишком часто. Подожди немного и попробуй снова.' });
 // Веб-чат: 30 сообщений в минуту. Лишнее сообщение не доходит до ИИ; человек получает ответ бота в чате (индикатор «печатает» не зависает).
 const limitChatSend = rateLimit({
@@ -244,6 +246,22 @@ router.get('/api/goals', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('[cabinet] /api/goals error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/goals/:id/contribute — «Пополнить» цель: { amount }
+// ──────────────────────────────────────────
+router.post('/api/goals/:id/contribute', requireAuth, limitGoalTopUp, async (req, res) => {
+  try {
+    if ((await getUserAccess(req.userId)) === 'free') {
+      return res.status(403).json({ error: 'Forbidden', message: 'Записывать взносы можно на пробном или платном тарифе' });
+    }
+    const r = await addGoalContribution(supabase, req.userId, req.params.id, req.body);
+    res.status(r.status).json(r.json);
+  } catch (err) {
+    console.error('[cabinet] POST /api/goals/:id/contribute error:', err.message);
+    res.status(500).json({ error: 'Internal server error', message: 'Не удалось записать взнос. Попробуй ещё раз' });
   }
 });
 

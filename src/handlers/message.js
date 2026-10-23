@@ -18,8 +18,9 @@ import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
-import { getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
+import { GOAL_CATEGORY, getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
 import { isGoalStateExpired } from '../utils/goalEdit.js';
+import { parseAmountStrict } from '../utils/parseAmount.js';
 import { todayStr } from '../utils/dateTz.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 
@@ -266,6 +267,8 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
   if (toSave.length > 0) {
     const ids = [];
     for (const { item, goalId } of toSave) {
+      // В комментарий — название цели: в истории видно, на какую цель ушёл взнос
+      if (goalId) item.comment = goals.find((g) => g.id === goalId)?.name ?? item.comment;
       ids.push(await saveTransaction(userId, item, rawMessage, goalId));
     }
     const savedEntries = toSave.filter((_, k) => ids[k] !== null);
@@ -313,6 +316,7 @@ async function finishGoalPick(bot, chatId, telegramId, state, goalId) {
     return;
   }
   const access = await getUserAccess(state.userId);
+  item.comment = goal.name;
   const txId = await saveTransaction(state.userId, item, state.rawMessage, goal.id);
   if (txId === null) {
     userStates.delete(telegramId);
@@ -346,6 +350,72 @@ export async function handleGoalContribCallback(bot, query) {
     return;
   }
   await finishGoalPick(bot, chatId, telegramId, state, query.data.split(':')[2]);
+}
+
+// ── «Пополнить» из карточки цели ─────────────────────────────────────────────
+
+export async function handleGoalTopupCallback(bot, query) {
+  const chatId = query.message.chat.id;
+  const telegramId = query.from.id;
+  await bot.answerCallbackQuery(query.id);
+
+  if (query.data === 'goal:topup_cancel') {
+    if (userStates.get(telegramId)?.awaitingGoalTopup) userStates.delete(telegramId);
+    await bot.sendMessage(chatId, TEXTS.goalPickCancelled, MENU_KEYBOARD);
+    return;
+  }
+
+  const userId = await getUserId(telegramId);
+  if (!userId) {
+    await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start для регистрации.');
+    return;
+  }
+  const goal = (await getActiveGoals(supabase, userId)).find((g) => g.id === query.data.split(':')[2]);
+  if (!goal) {
+    await bot.sendMessage(chatId, 'Цель не найдена 🤔', MENU_KEYBOARD);
+    return;
+  }
+  userStates.set(telegramId, { awaitingGoalTopup: true, goalId: goal.id, userId, createdAt: Date.now() });
+  await bot.sendMessage(chatId, `Сколько отложил на «${goal.name}»? Напиши сумму, например 5000 👇`, {
+    reply_markup: { inline_keyboard: [[{ text: 'Отмена', callback_data: 'goal:topup_cancel' }]] },
+  });
+}
+
+// Бот ждёт сумму. Только сумма («5000», «5 тыс») — взнос; текст без цифр — переспрашиваем;
+// всё остальное («кофе 200») — обычная запись, ожидание снимаем.
+async function handleGoalTopupText(bot, msg) {
+  const telegramId = msg.from.id;
+  const chatId = msg.chat.id;
+  const state = userStates.get(telegramId);
+  if (!state?.awaitingGoalTopup) return false;
+
+  const text = String(msg.text ?? '');
+  const amount = parseAmountStrict(text);
+  if (amount === null || amount <= 0) {
+    if (!/\d/.test(text)) {
+      await bot.sendMessage(chatId, TEXTS.manualNoAmount);
+      return true;
+    }
+    userStates.delete(telegramId);
+    return false;
+  }
+
+  userStates.delete(telegramId);
+  const goals = await getActiveGoals(supabase, state.userId);
+  const goal = goals.find((g) => g.id === state.goalId);
+  if (!goal) {
+    await bot.sendMessage(chatId, 'Цель не найдена 🤔', MENU_KEYBOARD);
+    return true;
+  }
+  const item = { type: 'goal', amount, category: GOAL_CATEGORY, comment: goal.name, transaction_date: todayStr() };
+  const txId = await saveTransaction(state.userId, item, text, goal.id);
+  if (txId === null) {
+    await bot.sendMessage(chatId, TEXTS.saveFailed, MENU_KEYBOARD);
+    return true;
+  }
+  await attachGoalInfoSafe(state.userId, goals, [{ item, goalId: goal.id }]);
+  await sendConfirmation(bot, chatId, item, txId, await getUserAccess(state.userId));
+  return true;
 }
 
 // Пока бот ждёт выбор цели: название цели текстом — это ответ; любое другое сообщение — новая запись,
@@ -567,6 +637,7 @@ export async function handleMessage(bot, msg) {
   // Состояния с приоритетом (правки выписки, редактирование транзакции и т.д.)
   if (await handleFileTextResponse(bot, msg)) return;
   if (await handleGoalPickText(bot, msg)) return;
+  if (await handleGoalTopupText(bot, msg)) return;
   if (await handleTxEditState(bot, msg)) return;
   if (await handleGoalState(bot, msg)) return;
   if (await handleBudgetState(bot, msg)) return;

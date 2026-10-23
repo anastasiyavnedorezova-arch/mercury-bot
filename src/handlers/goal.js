@@ -93,10 +93,13 @@ function goalCardKeyboard(goal, canAdd) {
   const id = goal.id;
   const keyboard = [
     [
+      { text: '➕ Пополнить', callback_data: `goal:topup:${id}` },
       { text: '📊 Оценить прогресс', callback_data: `goal:progress:${id}` },
-      { text: '✏️ Изменить', callback_data: `goal:edit:${id}` },
     ],
-    [{ text: '🗑 Удалить', callback_data: `goal:delete:${id}` }],
+    [
+      { text: '✏️ Изменить', callback_data: `goal:edit:${id}` },
+      { text: '🗑 Удалить', callback_data: `goal:delete:${id}` },
+    ],
   ];
   if (canAdd) {
     keyboard.push([{ text: '➕ Добавить новую цель', callback_data: 'goal:add_new' }]);
@@ -205,7 +208,7 @@ async function saveGoalAndConfirm(bot, chatId, userId, state, yieldRate) {
     confirmText += `💰 Нужно откладывать: ${formatNum(monthly)} ₽/мес\n\n`;
   }
 
-  confirmText += `Чтобы фиксировать пополнения копилки — пиши мне «на цель [сумма]» 💪`;
+  confirmText += `Чтобы пополнить копилку — нажми «➕ Пополнить» в карточке цели или напиши мне «на цель 5000» 💪`;
 
   await bot.sendMessage(chatId, confirmText, MENU_KEYBOARD);
 }
@@ -520,7 +523,14 @@ async function showGoalProgress(bot, chatId, userId, goal) {
     text += `💡 Нужно откладывать: ${formatNum(goal.monthly_payment)} ₽/мес`;
   }
 
-  await bot.sendMessage(chatId, text, MENU_KEYBOARD);
+  await bot.sendMessage(chatId, text, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '➕ Пополнить', callback_data: `goal:topup:${goal.id}` }],
+        [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
+      ],
+    },
+  });
 }
 
 // ── Обработчик кнопок goal: ───────────────────────────────────────────────────
