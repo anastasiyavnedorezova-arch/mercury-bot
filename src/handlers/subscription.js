@@ -7,6 +7,13 @@ import { yookassaConfigured } from '../payments/yookassa.js';
 import { findRecentPaidSubscription } from '../payments/process.js';
 import { PLANS, askPromo, continueWithoutPromo, handlePromoMessage } from './subscriptionPromo.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
+import { SUPPORT_EMAIL } from '../emails/config.js';
+
+// Отмена подписки и возврат — по письму (условия возврата — в оферте, п. 6)
+export const CANCEL_SUBSCRIPTION_TEXT =
+  `Чтобы отменить подписку, напиши на ${SUPPORT_EMAIL} письмо с темой «Отменить подписку».\n\n` +
+  'В письме укажи e-mail или ник в Telegram, к которому привязан аккаунт, и дату оплаты.\n\n' +
+  'Деньги вернём за неиспользованные дни подписки. Условия возврата: https://finnikbot.ru/legal/offer';
 
 const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
@@ -96,6 +103,7 @@ export async function showSubscription(bot, chatId, telegramId) {
       reply_markup: {
         inline_keyboard: [
           [{ text: 'Продлить подписку', callback_data: 'buy_subscription' }],
+          [{ text: 'Отменить подписку', callback_data: 'cancel_subscription' }],
           [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
         ],
       },
@@ -229,6 +237,14 @@ export async function handleSubscriptionCallback(bot, query) {
         },
       }
     );
+    return;
+  }
+
+  if (action === 'cancel_subscription') {
+    await bot.sendMessage(chatId, CANCEL_SUBSCRIPTION_TEXT, {
+      disable_web_page_preview: true,
+      reply_markup: { inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]] },
+    });
     return;
   }
 

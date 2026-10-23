@@ -100,7 +100,8 @@ export async function dispatchCallbackQuery(bot, query) {
     action === 'buy_subscription' ||
     action.startsWith('buy_') ||
     action.startsWith('check_payment_') ||
-    action === 'cancel_payment'
+    action === 'cancel_payment' ||
+    action === 'cancel_subscription'
   ) {
     await handleSubscriptionCallback(bot, query);
     return;

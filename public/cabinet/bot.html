@@ -64,6 +64,8 @@ body{font-family:'Manrope',sans-serif;background:#F5F7FA;margin:0;overflow:hidde
 .bubble-wrap.from-user{align-items:flex-end}
 .bubble{position:relative;padding:8px 14px;border-radius:var(--radius-bubble);font-size:14px;font-weight:400;line-height:20px;max-width:85%;word-break:break-word;white-space:pre-wrap}
 .bubble.bot{background:var(--color-bg-alt);color:var(--color-text-main);border-bottom-left-radius:4px}
+.bubble.bot a{color:#2563EB;text-decoration:underline;word-break:break-all}
+.bubble.bot code{font-family:ui-monospace,Menlo,monospace;font-size:13px}
 .bubble.user{background:var(--color-brand-primary);color:#fff;border-bottom-right-radius:4px}
 .bubble.bot::before{content:'';position:absolute;left:-8px;bottom:6px;width:0;height:0;border-top:10px solid transparent;border-right:10px solid var(--color-bg-alt);border-bottom:0 solid transparent}
 .bubble.user::before{content:'';position:absolute;right:-8px;bottom:6px;width:0;height:0;border-top:10px solid transparent;border-left:10px solid var(--color-brand-primary);border-bottom:0 solid transparent}
@@ -169,6 +171,7 @@ body{font-family:'Manrope',sans-serif;background:#F5F7FA;margin:0;overflow:hidde
 <script type="module">
 import { getToken, authHeaders } from './layout.js';
 import { createChatHistory, userIdFromToken, compactKeyboard } from './chat-history.js';
+import { appendRichText } from './rich-text.js';
 
 // История чата общая со встроенным виджетом: живёт в браузере до выхода из аккаунта
 const history = createChatHistory({
@@ -251,7 +254,7 @@ function appendBotBubble(area, text, keyboard) {
   wrap.className = 'bubble-wrap from-bot';
   const bubble = document.createElement('div');
   bubble.className = 'bubble bot';
-  bubble.textContent = text;
+  appendRichText(bubble, text); // ссылки и почты кликабельны, <b> — жирный
   wrap.appendChild(bubble);
   area.appendChild(wrap);
 
