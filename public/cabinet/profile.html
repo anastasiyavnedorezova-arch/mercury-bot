@@ -302,7 +302,10 @@
 .mini-btn-blue{background:var(--color-brand-primary);color:#fff}
 .mini-btn-blue:hover{background:var(--color-brand-primary-hover)}
 .mini-btn-green{background:#2FBF71;color:#fff}
-.mini-btn-green:hover{background:#3B82F6}
+.mini-btn-green:hover{background:#28A862}
+.mini-btn-outline{box-sizing:border-box;padding:3px 8px;background:transparent;color:#4C9AFF;border:1px solid #4C9AFF}
+.mini-btn-outline:hover{background:#EAF2FF}
+.profile-top-grid .field-value{align-self:stretch;color:#2D3748;font-size:16px;font-family:'Manrope',sans-serif;font-weight:600;line-height:24px;word-wrap:break-word}
 .mini-btn-text-red{background:transparent;color:var(--color-error-main);font-size:12px;font-weight:500;padding:4px 0}
 .mini-btn-text-red:hover{text-decoration:underline}
 
@@ -348,9 +351,6 @@
 .status-active-inner{width:10px;height:10px;border-radius:50%;background:var(--color-success-main)}
 .status-error-outer{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:var(--color-error-bg);flex-shrink:0}
 .status-error-inner{width:10px;height:10px;border-radius:50%;background:var(--color-error-main)}
-
-/* Telegram avatar */
-.tg-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(180deg,#2AABEE 0%,#229ED9 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:4px}
 
 /* ============================================================ NOTIFICATIONS CARD */
 .notif-card{background:var(--color-white);border:1px solid var(--color-border);border-radius:24px;box-shadow:var(--shadow-card);padding:24px;margin-bottom:16px;max-width:520px}
@@ -532,7 +532,7 @@
         <div class="profile-card">
           <div class="card-header">
             <span class="card-title">Личные данные</span>
-            <button class="mini-btn mini-btn-dark" onclick="openEditProfile()">Редактировать</button>
+            <button class="mini-btn mini-btn-outline" onclick="openEditProfile()">Редактировать</button>
           </div>
           <div class="card-fields">
             <div class="card-field">
@@ -542,10 +542,6 @@
             <div class="card-field">
               <span class="field-label">E-mail:</span>
               <span class="field-value" id="personalEmail">—</span>
-            </div>
-            <div class="card-field">
-              <span class="field-label">Дата регистрации:</span>
-              <span class="field-value" id="personalCreated">—</span>
             </div>
           </div>
         </div>
@@ -557,11 +553,6 @@
             <button class="mini-btn" id="tgBtn">...</button>
           </div>
           <div class="card-fields">
-            <div class="tg-avatar" id="tgAvatar">
-              <svg width="30" height="25" viewBox="0 0 30 25" fill="none">
-                <path d="M29.7 2.3L25.2 23.1C24.9 24.4 24.1 24.7 23 24.1L16.4 19.2L13.2 22.3C12.9 22.6 12.6 22.7 12.2 22.7L12.7 15.9L24.3 5.4C24.8 4.9 24.2 4.7 23.5 5.2L9.1 14.3L2.7 12.3C1.4 11.9 1.4 11 3 10.4L27.8 0.8C28.9 0.4 29.9 1.1 29.7 2.3Z" fill="white"/>
-              </svg>
-            </div>
             <div class="card-field">
               <span class="field-label">Имя пользователя:</span>
               <span class="field-value" id="tgUsername">—</span>
@@ -576,13 +567,13 @@
         <!-- SUBSCRIPTION CARD -->
         <div class="profile-card">
           <div class="card-header">
-            <span class="card-title">Подписка</span>
+            <span class="card-title">Тариф</span>
             <button class="mini-btn" id="subBtn">...</button>
           </div>
           <div class="card-fields">
             <div class="card-field">
               <div class="field-label-row">
-                <span class="field-label">Тариф:</span>
+                <span class="field-label">Действующий тариф:</span>
                 <span id="subStatusBadge"></span>
               </div>
               <span class="field-value" id="subPlan">—</span>
@@ -590,10 +581,6 @@
             <div class="card-field">
               <span class="field-label">Действует до:</span>
               <span class="field-value" id="subUntil">—</span>
-            </div>
-            <div class="card-field">
-              <span class="field-label">Осталось:</span>
-              <span class="field-value" id="subLeft">—</span>
             </div>
           </div>
         </div>
@@ -1015,7 +1002,6 @@
         emailEl.textContent = '—';
         emailEl.classList.add('empty');
       }
-      document.getElementById('personalCreated').textContent = fmtDateNoTime(data.created_at);
 
       // Telegram
       const isTgConnected = data.telegram_connected ?? (!!data.external_id && data.channel === 'telegram');
@@ -1024,12 +1010,12 @@
       const tgStatus = document.getElementById('tgStatus');
       if (isTgConnected) {
         tgBtn.textContent = 'Отключить';
-        tgBtn.className = 'mini-btn mini-btn-text-red';
+        tgBtn.className = 'mini-btn mini-btn-outline';
         tgUsername.textContent = data.tg_username || data.external_id;
         tgStatus.innerHTML = '✅ Telegram подключён';
       } else {
         tgBtn.textContent = 'Подключить';
-        tgBtn.className = 'mini-btn mini-btn-dark';
+        tgBtn.className = 'mini-btn mini-btn-green';
         tgUsername.textContent = '—';
         tgStatus.innerHTML = '❌ Telegram не подключён';
       }
@@ -1038,58 +1024,40 @@
       const subBtn = document.getElementById('subBtn');
       const subPlan = document.getElementById('subPlan');
       const subUntil = document.getElementById('subUntil');
-      const subLeft = document.getElementById('subLeft');
       const subStatusBadge = document.getElementById('subStatusBadge');
       const sub = data.subscription;
-      const now = new Date();
 
       if (sub && sub.status === 'trial') {
-        subBtn.textContent = 'Оформить подписку';
+        subBtn.textContent = 'Оплатить подписку';
         subBtn.className = 'mini-btn mini-btn-green';
         subBtn.onclick = () => window.openModal('modalSubscribe');
-        subPlan.textContent = 'Пробный тариф';
+        subPlan.textContent = 'Пробный период';
         subUntil.textContent = fmtDateNoTime(sub.ends_at);
-        const daysLeft = Math.max(0, Math.ceil((new Date(sub.ends_at) - now) / 86400000));
-        subLeft.textContent = daysLeft + ' ' + pluralDays(daysLeft);
         subStatusBadge.innerHTML = '';
       } else if (sub && sub.status === 'active') {
         subBtn.textContent = 'Продлить подписку';
-        subBtn.className = 'mini-btn mini-btn-dark';
+        subBtn.className = 'mini-btn mini-btn-green';
         subBtn.onclick = () => window.openModal('modalRenew');
-        subPlan.textContent = (sub.period_months || 1) + ' ' + monthsWord(sub.period_months || 1);
+        subPlan.textContent = 'Подписка (' + (sub.period_months || 1) + ' мес)';
         subUntil.textContent = fmtDateNoTime(sub.ends_at);
-        const daysLeft = Math.max(0, Math.ceil((new Date(sub.ends_at) - now) / 86400000));
-        subLeft.textContent = daysLeft + ' ' + pluralDays(daysLeft);
         subStatusBadge.innerHTML = '<span class="sub-status-badge"><span class="status-active-outer"><span class="status-active-inner"></span></span><span style="color:#1F7A4C;font-size:12px;font-weight:500">Подписка активна</span></span>';
       } else if (data.last_subscription) {
         subBtn.textContent = 'Продлить подписку';
-        subBtn.className = 'mini-btn mini-btn-dark';
+        subBtn.className = 'mini-btn mini-btn-green';
         subBtn.onclick = () => window.openModal('modalRenew');
         subPlan.textContent = 'Подписка истекла';
         subUntil.textContent = fmtDateNoTime(data.last_subscription.ends_at);
-        subLeft.textContent = '0 дней';
         subStatusBadge.innerHTML = '<span class="sub-status-badge"><span class="status-error-outer"><span class="status-error-inner"></span></span><span style="color:#9B2C2C;font-size:12px;font-weight:500">Истекла</span></span>';
       } else {
         subBtn.textContent = data.had_trial_before ? 'Оформить подписку' : 'Активировать пробный период';
-        subBtn.className = 'mini-btn mini-btn-blue';
+        subBtn.className = 'mini-btn mini-btn-green';
         subBtn.onclick = data.had_trial_before ? () => window.openModal('modalSubscribe') : activateTrial;
         subPlan.textContent = 'Бесплатный тариф';
         subUntil.textContent = 'бессрочно';
-        subLeft.textContent = '—';
         subStatusBadge.innerHTML = '';
       }
     }
 
-    function pluralDays(n) {
-      if (n % 10 === 1 && n % 100 !== 11) return 'день';
-      if ([2,3,4].includes(n % 10) && ![12,13,14].includes(n % 100)) return 'дня';
-      return 'дней';
-    }
-    function monthsWord(n) {
-      if (n === 1) return 'месяц';
-      if (n >= 2 && n <= 4) return 'месяца';
-      return 'месяцев';
-    }
 
     async function activateTrial() {
       const res = await fetch('/api/profile/activate-trial', { method: 'POST', headers: authHeaders() });
