@@ -94,8 +94,17 @@ test('код бота: кнопка «Пополнить» в карточке �
 test('код кабинета: кнопка, окно ввода суммы и маршрут с проверкой тарифа и лимитом', () => {
   const page = read('public/cabinet/goals.html');
   assert.ok(page.includes('window.openTopUpModal') && page.includes('id="modal-topup"') && page.includes("'/contribute'"));
-  assert.ok(page.includes("(faded ? '' : '<button class=\"btn btn-primary btn-sm\" onclick=\"window.openTopUpModal"), 'у неактивных карточек кнопки нет');
-  assert.ok(page.includes('class="goal-trash-btn"') && !/>Удалить<\/button>' \+\s*\n\s*'<button class="btn btn-mini-dark/.test(page), 'в карточке цели удаление — иконка-корзина, а не текст');
+  assert.ok(page.includes("(faded ? '' : '<button class=\"btn btn-primary btn-sm btn-topup\" onclick=\"window.openTopUpModal"), 'у неактивных карточек кнопки нет');
+  // Корзина: красная иконка в правом верхнем углу карточки, до названия цели в разметке; в ряду кнопок её нет
+  assert.ok(page.includes('class="goal-trash-btn"') && page.includes('stroke="#E5484D"'));
+  assert.ok(page.indexOf('class="goal-trash-btn"') < page.indexOf("'<div class=\"goal-name\">'"), 'корзина в карточке идёт раньше названия');
+  assert.ok(/\.goal-trash-btn \{ position: absolute; top: 22px; right: 22px;/.test(page));
+  const actions = page.slice(page.indexOf("'<div class=\"card-actions\">'"), page.indexOf("'</div>';", page.indexOf("'<div class=\"card-actions\">'")));
+  assert.ok(!actions.includes('goal-trash-btn') && !actions.includes('>Удалить<'), 'в ряду кнопок остались «Редактировать» и «Пополнить»');
+  assert.ok(page.includes('.btn-topup { border-radius: var(--radius-sm); }'), 'у «Пополнить» то же скругление, что у «Редактировать»');
+  // Окно удаления — как в «Истории»: del-box, заголовок + крестик, Отмена и красная «Удалить», сводка по цели
+  assert.ok(page.includes('class="del-box"') && page.includes('class="del-confirm btn-delete-primary"') && page.includes('Удаление безвозвратно'));
+  assert.ok(page.includes('Записи о взносах останутся в истории транзакций.'));
   const route = read('src/cabinetRoutes.js');
   assert.ok(route.includes("router.post('/api/goals/:id/contribute', requireAuth, limitGoalTopUp"));
   assert.ok(route.includes("=== 'free'") && route.includes('addGoalContribution'));
