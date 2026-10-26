@@ -22,7 +22,7 @@ export function clearWebChatQueue(chatId) {
   webChatQueues.set(chatId, []);
 }
 
-// Адаптер, имитирующий интерфейс node-telegram-bot-api для веб-канала
+// Адаптер, имитирующий интерфейс Telegram-бота (src/telegram/botClient.js) для веб-канала
 export function createWebBotAdapter() {
   return {
     isWeb: true,

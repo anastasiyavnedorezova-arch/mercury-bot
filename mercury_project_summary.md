@@ -19,7 +19,7 @@
 | Компонент | Технология |
 |-----------|-----------|
 | Runtime | Node.js 22, ES Modules |
-| Telegram | node-telegram-bot-api (polling) |
+| Telegram | собственный клиент src/telegram/botClient.js на встроенном fetch (polling); библиотека node-telegram-bot-api удалена в патче 48 |
 | База данных | Supabase (PostgreSQL), Frankfurt |
 | LLM | OpenAI GPT-4o-mini + Whisper |
 | Хостинг бота | Railway |
@@ -402,7 +402,7 @@ pm2 stop all  # если бот запустился на VPS и создаёт 
 - State хранится в памяти (Map) — сбрасывается через 30 минут
 
 ### Ключевые архитектурные решения
-- **src/webBotAdapter.js** — адаптер бота для веб-канала: имитирует node-telegram-bot-api, очередь сообщений через EventEmitter
+- **src/webBotAdapter.js** — адаптер бота для веб-канала: имитирует интерфейс бота (как src/telegram/botClient.js), очередь сообщений через EventEmitter
 - **src/realBot.js** — singleton TelegramBot без polling, используется для отправки уведомлений админу из любого канала
 - **src/handlers/callbackDispatcher.js** — диспетчер callback_query, общий для Telegram и веб-канала
 - **Merge-логика при подключении Telegram:** POST /api/profile/merge-telegram — переносит transactions, goals, budget, subscriptions со старого user_id на новый

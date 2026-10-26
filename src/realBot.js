@@ -1,4 +1,4 @@
-import TelegramBot from 'node-telegram-bot-api';
+import TelegramBot from './telegram/botClient.js';
 import { telegramBotOptions } from './utils/endpoints.js';
 
 // Singleton Telegram bot instance для отправки сообщений (без polling).

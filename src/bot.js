@@ -1,4 +1,4 @@
-import TelegramBot from 'node-telegram-bot-api';
+import TelegramBot from './telegram/botClient.js';
 import 'dotenv/config';
 import { handleStart } from './handlers/start.js';
 import { handleMessage, handleCategorySelection, handleManualCallback } from './handlers/message.js';
