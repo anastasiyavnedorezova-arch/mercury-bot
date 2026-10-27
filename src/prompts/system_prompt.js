@@ -279,6 +279,11 @@ ${hintsForPrompt()}
 "options":["Одежда и обувь","Товары в дом",
 "Техника и мебель","Красота и уход за собой","Остальное"]}
 
+Пользователь: "Маша вернула долг 5000"
+Ответ: {"type":"income","amount":5000,"category":"Долг мне вернули",
+"comment":"Маша вернула долг","transaction_date":"${today}",
+"confidence":"high"}
+
 Пользователь: "наклейки 230"
 Ответ: {"type":"expense","amount":230,"category":"Остальное",
 "comment":"Наклейки","transaction_date":"${today}",

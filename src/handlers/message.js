@@ -20,7 +20,8 @@ import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { quickParse } from '../utils/quickParse.js';
 import { rememberPhrase, recallPhrase, memoryNote } from '../utils/phraseMemory.js';
-import { rememberUnrecognized, clearUnrecognized, takeUnrecognized } from '../utils/learnSignal.js';
+import { rememberUnrecognized, clearUnrecognized, takeUnrecognized, looksLikeMash } from '../utils/learnSignal.js';
+import { splitAmountAndWords } from '../utils/categoryHints.js';
 import { maybeAskToLearn } from './learn.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
 import { GOAL_CATEGORY, getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
@@ -791,7 +792,23 @@ export async function handleMessage(bot, msg) {
       parsed.clarification_type === 'wb_category' &&
       !mentionsMarketplace(effectiveText)
     ) {
-      // Модель ошиблась: маркетплейс в сообщении не назван — вопрос про него не нужен
+      // Модель ошиблась: маркетплейс в сообщении не назван — вопрос про него не нужен.
+      // Если в сообщении настоящее слово и сумма, записываем в «Остальное» с кнопкой «Исправить», а не гоним в ручной ввод
+      const parts = splitAmountAndWords(effectiveText);
+      const wbAmount = Number(parsed.amount) > 0 ? Number(parsed.amount) : (parts ? parseAmount(parts.amountText) : NaN);
+      if (parts && Number.isFinite(wbAmount) && wbAmount > 0 && !looksLikeMash(effectiveText)) {
+        console.log('[llm] wb_category без названия маркетплейса → Остальное', JSON.stringify(effectiveText));
+        await processAndSave(bot, chatId, telegramId, {
+          type: parsed.type === 'income' ? 'income' : 'expense',
+          amount: wbAmount,
+          category: 'Остальное',
+          comment: parts.words.trim().slice(0, 60),
+          transaction_date: parsed.transaction_date ?? todayStr(),
+          confidence: 'low',
+          uncertain: true,
+        }, effectiveText);
+        return;
+      }
       console.log('[llm] wb_category без названия маркетплейса → не распознано', JSON.stringify(effectiveText));
       rememberUnrecognized(telegramId, { text: effectiveText, reason: null });
       await bot.sendMessage(chatId, TEXTS.unrecognized, MANUAL_ERROR_KEYBOARD);
@@ -839,7 +856,16 @@ export async function handleMessage(bot, msg) {
   }
 
   // Слово настоящее, но категорию модель не нашла: запись ушла в «Остальное», скажем об этом и дадим исправить
-  if (!Array.isArray(parsed) && parsed.category === 'Остальное' && parsed.confidence === 'low') parsed.uncertain = true;
+  if (!Array.isArray(parsed) && parsed.category === 'Остальное' && parsed.confidence === 'low') {
+    // Случайный набор букв («ывапр 100») не запись: говорим «не распознал», а не пишем в «Остальное»
+    if (looksLikeMash(effectiveText)) {
+      console.log('[llm] случайный набор букв → не распознано', JSON.stringify(effectiveText));
+      rememberUnrecognized(telegramId, { text: effectiveText, reason: 'gibberish' });
+      await bot.sendMessage(chatId, TEXTS.unrecognized, MANUAL_ERROR_KEYBOARD);
+      return;
+    }
+    parsed.uncertain = true;
+  }
 
   await processAndSave(bot, chatId, telegramId, parsed, effectiveText);
 }

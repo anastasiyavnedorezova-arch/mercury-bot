@@ -18,12 +18,12 @@ const isCyr = (w) => /[А-Яа-яЁё]/.test(w);
 const isLat = (w) => /[A-Za-z]/.test(w);
 
 // Подряд идущие буквы с одного ряда клавиатуры («йцукен», «фывап», «нгшщ») — случайный набор
-function keyboardMash(word) {
+function keyboardMash(word, run = 4) {
   const w = word.toLowerCase().replace(/ё/g, 'е');
   for (const row of ROWS) {
     const rev = [...row].reverse().join('');
-    for (let i = 0; i + 4 <= w.length; i++) {
-      const part = w.slice(i, i + 4);
+    for (let i = 0; i + run <= w.length; i++) {
+      const part = w.slice(i, i + run);
       if (row.includes(part) || rev.includes(part)) return true;
     }
   }
@@ -33,6 +33,13 @@ function keyboardMash(word) {
 function goodCyrillicWord(w) {
   const letters = w.replace(/-/g, '');
   return letters.length >= 3 && VOWELS.test(letters) && !/(.)\1{3,}/i.test(letters) && !keyboardMash(letters);
+}
+
+// Откровенный случайный набор («ывапр», «ффффф», «йцукен»): такую фразу не записываем в «Остальное», она не запись.
+// Нарочно строже, чем analyzePhrase: настоящие сокращения без гласных («мфц», «днс») сюда не попадают.
+export function looksLikeMash(text) {
+  const words = (String(text ?? '').match(WORD) ?? []).filter((w) => !UNITS.test(w));
+  return words.some((w) => isCyr(w) && !isLat(w) && (/(.)\1{3,}/i.test(w) || keyboardMash(w, 5)));
 }
 
 // Слова фразы без сумм, ё → е, нижний регистр: по ним сравниваем фразы между собой
