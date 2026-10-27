@@ -19,6 +19,8 @@ import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { quickParse } from '../utils/quickParse.js';
+import { rememberUnrecognized, clearUnrecognized, takeUnrecognized } from '../utils/learnSignal.js';
+import { maybeAskToLearn } from './learn.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
 import { GOAL_CATEGORY, getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
 import { isGoalStateExpired } from '../utils/goalEdit.js';
@@ -513,6 +515,8 @@ async function handleManualAmountState(bot, msg) {
     return true;
   }
   await sendConfirmation(bot, chatId, parsed, txId, access);
+  // Фраза, которую бот не смог распознать: предлагаем передать её разработчикам
+  await maybeAskToLearn(bot, chatId, { userId, learn: state.learn, parsed });
   return true;
 }
 
@@ -524,7 +528,7 @@ export async function handleManualCallback(bot, query) {
   await bot.answerCallbackQuery(query.id);
 
   if (action === 'manual:start') {
-    userStates.set(telegramId, { manualStep: 'type', createdAt: Date.now() });
+    userStates.set(telegramId, { manualStep: 'type', learn: takeUnrecognized(telegramId), createdAt: Date.now() });
     await bot.sendMessage(chatId, 'Это расход или доход? 👇', {
       reply_markup: {
         inline_keyboard: [
@@ -738,6 +742,7 @@ export async function handleMessage(bot, msg) {
 
   // ── Обычный поток через LLM ───────────────────────────────────────────────
 
+  clearUnrecognized(telegramId); // новая запись: прежняя нераспознанная фраза больше не ждёт ручного ввода
   const userId = await getUserId(telegramId);
   let userCategories = [];
   // Свои категории модели показываем только с пробным периодом или подпиской: на free записи в них не пишутся
@@ -782,6 +787,7 @@ export async function handleMessage(bot, msg) {
     ) {
       // Модель ошиблась: маркетплейс в сообщении не назван — вопрос про него не нужен
       console.log('[llm] wb_category без названия маркетплейса → не распознано', JSON.stringify(effectiveText));
+      rememberUnrecognized(telegramId, { text: effectiveText, reason: null });
       await bot.sendMessage(chatId, TEXTS.unrecognized, MANUAL_ERROR_KEYBOARD);
       return;
     }
@@ -821,6 +827,7 @@ export async function handleMessage(bot, msg) {
       await bot.sendMessage(chatId, TEXTS.noAmount, MANUAL_ERROR_KEYBOARD);
       return;
     }
+    rememberUnrecognized(telegramId, { text: effectiveText, reason: parsed.reason });
     await bot.sendMessage(chatId, TEXTS.unrecognized, MANUAL_ERROR_KEYBOARD);
     return;
   }

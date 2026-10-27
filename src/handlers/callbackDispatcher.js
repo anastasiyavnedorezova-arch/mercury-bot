@@ -10,6 +10,7 @@ import { handleCategorySelection, handleManualCallback, handleGoalContribCallbac
 import { showMainMenu, handleMenuCallback } from './menu.js';
 import { handleTransactionCallback } from './transaction.js';
 import { handleFileCallback } from './fileUpload.js';
+import { handleLearnCallback } from './learn.js';
 import { handleLinkCallback } from './linkTelegram.js';
 import { userStates } from '../state.js';
 import { recordHint } from '../utils/botTexts.js';
@@ -151,6 +152,12 @@ export async function dispatchCallbackQuery(bot, query) {
   // Кнопки ручного ввода транзакции
   if (action.startsWith('manual:')) {
     await handleManualCallback(bot, query);
+    return;
+  }
+
+  // Кнопки «передать фразу разработчикам»
+  if (action.startsWith('learn:')) {
+    await handleLearnCallback(bot, query);
     return;
   }
 
