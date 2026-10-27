@@ -102,10 +102,15 @@ export function goalProgressLine(goal) {
     : `Накоплено ${formatRub(goal.saved)} ₽`;
 }
 
+export const UNCERTAIN_NOTE =
+  '🤔 Не знаю, куда это отнести, поэтому записал в «Остальное». Если нужна другая категория, нажми «Исправить».';
+
 export function buildConfirmationText(item) {
   const opener = pick(OPENERS[item.type] ?? OPENERS.expense);
   const progress = item.type === 'goal' && item.goal ? `\n📊 ${goalProgressLine(item.goal)}` : '';
-  const note = item.category_locked ? `\n${CUSTOM_LOCKED_NOTE}` : '';
+  let note = item.category_locked ? `\n${CUSTOM_LOCKED_NOTE}` : '';
+  if (item.uncertain) note += `\n${UNCERTAIN_NOTE}`;
+  if (item.remembered) note += `\n💡 Записал по твоей памяти: «${item.remembered.words}» → «${item.remembered.category}»`;
   return `${opener}\n${entryLine(item)}\n📅 ${formatRuDate(item.transaction_date)}${progress}${note}`;
 }
 

@@ -4,6 +4,8 @@ import { userStates } from '../state.js';
 import { syncTxGoalLink } from '../utils/goalProgress.js';
 import { buildGoalPickKeyboard } from '../utils/botTexts.js';
 import { listPickableCategories, findPickableCategory } from '../utils/categoryAccess.js';
+import { rememberPhrase, memoryNote, memoryKey } from '../utils/phraseMemory.js';
+import { maybeAskToLearn } from './learn.js';
 
 const TYPE_RU = { expense: 'расход', income: 'доход', goal: 'цель' };
 
@@ -33,6 +35,26 @@ async function fetchAndShowTx(bot, chatId, txId) {
     `💸 Сумма: ${data.amount} ₽`;
 
   await bot.sendMessage(chatId, text, MENU_KEYBOARD);
+}
+
+// Человек исправил категорию: запоминаем его выбор для такой же фразы и, если запись была в «Остальном»,
+// предлагаем передать фразу разработчикам. Ошибки здесь не должны ломать исправление.
+export async function learnFromCorrection(bot, chatId, userId, before, picked, db = supabase) {
+  try {
+    if (!before?.raw_message || (before.type !== 'expense' && before.type !== 'income')) return;
+    if (picked.type !== before.type) return; // расход в категорию дохода и наоборот не запоминаем
+    const oldName = before.categories?.name;
+    if (oldName === picked.name) return;
+    const parsed = { type: before.type, category: picked.name, amount: Number(before.amount) };
+    if (await rememberPhrase(db, userId, before.raw_message, parsed)) {
+      await bot.sendMessage(chatId, memoryNote(before.raw_message, picked.name));
+    }
+    if (oldName === 'Остальное' && memoryKey(before.raw_message)) { // только фразы «слова + одна сумма»
+      await maybeAskToLearn(bot, chatId, { userId, learn: { text: before.raw_message, reason: null }, parsed }, db);
+    }
+  } catch (err) {
+    console.error('[learn] correction error:', err.message);
+  }
 }
 
 async function getUserId(telegramId) {
@@ -225,10 +247,19 @@ export async function handleTransactionCallback(bot, query) {
       return;
     }
 
+    // Что было до исправления: нужно, чтобы запомнить фразу и понять, была ли запись в «Остальном»
+    const { data: before } = await supabase
+      .from('transactions')
+      .select('raw_message, type, amount, categories(name)')
+      .eq('id', txId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
     await supabase.from('transactions').update({ category_id: picked.id }).eq('id', txId).eq('user_id', userId);
     // «Цель» ↔ другая категория: привязка к цели должна совпадать с категорией
     const link = await syncTxGoalLink(supabase, txId);
     await fetchAndShowTx(bot, chatId, txId);
+    await learnFromCorrection(bot, chatId, userId, before, picked);
     if (link.status === 'needs_pick') {
       userStates.set(telegramId, { awaitingGoalPick: true, userId: link.userId, linkTxId: txId, createdAt: Date.now() });
       await bot.sendMessage(chatId, 'К какой цели относится этот взнос? 🎯', buildGoalPickKeyboard(link.goals));

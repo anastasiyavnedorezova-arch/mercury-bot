@@ -83,6 +83,8 @@ export function startScheduler(bot) {
         await supabase.from('transactions').delete().eq('user_id', user.id);
         await supabase.from('goals').delete().eq('user_id', user.id);
         await supabase.from('budget').delete().eq('user_id', user.id);
+        await supabase.from('user_phrases').delete().eq('user_id', user.id);
+        await supabase.from('recognition_signals').delete().eq('user_id', user.id);
         console.log('[cleanup] Purged data for user:', user.id);
       }
     } catch (err) {

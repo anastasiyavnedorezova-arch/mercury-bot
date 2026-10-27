@@ -19,6 +19,7 @@ import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { quickParse } from '../utils/quickParse.js';
+import { rememberPhrase, recallPhrase, memoryNote } from '../utils/phraseMemory.js';
 import { rememberUnrecognized, clearUnrecognized, takeUnrecognized } from '../utils/learnSignal.js';
 import { maybeAskToLearn } from './learn.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
@@ -515,7 +516,10 @@ async function handleManualAmountState(bot, msg) {
     return true;
   }
   await sendConfirmation(bot, chatId, parsed, txId, access);
-  // Фраза, которую бот не смог распознать: предлагаем передать её разработчикам
+  // Фраза, которую бот не смог распознать: запоминаем выбор человека и предлагаем передать фразу разработчикам
+  if (state.learn?.text && await rememberPhrase(supabase, userId, state.learn.text, parsed)) {
+    await bot.sendMessage(chatId, memoryNote(state.learn.text, parsed.category));
+  }
   await maybeAskToLearn(bot, chatId, { userId, learn: state.learn, parsed });
   return true;
 }
@@ -755,10 +759,12 @@ export async function handleMessage(bot, msg) {
     userCategories = data ?? [];
   }
 
-  // Короткая запись «развлечения 400» или «золотое яблоко 3400»: категория известна по справочнику слов, ИИ не нужен
-  const quick = quickParse(effectiveText, userCategories, todayStr());
+  // Короткая запись «развлечения 400» или «золотое яблоко 3400»: категория известна, ИИ не нужен.
+  // Сначала личная память человека (он сам так записывал раньше), потом общий справочник слов.
+  const recalled = await recallPhrase(supabase, userId, effectiveText, todayStr());
+  const quick = recalled ?? quickParse(effectiveText, userCategories, todayStr());
   if (quick) {
-    console.log('[quick] без ИИ', JSON.stringify({ text: effectiveText, category: quick.category }));
+    console.log(recalled ? '[memory] из памяти' : '[quick] без ИИ', JSON.stringify({ text: effectiveText, category: quick.category }));
     await processAndSave(bot, chatId, telegramId, quick, effectiveText);
     return;
   }
@@ -831,6 +837,9 @@ export async function handleMessage(bot, msg) {
     await bot.sendMessage(chatId, TEXTS.unrecognized, MANUAL_ERROR_KEYBOARD);
     return;
   }
+
+  // Слово настоящее, но категорию модель не нашла: запись ушла в «Остальное», скажем об этом и дадим исправить
+  if (!Array.isArray(parsed) && parsed.category === 'Остальное' && parsed.confidence === 'low') parsed.uncertain = true;
 
   await processAndSave(bot, chatId, telegramId, parsed, effectiveText);
 }

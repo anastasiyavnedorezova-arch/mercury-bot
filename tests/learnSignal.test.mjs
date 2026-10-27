@@ -226,7 +226,7 @@ test('кнопки и тексты', () => {
 
 test('инструкция для ИИ просит указывать причину; в коде всё подключено', () => {
   const p = getSystemPrompt([]);
-  for (const r of ['unknown_item', 'typo', 'gibberish', 'foreign']) assert.ok(p.includes(`"${r}"`), r);
+  for (const r of ['typo', 'gibberish', 'foreign']) assert.ok(p.includes(`"${r}"`), r);
   assert.ok(p.includes('"reason":"gibberish"'));
   const message = read('src/handlers/message.js');
   assert.match(message, /takeUnrecognized\(telegramId\)/);

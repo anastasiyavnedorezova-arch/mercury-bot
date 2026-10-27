@@ -75,7 +75,7 @@ export async function listPickableCategories(db, userId, access, groupId) {
 export async function findPickableCategory(db, userId, access, categoryId) {
   const { data } = await db
     .from('categories')
-    .select('id, name, user_id, is_active')
+    .select('id, name, type, user_id, is_active')
     .eq('id', categoryId)
     .maybeSingle();
   if (!data || data.is_active === false) return null;

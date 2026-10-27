@@ -41,7 +41,10 @@ export async function notifyAdminAboutLearnSignal(signal) {
 // learn — { text, reason } из памяти (то, что бот не распознал); parsed — запись, которую человек выбрал сам.
 export async function maybeAskToLearn(bot, chatId, { userId, learn, parsed }, db = supabase) {
   try {
-    if (!learn?.text || !userId) return 'skip:no_context';
+    if (!learn?.text || !userId) {
+      console.log('[learn] не спрашиваем: no_context');
+      return 'skip:no_context';
+    }
     const check = analyzePhrase(learn.text, learn.reason);
     if (!check.ok) {
       console.log('[learn] не спрашиваем:', check.why, JSON.stringify(learn.text));
@@ -50,9 +53,15 @@ export async function maybeAskToLearn(bot, chatId, { userId, learn, parsed }, db
     const key = phraseKey(learn.text);
     // Эту фразу уже передавали (любой человек) или тот же человек уже отвечал на неё: второй раз не спрашиваем
     const { data: sentRows } = await db.from('recognition_signals').select('id').eq('phrase_norm', key).eq('answer', 'sent').limit(1);
-    if (sentRows?.length) return 'skip:already_sent';
+    if (sentRows?.length) {
+      console.log('[learn] не спрашиваем: already_sent', JSON.stringify(learn.text));
+      return 'skip:already_sent';
+    }
     const { data: mineRows } = await db.from('recognition_signals').select('id').eq('phrase_norm', key).eq('user_id', userId).limit(1);
-    if (mineRows?.length) return 'skip:already_asked';
+    if (mineRows?.length) {
+      console.log('[learn] не спрашиваем: already_asked', JSON.stringify(learn.text));
+      return 'skip:already_asked';
+    }
 
     const { data: row, error } = await db.from('recognition_signals').insert({
       user_id: userId,

@@ -25,6 +25,7 @@ export const FOREIGN_KEYS = {
   promo_codes: {},
   promo_redemptions: { users: 'user_id' },
   recognition_signals: { users: 'user_id' },
+  user_phrases: { users: 'user_id' },
   subscriptions: { users: 'user_id' },
   telegram_link_tokens: { users: 'user_id' },
   transactions: { categories: 'category_id', goals: 'goal_id', users: 'user_id' },

@@ -101,6 +101,10 @@ async function moveData(q, Y, X, now) {
   moved.subscriptions = await count('UPDATE public.subscriptions SET user_id = $2 WHERE user_id = $1', [Y, X]);
   await q('UPDATE public.notifications SET user_id = $2 WHERE user_id = $1', [Y, X]);
   await q('UPDATE public.feedback SET user_id = $2 WHERE user_id = $1', [Y, X]);
+  // Личная память фраз: одинаковая фраза у обоих аккаунтов — остаётся запись аккаунта с сайта
+  await q('DELETE FROM public.user_phrases p WHERE p.user_id = $1 AND EXISTS (SELECT 1 FROM public.user_phrases x WHERE x.user_id = $2 AND x.phrase_norm = p.phrase_norm)', [Y, X]);
+  await q('UPDATE public.user_phrases SET user_id = $2 WHERE user_id = $1', [Y, X]);
+  await q('UPDATE public.recognition_signals SET user_id = $2 WHERE user_id = $1', [Y, X]);
   await q('UPDATE public.promo_redemptions SET user_id = $2 WHERE user_id = $1', [Y, X]);
 
   // Оплаченные периоды складываются: период, который кончается раньше, добавляется к тому, что кончается позже
