@@ -1056,6 +1056,13 @@
         subUntil.textContent = 'бессрочно';
         subStatusBadge.innerHTML = '';
       }
+
+      // Переход с другой страницы кабинета (?plans=1): сразу открываем окно выбора тарифа
+      window.__plansModalName = ((sub && sub.status === 'active') || (!sub && data.last_subscription)) ? 'modalRenew' : 'modalSubscribe';
+      if (window.__openPlansAfterLoad) {
+        window.__openPlansAfterLoad = false;
+        window.openModal(window.__plansModalName);
+      }
     }
 
 
@@ -1245,8 +1252,13 @@
       const pay = Number(qs.get('pay'));
       const paid = qs.get('paid');
       const promoParam = qs.get('promo');
-      if (!pay && !paid && !promoParam) return;
+      const plans = qs.get('plans');
+      if (!pay && !paid && !promoParam && !plans) return;
       history.replaceState(null, '', window.location.pathname);
+      if (plans) {
+        window.__openPlansAfterLoad = true;
+        if (window.__plansModalName) { window.__openPlansAfterLoad = false; window.openModal(window.__plansModalName); }
+      }
       if (promoParam) {
         const applied = await applyPromoCode(promoParam);
         if (applied && ![1, 6, 12].includes(pay)) showToast('Промокод применён. Выбери тариф: цена уже со скидкой.', 'success', 6000);

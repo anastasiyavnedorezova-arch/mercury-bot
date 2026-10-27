@@ -4,6 +4,8 @@ import { showBudget } from './budget.js';
 import { showGoal } from './goal.js';
 import { inTz } from '../utils/dateTz.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
+import { hadTrial } from '../utils/trial.js';
+import { featurePaywall } from '../utils/paywall.js';
 import { getContributions, goalSaved } from '../utils/goalProgress.js';
 
 // ── Константы ─────────────────────────────────────────────────────────────────
@@ -95,19 +97,9 @@ async function getBudgetSpent(userId) {
 
 // ── Paywall ───────────────────────────────────────────────────────────────────
 
-async function showPaywall(bot, chatId) {
-  await bot.sendMessage(
-    chatId,
-    'Эта функция доступна в подписке 💛\nХочешь активировать 30 дней бесплатно?',
-    {
-      reply_markup: {
-        inline_keyboard: [[
-          { text: 'Активировать пробный период', callback_data: 'onboarding:activate_trial' },
-          { text: 'Не сейчас', callback_data: 'menu:main' },
-        ]],
-      },
-    }
-  );
+async function showPaywall(bot, chatId, userId) {
+  const paywall = featurePaywall(await hadTrial(supabase, userId));
+  await bot.sendMessage(chatId, paywall.text, { reply_markup: paywall.keyboard });
 }
 
 // ── 1. Расходы за месяц ───────────────────────────────────────────────────────
@@ -489,7 +481,7 @@ export async function handleAnalyticsCallback(bot, query) {
   const access = await getUserAccess(userId);
 
   if (!FEATURE_ACCESS[action]?.includes(access)) {
-    await showPaywall(bot, chatId);
+    await showPaywall(bot, chatId, userId);
     return;
   }
 

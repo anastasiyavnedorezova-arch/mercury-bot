@@ -178,7 +178,7 @@ test('маршруты и бот: тариф передаётся в прове�
 
   const msg = read('src/handlers/message.js');
   assert.match(msg, /resolveCategory\(supabase, userId, parsed\.category, access\)/);
-  assert.match(msg, /customCategoriesAllowed\(await getUserAccess\(userId\)\)/, 'модели свои категории не показываем на free');
+  assert.ok(!msg.includes('customCategoriesAllowed'), 'с патча 53 модели свои категории показываем и на free: запись получает пояснение про подписку');
 
   const cats = read('src/handlers/categories.js');
   assert.equal((cats.match(/customCategoriesAllowed\(await getUserAccess\(/g) || []).length, 3, 'создание (кнопка и ввод названия) и подсказка в «Моих категориях»');
@@ -186,9 +186,10 @@ test('маршруты и бот: тариф передаётся в прове�
 
 test('тексты тарифа в боте и на сайте: редактирование и удаление записей — для всех, платные свои категории', () => {
   const sub = read('src/handlers/subscription.js');
-  assert.match(sub, /'✔️ редактирование и удаление записей\\n'/);
-  assert.ok(!sub.includes('❌ редактирование и удаление записей'));
-  assert.match(sub, /'❌ свои категории\\n\\n'/);
+  const paywall = read('src/utils/paywall.js'); // экран тарифа free (с патча 53 тексты вынесены сюда)
+  assert.match(paywall, /'✔️ редактирование и удаление записей\\n'/);
+  assert.ok(!paywall.includes('❌ редактирование и удаление записей') && !sub.includes('❌ редактирование и удаление записей'));
+  assert.match(paywall, /'❌ свои категории\\n\\n'/);
   assert.match(sub, /'✅ свои категории\\n\\n'/);
   assert.ok(!read('src/emails/letters.js').includes('✅ редактирование и удаление записей'));
   assert.match(read('public/index.html'), /Редактировать и удалять записи можно на любом тарифе, в личном кабинете и в чате с ботом\./);

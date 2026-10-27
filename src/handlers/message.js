@@ -8,7 +8,7 @@ import { getSystemPrompt } from '../prompts/system_prompt.js';
 import { userStates } from '../state.js';
 import { requireTerms } from './onboarding.js';
 import { getUserAccess } from '../utils/access.js';
-import { resolveCategory, applyCategoryScope, customCategoriesAllowed } from '../utils/categoryAccess.js';
+import { resolveCategory, applyCategoryScope } from '../utils/categoryAccess.js';
 import { handleTxEditState } from './transaction.js';
 import { handleGoalState } from './goal.js';
 import { handleBudgetState } from './budget.js';
@@ -750,8 +750,9 @@ export async function handleMessage(bot, msg) {
   clearUnrecognized(telegramId); // новая запись: прежняя нераспознанная фраза больше не ждёт ручного ввода
   const userId = await getUserId(telegramId);
   let userCategories = [];
-  // Свои категории модели показываем только с пробным периодом или подпиской: на free записи в них не пишутся
-  if (userId && customCategoriesAllowed(await getUserAccess(userId))) {
+  // Свои категории показываем модели всегда. На free запись в такую категорию уйдёт в «Остальное», но с пояснением
+  // («Свои категории доступны в подписке…»): иначе человек не поймёт, почему запись попала не туда
+  if (userId) {
     const { data } = await supabase
       .from('categories')
       .select('name, type, synonyms')

@@ -4,6 +4,8 @@ import { userStates } from '../state.js';
 import { parseAmount } from '../utils/parseAmount.js';
 import { inTz } from '../utils/dateTz.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
+import { hadTrial } from '../utils/trial.js';
+import { budgetPaywall } from '../utils/paywall.js';
 
 // ── Вспомогательные функции ───────────────────────────────────────────────────
 
@@ -119,18 +121,8 @@ export async function showBudget(bot, chatId, telegramId) {
   const access = await getUserAccess(userId);
 
   if (access === 'free') {
-    await bot.sendMessage(
-      chatId,
-      'Бюджет доступен в подписке. Хочешь активировать 30 дней бесплатно? 💛',
-      {
-        reply_markup: {
-          inline_keyboard: [[
-            { text: 'Активировать пробный период', callback_data: 'onboarding:activate_trial' },
-            { text: 'Не сейчас', callback_data: 'menu:main' },
-          ]],
-        },
-      }
-    );
+    const paywall = budgetPaywall(await hadTrial(supabase, userId));
+    await bot.sendMessage(chatId, paywall.text, { reply_markup: paywall.keyboard });
     return;
   }
 

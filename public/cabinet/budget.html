@@ -278,9 +278,25 @@
         .table-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 48px 24px; }
         .table-empty-text { font-size: 16px; font-weight: 600; color: var(--color-text-second); text-align: center; }
     
+        /* Карточка бюджета на тарифе free: те же размытие и затемнение, что на дашборде */
+        .budget-locked-wrap { position: relative; width: 340px; border-radius: 24px; overflow: hidden; }
+        .budget-locked-wrap .budget-card { opacity: 0.4; pointer-events: none; user-select: none; }
+        .budget-locked-overlay {
+          position: absolute; inset: 0;
+          background: rgba(0,0,0,0.40);
+          backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          gap: 12px; z-index: 2; border-radius: 24px;
+        }
+        .budget-locked-overlay__text { color: #fff; font-size: 18px; font-weight: 600; line-height: 26px; text-align: center; max-width: 230px; }
+
         /* ══════ RESPONSIVE ══════ */
         @media (max-width: 1024px) {
           .budget-card { width: 100%; max-width: 420px; }
+          .budget-locked-wrap { width: 100%; max-width: 420px; }
+        }
+        @media (max-width: 900px) {
+          .budget-locked-overlay__text { font-size: 16px; line-height: 24px; }
         }
         @media (max-width: 900px) {
           .page-content { padding: 28px 20px 120px; }
@@ -658,6 +674,18 @@
     '</div>';
   }
 
+  // ── Карточка бюджета без подписки: образец под размытием и затемнением, как на дашборде ──
+  var LOCK_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggb3BhY2l0eT0iMC41IiBkPSJNMiAxNkMyIDEzLjE3MTYgMiAxMS43NTc0IDIuODc4NjggMTAuODc4N0MzLjc1NzM2IDEwIDUuMTcxNTcgMTAgOCAxMEgxNkMxOC44Mjg0IDEwIDIwLjI0MjYgMTAgMjEuMTIxMyAxMC44Nzg3QzIyIDExLjc1NzQgMjIgMTMuMTcxNiAyMiAxNkMyMiAxOC44Mjg0IDIyIDIwLjI0MjYgMjEuMTIxMyAyMS4xMjEzQzIwLjI0MjYgMjIgMTguODI4NCAyMiAxNiAyMkg4QzUuMTcxNTcgMjIgMy43NTczNiAyMiAyLjg3ODY4IDIxLjEyMTNDMiAyMC4yNDI2IDIgMTguODI4NCAyIDE2WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTEyIDE4QzEzLjEwNDYgMTggMTQgMTcuMTA0NiAxNCAxNkMxNCAxNC44OTU0IDEzLjEwNDYgMTQgMTIgMTRDMTAuODk1NCAxNCAxMCAxNC44OTU0IDEwIDE2QzEwIDE3LjEwNDYgMTAuODk1NCAxOCAxMiAxOFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik02Ljc1IDhDNi43NSA1LjEwMDUxIDkuMTAwNTEgMi43NSAxMiAyLjc1QzE0Ljg5OTUgMi43NSAxNy4yNSA1LjEwMDUxIDE3LjI1IDhWMTAuMDAzNkMxNy44MTc0IDEwLjAwODkgMTguMzEzNSAxMC4wMjIgMTguNzUgMTAuMDU0NlY4QzE4Ljc1IDQuMjcyMDggMTUuNzI3OSAxLjI1IDEyIDEuMjVDOC4yNzIwOCAxLjI1IDUuMjUgNC4yNzIwOCA1LjI1IDhWMTAuMDU0NkM1LjY4NjUxIDEwLjAyMiA2LjE4MjY0IDEwLjAwODkgNi43NSAxMC4wMDM2VjhaIiBmaWxsPSJ3aGl0ZSIvPgo8L3N2Zz4K';
+  function renderLockedCard() {
+    return '<div class="budget-locked-wrap">' +
+      renderFilledCard(100000, 40000) +
+      '<div class="budget-locked-overlay">' +
+        '<img src="' + LOCK_ICON + '" width="24" height="24" alt=""/>' +
+        '<span class="budget-locked-overlay__text">Разблокируй функционал в подписке</span>' +
+      '</div>' +
+    '</div>';
+  }
+
   // ── Main load ────────────────────────────────────────────
   async function loadPage() {
     var container = document.getElementById('budgetContainer');
@@ -680,11 +708,8 @@
       var sub = meData.subscription;
       var subStatus = sub ? sub.status : null;
 
-      // Redirect non-subscribers to dashboard
-      if (subStatus !== 'active' && subStatus !== 'trial') {
-        window.location.replace('/cabinet/dashboard');
-        return;
-      }
+      // Без подписки страница открывается: таблица «История» видна, а карточка бюджета закрыта размытием
+      var hasAccess = subStatus === 'active' || subStatus === 'trial';
 
       renderHeader({ username: meData.username || 'Пользователь', subscription: meData.subscription || null });
 
@@ -731,9 +756,11 @@
       var tableMonths = months; // current month first (already reversed)
 
       // Render
-      var cardHtml = curBudgetAmt !== null
-        ? renderFilledCard(curBudgetAmt, curSpent)
-        : renderEmptyCard();
+      var cardHtml = !hasAccess
+        ? renderLockedCard()
+        : curBudgetAmt !== null
+          ? renderFilledCard(curBudgetAmt, curSpent)
+          : renderEmptyCard();
 
       var tableHtml = buildTable(tableMonths, budgetByMonth, spentByMonth);
 

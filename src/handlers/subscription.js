@@ -8,6 +8,8 @@ import { findRecentPaidSubscription } from '../payments/process.js';
 import { PLANS, askPromo, continueWithoutPromo, handlePromoMessage } from './subscriptionPromo.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 import { SUPPORT_EMAIL } from '../emails/config.js';
+import { hadTrial } from '../utils/trial.js';
+import { freeTariffScreen } from '../utils/paywall.js';
 
 // Отмена подписки и возврат — по письму (условия возврата — в оферте, п. 6)
 export const CANCEL_SUBSCRIPTION_TEXT =
@@ -49,29 +51,8 @@ export async function showSubscription(bot, chatId, telegramId) {
     .maybeSingle();
 
   if (access === 'free') {
-    await bot.sendMessage(
-      chatId,
-      '💳 Твой тариф: Бесплатный\n\n' +
-      'Доступно:\n' +
-      '✔️ 1 финансовая цель\n' +
-      '✔️ учёт доходов и расходов\n' +
-      '✔️ редактирование и удаление записей\n' +
-      '✔️ ежемесячная аналитика\n\n' +
-      'Недоступно без подписки:\n' +
-      '❌ бюджет и алерты\n' +
-      '❌ до 3 целей с расчётом доходности\n' +
-      '❌ аналитика по запросу\n' +
-      '❌ свои категории\n\n' +
-      'У тебя есть возможность попробовать все функции бесплатно 30 дней 💛',
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'Активировать пробный период', callback_data: 'onboarding:activate_trial' }],
-            [{ text: 'Оформить подписку', callback_data: 'buy_subscription' }],
-          ],
-        },
-      }
-    );
+    const screen = freeTariffScreen(await hadTrial(supabase, userId));
+    await bot.sendMessage(chatId, screen.text, { reply_markup: screen.keyboard });
     return;
   }
 
