@@ -10,10 +10,11 @@ import { todayStr } from '../utils/dateTz.js';
 import { reserveAi, denyAi } from '../utils/aiLimit.js';
 import { replyIfQuota } from '../utils/openaiErrors.js';
 import { telegramFileUrl } from '../utils/endpoints.js';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, hintsForPrompt, canonicalCategory, refineStatementItem } from '../utils/categoryHints.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-function getStatementPrompt() {
+export function getStatementPrompt() {
   const today = todayStr();
   return `Ты — парсер банковских выписок. Проанализируй изображение(я) банковской выписки и извлеки все транзакции.
 
@@ -37,18 +38,17 @@ function getStatementPrompt() {
 
 Используй "confidence": "low" если не уверен в сумме, дате или категории.
 
-КАТЕГОРИИ ДОХОДОВ:
-Зарплата, Фриланс и подработка, Продажа и соцвыплаты, Проценты по вкладу,
-Инвестиционный доход, Кэшбек и бонусы, Подарки мне, Возврат денег, Долг мне вернули
+КАТЕГОРИИ ДОХОДОВ (пиши название ровно так):
+${INCOME_CATEGORIES.join('\n')}
 
-КАТЕГОРИИ РАСХОДОВ:
-Продукты, Кафе, рестораны, Кофе на вынос, Доставка еды,
-Жильё, Дом и быт, Техника и мебель,
-Транспорт, Авто,
-Здоровье, Красота, Спорт,
-Одежда и обувь, Путешествия, Отдых и развлечения, Обучение, Подписки, Подарки другим,
-Кредиты и займы, Налоги, Комиссии, Долг я дал, Благотворительность, Связь и интернет, Цель,
-Дети, Животные, Другое`;
+КАТЕГОРИИ РАСХОДОВ (пиши название ровно так):
+${EXPENSE_CATEGORIES.join('\n')}
+
+Любое название не из этих списков система не поймёт, а запись уйдёт в «Остальное». «Остальное» — только если ни одна категория не подходит.
+Налоговая служба (ФНС), налоги, штрафы, ГИБДД — «Налоги и штрафы». Золотое яблоко, Летуаль, Рив Гош — «Красота и уход за собой», не «Продукты».
+
+СЛОВА И НАЗВАНИЯ ПО КАТЕГОРИЯМ:
+${hintsForPrompt()}`;
 }
 
 function downloadFile(url, destPath) {
@@ -137,17 +137,19 @@ async function checkDuplicates(userId, transactions) {
   return result;
 }
 
-function buildSummaryText(transactions) {
+export function buildSummaryText(transactions) {
   const newOnes = transactions.filter((t) => !t.isDuplicate);
   const dupCount = transactions.length - newOnes.length;
   const show = transactions.slice(0, 20);
 
   let text = `📄 Нашёл ${transactions.length} транзакций в выписке:\n\n`;
+  let num = 0; // номера только у тех, что будут записаны: по ним человек правит категории
   for (const tx of show) {
     const emoji = tx.type === 'income' ? '📈' : '📉';
     const dup = tx.isDuplicate ? ' ⚠️дубль' : '';
     const comment = tx.comment ? ` (${tx.comment})` : '';
-    text += `${emoji} ${tx.transaction_date} — ${tx.category}: ${tx.amount} ₽${comment}${dup}\n`;
+    const label = tx.isDuplicate ? '' : `${++num}. `;
+    text += `${label}${emoji} ${tx.transaction_date} — ${tx.category}: ${tx.amount} ₽${comment}${dup}\n`;
   }
   if (transactions.length > 20) {
     text += `\n...и ещё ${transactions.length - 20} транзакций\n`;
@@ -158,7 +160,7 @@ function buildSummaryText(transactions) {
   if (newOnes.length === 0) {
     text += '\nВсе транзакции уже были записаны ранее.';
   } else {
-    text += `\nЗаписать ${newOnes.length} новых транзакций?`;
+    text += `\nЗаписать ${newOnes.length} новых транзакций?\nЧтобы поправить категорию, напиши номер и категорию, например: «2 — Налоги и штрафы». Можно сразу несколько.`;
   }
   return text;
 }
@@ -234,7 +236,7 @@ export async function handleFileUpload(bot, msg, fileType) {
   // Analyze via GPT-4o
   let rawTransactions = [];
   try {
-    rawTransactions = await analyzeStatement(base64Content, mimeType);
+    rawTransactions = (await analyzeStatement(base64Content, mimeType)).map(refineStatementItem);
     console.log(`[fileUpload] Found ${rawTransactions.length} transactions for user ${telegramId}`);
   } catch (err) {
     console.error('[fileUpload] Vision error:', err.message);
@@ -325,6 +327,35 @@ function buildUpdatedSummary(transactions) {
   return text;
 }
 
+// Правки человека к списку из выписки. Номера в ответе модели — как в списке для человека (с единицы).
+export function applyStatementCorrections(pending, parsed) {
+  const updated = pending.map((tx) => ({ ...tx }));
+  const updates = Array.isArray(parsed?.updates) ? parsed.updates : [];
+  const updatedIndexes = new Set(updates.map((u) => u.index - 1));
+
+  // Шаг 1: applyToAll — только для транзакций без индивидуальных правок
+  if (parsed?.applyToAll) {
+    const { category, type } = parsed.applyToAll;
+    updated.forEach((tx, i) => {
+      if (!updatedIndexes.has(i) && (tx.category === 'Остальное' || tx.category === 'Другое' || tx.confidence !== 'high')) {
+        if (category) tx.category = canonicalCategory(category);
+        if (type) tx.type = type;
+      }
+    });
+  }
+
+  // Шаг 2: индивидуальные правки — приоритет выше applyToAll
+  for (const upd of updates) {
+    const at = typeof upd.index === 'number' ? upd.index - 1 : -1;
+    if (updated[at]) {
+      if (upd.category) updated[at].category = canonicalCategory(upd.category);
+      if (upd.type) updated[at].type = upd.type;
+      if (upd.comment !== undefined) updated[at].comment = upd.comment;
+    }
+  }
+  return updated;
+}
+
 export async function handleFileTextResponse(bot, msg) {
   const telegramId = msg.from.id;
   const chatId = msg.chat.id;
@@ -338,7 +369,9 @@ export async function handleFileTextResponse(bot, msg) {
   await bot.sendChatAction(chatId, 'typing');
 
   const correctionPrompt = `У пользователя есть список транзакций на подтверждение.
-Pending транзакции: ${JSON.stringify(state.pendingTransactions)}
+Транзакции с номерами (n — номер в списке пользователя, начиная с 1): ${JSON.stringify(state.pendingTransactions.map((t, i) => ({ n: i + 1, ...t })))}
+
+Категории, которые существуют (пиши название ровно так): ${[...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].join(', ')}
 
 Пользователь написал правки: "${msg.text}"
 
@@ -361,17 +394,18 @@ Pending транзакции: ${JSON.stringify(state.pendingTransactions)}
     },
     {
       "index": 2,
-      "category": "Дом и быт",
+      "category": "Товары в дом",
       "type": "expense"
     }
   ],
   "applyToAll": {
-    "category": "Дом и быт",
+    "category": "Товары в дом",
     "type": "expense"
   }
 }
 
-applyToAll — если пользователь говорит "остальное всё в категорию X" — применить ко всем у кого категория "Другое" или confidence не high. Если applyToAll не нужен — верни null.
+index — это n транзакции из списка (первая имеет n = 1).
+applyToAll — если пользователь говорит "остальное всё в категорию X" — применить ко всем у кого категория "Остальное" или confidence не high. Если applyToAll не нужен — верни null.
 Верни ТОЛЬКО валидный JSON без пояснений.`;
 
   let parsed;
@@ -394,30 +428,7 @@ applyToAll — если пользователь говорит "остальн�
     return true;
   }
 
-  // Apply updates
-  const updated = state.pendingTransactions.map((tx) => ({ ...tx }));
-  const updates = Array.isArray(parsed.updates) ? parsed.updates : [];
-  const updatedIndexes = new Set(updates.map((u) => u.index));
-
-  // Шаг 1: applyToAll — только для транзакций без индивидуальных правок
-  if (parsed.applyToAll) {
-    const { category, type } = parsed.applyToAll;
-    updated.forEach((tx, i) => {
-      if (!updatedIndexes.has(i) && (tx.category === 'Другое' || tx.confidence !== 'high')) {
-        if (category) tx.category = category;
-        if (type) tx.type = type;
-      }
-    });
-  }
-
-  // Шаг 2: индивидуальные правки — приоритет выше applyToAll
-  for (const upd of updates) {
-    if (typeof upd.index === 'number' && updated[upd.index]) {
-      if (upd.category) updated[upd.index].category = upd.category;
-      if (upd.type) updated[upd.index].type = upd.type;
-      if (upd.comment !== undefined) updated[upd.index].comment = upd.comment;
-    }
-  }
+  const updated = applyStatementCorrections(state.pendingTransactions, parsed);
 
   // Save updated state
   userStates.set(telegramId, { ...state, pendingTransactions: updated });

@@ -18,6 +18,7 @@ import { handleSubscriptionEmailState, handleSubscriptionPromoState } from './su
 import { handleCategoryNameState } from './categories.js';
 import { handleFileTextResponse } from './fileUpload.js';
 import { parseAmount } from '../utils/parseAmount.js';
+import { quickParse } from '../utils/quickParse.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
 import { GOAL_CATEGORY, getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
 import { isGoalStateExpired } from '../utils/goalEdit.js';
@@ -737,6 +738,26 @@ export async function handleMessage(bot, msg) {
 
   // ── Обычный поток через LLM ───────────────────────────────────────────────
 
+  const userId = await getUserId(telegramId);
+  let userCategories = [];
+  // Свои категории модели показываем только с пробным периодом или подпиской: на free записи в них не пишутся
+  if (userId && customCategoriesAllowed(await getUserAccess(userId))) {
+    const { data } = await supabase
+      .from('categories')
+      .select('name, type, synonyms')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+    userCategories = data ?? [];
+  }
+
+  // Короткая запись «развлечения 400» или «золотое яблоко 3400»: категория известна по справочнику слов, ИИ не нужен
+  const quick = quickParse(effectiveText, userCategories, todayStr());
+  if (quick) {
+    console.log('[quick] без ИИ', JSON.stringify({ text: effectiveText, category: quick.category }));
+    await processAndSave(bot, chatId, telegramId, quick, effectiveText);
+    return;
+  }
+
   // Дневной лимит запросов к ИИ (голосовое уже учтено при распознавании)
   if (!msg.fromVoice) {
     const gate = await reserveAi(supabase, telegramId, 'text');
@@ -745,17 +766,6 @@ export async function handleMessage(bot, msg) {
 
   let parsed;
   try {
-    const userId = await getUserId(telegramId);
-    let userCategories = [];
-    // Свои категории модели показываем только с пробным периодом или подпиской: на free записи в них не пишутся
-    if (userId && customCategoriesAllowed(await getUserAccess(userId))) {
-      const { data } = await supabase
-        .from('categories')
-        .select('name, type, synonyms')
-        .eq('user_id', userId)
-        .eq('is_active', true);
-      userCategories = data ?? [];
-    }
     parsed = await parseWithRetry((opts) => callLLM(effectiveText, userCategories, opts), effectiveText);
   } catch (err) {
     console.error('OpenAI error:', err.message);

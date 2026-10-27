@@ -1,4 +1,5 @@
 import { todayStr } from '../utils/dateTz.js';
+import { hintsForPrompt } from '../utils/categoryHints.js';
 
 export function getSystemPrompt(userCategories = []) {
   const today = todayStr();
@@ -198,7 +199,35 @@ wildberries, вб, wb, ozon, озон, lamoda, ламода, вайлдберр�
 Новый телефон / покупка → "Техника и мебель"
 Оплата связи / тарифа → "Связь и интернет"
 
+НАЗВАНИЕ КАТЕГОРИИ ИЛИ ЗНАКОМОЕ СЛОВО + СУММА — ЭТО ВСЕГДА ЗАПИСЬ:
+Если человек пишет название категории или слово из списка ниже («развлечения 400», «налоги 5000», «спорт 1500», «отдых 2000»), это прямое указание категории.
+error: unrecognized для таких сообщений НЕЛЬЗЯ.
+Магазины и организации: Золотое яблоко (ЗЯ) — косметика, категория «Красота и уход за собой», НЕ «Продукты»; ФНС и налоговая — «Налоги и штрафы».
+
+СЛОВА И НАЗВАНИЯ ПО КАТЕГОРИЯМ:
+${hintsForPrompt()}
+
 ПРИМЕРЫ:
+
+Пользователь: "развлечения 400"
+Ответ: {"type":"expense","amount":400,"category":"Отдых и развлечения",
+"comment":null,"transaction_date":"${today}","confidence":"high"}
+
+Пользователь: "налоги 5000"
+Ответ: {"type":"expense","amount":5000,"category":"Налоги и штрафы",
+"comment":null,"transaction_date":"${today}","confidence":"high"}
+
+Пользователь: "Федеральная Налоговая Служба 2920"
+Ответ: {"type":"expense","amount":2920,"category":"Налоги и штрафы",
+"comment":"ФНС","transaction_date":"${today}","confidence":"high"}
+
+Пользователь: "золотое яблоко 3400"
+Ответ: {"type":"expense","amount":3400,"category":"Красота и уход за собой",
+"comment":"Золотое яблоко","transaction_date":"${today}","confidence":"high"}
+
+Пользователь: "ЗЯ помада 1800"
+Ответ: {"type":"expense","amount":1800,"category":"Красота и уход за собой",
+"comment":"Золотое яблоко","transaction_date":"${today}","confidence":"high"}
 
 Пользователь: "книги 499"
 Ответ: {"type":"expense","amount":499,"category":"Обучение",
