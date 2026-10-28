@@ -280,7 +280,7 @@ test('документы: про счётчик сказано честно, с�
   assert.ok(!/не устанавливаем счетчики/.test(cookies), 'старая фраза про отсутствие счётчиков');
   assert.match(read('public/legal/privacy.html'), /Сервис веб-аналитики/);
   assert.match(read('public/legal/privacy.html'), /Редакция от 23\.10\.2026/);
-  assert.match(read('public/legal/consent.html'), /Редакция от 23\.10\.2026/);
+  assert.match(read('public/legal/consent.html'), /Редакция от 28\.10\.2026/);
   for (const f of ['public/index.html', 'public/legal/offer.html', 'public/legal/privacy.html', 'public/legal/consent.html', 'public/legal/cookies.html']) {
     assert.match(read(f), /data-cookie-settings/, f);
   }
