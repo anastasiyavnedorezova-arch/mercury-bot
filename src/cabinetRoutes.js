@@ -380,6 +380,12 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
     // Взносы по целям: у каждой цели свои (transactions.goal_id)
     const contributions = await getContributions(supabase, req.userId);
 
+    // Ни одной записи за всё время: кабинет сам откроет чат с приветствием (патч 56)
+    const { count: txTotal } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', req.userId);
+
     // Баланс текущего месяца
     let income = 0, expenses = 0;
     transactions.forEach(t => {
@@ -426,10 +432,12 @@ router.get('/api/dashboard', requireAuth, async (req, res) => {
 
     res.json({
       user: {
+        id: user.id,
         name: user.web_username || user.tg_username || user.email || 'Пользователь',
         subscription_status: sub?.status ?? null,
         subscription_end: sub?.ends_at ?? null,
       },
+      no_records: (txTotal ?? 0) === 0,
       balance: { income, expenses, total: income - expenses },
       goals: goalsWithSaved,
       top_categories,

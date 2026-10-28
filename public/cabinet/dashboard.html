@@ -749,6 +749,9 @@
       // Top-5 categories
       renderTop5Card(d.top_categories);
 
+      // Первый заход без единой записи: поверх дашборда сразу открывается чат с приветствием
+      if (d.no_records) autoOpenChatOnce(d.user && d.user.id);
+
     } catch (err) {
       console.error('[dashboard] load error:', err);
       const _lkUserInfoErr = document.getElementById('lkUserInfo');
@@ -756,6 +759,16 @@
     }
   }
 
+
+  // Один раз на человека в этом браузере (если человек закрыл чат, сам он больше не откроется)
+  function autoOpenChatOnce(userId) {
+    var key = 'finnik_chat_autoopen_' + (userId || '');
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    } catch (e) { return; }
+    setTimeout(function () { if (window.openBotWidget) window.openBotWidget(); }, 400);
+  }
 
   loadDashboard();
 

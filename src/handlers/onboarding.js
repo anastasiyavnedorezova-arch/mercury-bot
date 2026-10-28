@@ -8,32 +8,26 @@ import { recordHint } from '../utils/botTexts.js';
 import { startTrial, hadTrial } from '../utils/trial.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 
-const STEP1_INTRO =
-  `Привет! Я Финник — твой личный финансовый помощник 👋\n\n` +
-  `Помогу тебе: \n` +
-  `💰понять, куда уходят деньги;\n` +
-  `🎯поставить финансовую цель и двигаться к ней; \n` +
-  `📊видеть понятную аналитику по доходам и расходам.\n\n` +
-  `Просто пиши мне в свободной форме — например, «продукты 2500» \n` +
-  `или «зарплата 120000» — и я всё запишу.`;
+const GREETING = `Привет! Я бот сервиса Финник Деньги 👋`;
+
+const RECORD_PROMPT =
+  `Давай начнём с первой записи. Напиши мне обычным сообщением, например «продукты 2500» или «зарплата 120000». ` +
+  `Категорию и сумму я определю сам, а ты поправишь, если нужно.`;
 
 // Запасной вариант: пробный период почему-то не включился (сбой базы) — предлагаем включить вручную
 const STEP1_TEXT =
-  `${STEP1_INTRO}\n\n` +
-  `У тебя есть 30 дней бесплатного доступа ко всем функциям — ` +
-  `бюджет, уведомления, глубокая аналитика. Активировать сразу ` +
-  `или сначала подробнее рассказать о моих возможностях?`;
+  `${GREETING}\n\n` +
+  `Я дарю тебе 30 дней бесплатного доступа ко всем функциям, нужно только активировать пробный период 🎁\n\n` +
+  `${RECORD_PROMPT}`;
 
 function trialStartedText(endsAt) {
   const until = endsAt
     ? ` (до ${new Date(endsAt).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' })})`
     : '';
-  return `${STEP1_INTRO}\n\n` +
-    `🎁 Я уже включил тебе 30 дней бесплатного доступа ко всем функциям${until} — ` +
-    `бюджет, уведомления, глубокая аналитика.\n\n` +
-    `Расскажу подробнее о моих возможностях или сразу запишем первую трату?`;
+  return `Я дарю тебе 30 дней бесплатного доступа ко всем функциям${until} 🎁\n\n${RECORD_PROMPT}`;
 }
 
+// Четыре «расскажи подробнее» убраны под одну кнопку «Что ещё умею»: главное действие — первая запись
 const INFO_ROWS = [
   [{ text: 'Как записывать расходы и доходы?', callback_data: 'onboarding:how_to_record' }],
   [{ text: 'Расскажи о целях', callback_data: 'onboarding:about_goals' }],
@@ -41,12 +35,16 @@ const INFO_ROWS = [
   [{ text: 'Зачем устанавливать бюджет?', callback_data: 'onboarding:about_budget' }],
 ];
 
-// Запасной вариант (пробный период не включён): последняя кнопка — включить вручную
+const FIRST_RECORD_ROW = [{ text: '✍️ Записать первую трату', callback_data: 'onboarding:start_transaction' }];
+const MORE_ROW = [{ text: 'Что ещё умею', callback_data: 'onboarding:more' }];
+
+// Запасной вариант (пробный период не включён): сверху — включить вручную
 const STEP1_KEYBOARD = {
   reply_markup: {
     inline_keyboard: [
-      ...INFO_ROWS,
       [{ text: 'Активировать пробный период', callback_data: 'onboarding:activate_trial' }],
+      FIRST_RECORD_ROW,
+      MORE_ROW,
     ],
   },
 };
@@ -54,16 +52,46 @@ const STEP1_KEYBOARD = {
 // Пробный период уже включён
 const STEP1_TRIAL_KEYBOARD = {
   reply_markup: {
+    inline_keyboard: [FIRST_RECORD_ROW, MORE_ROW],
+  },
+};
+
+// Один раз, сразу после самой первой записи человека: что делать дальше
+const FIRST_RECORD_TEXT =
+  `Вот и первая запись 🎉 Так же просто можно записывать любые траты и доходы: всё собирается в истории и аналитике.\n\n` +
+  `Что дальше? Могу помочь поставить финансовую цель или бюджет на месяц.`;
+
+const FIRST_RECORD_KEYBOARD = {
+  reply_markup: {
     inline_keyboard: [
-      ...INFO_ROWS,
-      [{ text: 'Записать первую трату', callback_data: 'onboarding:start_transaction' }],
+      [{ text: '🎯 Поставить цель', callback_data: 'onboarding:start_goal' }],
+      [{ text: '📊 Установить бюджет', callback_data: 'onboarding:start_budget' }],
     ],
   },
 };
 
+// Показывает подсказку, если запись — самая первая у человека (txId — только что сохранённая запись)
+export async function maybeShowFirstRecordTip(bot, chatId, txId, db = supabase) {
+  if (!txId) return false;
+  try {
+    const { data: tx } = await db.from('transactions').select('user_id').eq('id', txId).maybeSingle();
+    if (!tx?.user_id) return false;
+    const { count } = await db
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', tx.user_id);
+    if (count !== 1) return false;
+    await bot.sendMessage(chatId, FIRST_RECORD_TEXT, FIRST_RECORD_KEYBOARD);
+    return true;
+  } catch (err) {
+    console.error('[onboarding] first record tip:', err.message);
+    return false;
+  }
+}
+
 const CONSENT_TEXT =
-  `Привет! Прежде чем начать — пара формальностей 📋\n\n` +
-  `Нажимая «Принимаю и продолжаю», ты:\n` +
+  `${GREETING} Записываю доходы и расходы по обычным сообщениям, слежу за бюджетом и помогаю копить на цели.\n\n` +
+  `Чтобы начать, нужно твоё согласие. Нажимая «Принимаю и продолжаю», ты:\n` +
   `• принимаешь условия публичной оферты;\n` +
   `• даёшь согласие на обработку персональных данных.\n\n` +
   `Финник хранит данные о твоих доходах и расходах на серверах в России. ` +
@@ -112,14 +140,11 @@ export async function maybeShowWebWelcome(bot, chatId, userId) {
     }
   }
 
-  const intro = STEP1_INTRO;
-  let tail = 'Рассказать подробнее о моих возможностях или сразу запишем первую трату?';
-  if (access === 'trial') tail = `Пробный период уже активирован — тебе доступны все функции 🎉 ${tail}`;
-  if (access === 'active') tail = `Подписка уже активна — тебе доступны все функции 🎉 ${tail}`;
+  let lead = '';
+  if (access === 'trial') lead = 'Пробный период уже активирован: тебе доступны все функции 🎉\n\n';
+  if (access === 'active') lead = 'Подписка уже активна: тебе доступны все функции 🎉\n\n';
 
-  const rows = [...INFO_ROWS];
-  rows.push([{ text: 'Записать первую трату', callback_data: 'onboarding:start_transaction' }]);
-  await bot.sendMessage(chatId, `${intro}\n\n${tail}`, { reply_markup: { inline_keyboard: rows } });
+  await bot.sendMessage(chatId, `${GREETING}\n\n${lead}${RECORD_PROMPT}`, STEP1_TRIAL_KEYBOARD);
   return true;
 }
 
@@ -175,6 +200,13 @@ export async function handleOnboardingCallback(bot, query) {
     return;
   }
 
+  // ── Кнопка «Что ещё умею»: четыре вопроса о возможностях ─────────────────
+
+  if (action === 'onboarding:more') {
+    await bot.sendMessage(chatId, 'Расскажу подробнее 👇', { reply_markup: { inline_keyboard: INFO_ROWS } });
+    return;
+  }
+
   // ── Кнопка 1: Как записывать расходы и доходы? ───────────────────────────
 
   if (action === 'onboarding:how_to_record') {
@@ -184,8 +216,8 @@ export async function handleOnboardingCallback(bot, query) {
       `доходов и расходов в свободной форме, главное пиши мне о каждом ` +
       `поступлении или трате, а я уже сам определяю категорию и запишу 🙌\n\n` +
       `Например: «продукты 1800», «такси 450», «зарплата 120000»\n\n` +
-      `Это безопасно. Все данные хранятся на защищённом сервере и не ` +
-      `передаются третьим лицам. Я всегда здесь — просто напиши мне ` +
+      `Это безопасно. Данные о твоих доходах и расходах хранятся на ` +
+      `защищённом сервере в России. Я всегда здесь — просто напиши мне ` +
       `в любой момент.\n\n` +
       `Попробуй прямо сейчас 👇`,
       {

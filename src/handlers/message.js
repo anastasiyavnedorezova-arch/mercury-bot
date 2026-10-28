@@ -6,7 +6,7 @@ import 'dotenv/config';
 import { supabase } from '../db.js';
 import { getSystemPrompt } from '../prompts/system_prompt.js';
 import { userStates } from '../state.js';
-import { requireTerms } from './onboarding.js';
+import { requireTerms, maybeShowFirstRecordTip } from './onboarding.js';
 import { getUserAccess } from '../utils/access.js';
 import { resolveCategory, applyCategoryScope } from '../utils/categoryAccess.js';
 import { handleTxEditState } from './transaction.js';
@@ -91,6 +91,8 @@ async function sendConfirmation(bot, chatId, parsed, txId, access) {
     keyboard = MENU_KEYBOARD;
   }
   await bot.sendMessage(chatId, buildConfirmationText(parsed), keyboard);
+  // Самая первая запись человека: один раз подсказываем, что делать дальше (цель, бюджет)
+  await maybeShowFirstRecordTip(bot, chatId, txId);
 }
 
 const FAQ_SYSTEM_PROMPT = `Ты — Финник, дружелюбный помощник сервиса «Финник · Деньги» (личные финансы: чат в Telegram и личный кабинет на сайте) 💛
