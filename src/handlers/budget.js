@@ -6,6 +6,7 @@ import { inTz } from '../utils/dateTz.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 import { hadTrial } from '../utils/trial.js';
 import { budgetPaywall } from '../utils/paywall.js';
+import { getMonthExpenses, buildForecast, forecastText } from '../utils/budgetCalc.js';
 
 // ── Вспомогательные функции ───────────────────────────────────────────────────
 
@@ -47,66 +48,26 @@ function progressBar(percent) {
 
 const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
-async function getSpentThisMonth(userId) {
-  const { data: cats } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('is_system', false);
-
-  const catIds = cats?.map(c => c.id) ?? [];
-  if (catIds.length === 0) return 0;
-
-  const { data: txData } = await supabase
-    .from('transactions')
-    .select('amount')
-    .eq('user_id', userId)
-    .eq('type', 'expense')
-    .gte('transaction_date', getMonthStart())
-    .lt('transaction_date', getNextMonthStart())
-    .in('category_id', catIds);
-
-  return txData?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0;
+// Все расходы месяца, включая крупные (жильё, кредиты, цели) — так же, как в кабинете
+async function getMonthStats(userId) {
+  return getMonthExpenses(supabase, userId, getMonthStart(), getNextMonthStart());
 }
 
 // ── Прогноз до конца месяца ───────────────────────────────────────────────────
 
 async function showForecast(bot, chatId, userId, budget) {
-  const spent = await getSpentThisMonth(userId);
+  const stats = await getMonthStats(userId);
 
-  if (spent === 0) {
+  if (stats.total === 0) {
     await bot.sendMessage(chatId, 'Пока нет данных для прогноза — внеси первые расходы 💛', MENU_KEYBOARD);
     return;
   }
 
   const now = inTz();
-  const passedDays = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const remainingDays = daysInMonth - passedDays;
-  const avgDaily = spent / passedDays;
-  const forecast = spent + avgDaily * remainingDays;
+  const f = buildForecast(stats, now.getDate(), daysInMonth);
 
-  let text =
-    `📊 Прогноз до конца месяца\n\n` +
-    `Потрачено сейчас: ${formatNum(spent)} ₽\n` +
-    `Среднедневной расход: ${formatNum(avgDaily)} ₽/день\n` +
-    `Прогноз до конца месяца: ${formatNum(forecast)} ₽\n\n`;
-
-  if (!budget) {
-    text += `При текущем темпе до конца месяца потратишь примерно ${formatNum(forecast)} ₽`;
-  } else {
-    const forecastPct = (forecast / budget.amount) * 100;
-    if (forecastPct <= 100) {
-      text +=
-        `Без учёта крупных трат, если сохранишь темп расходов — ` +
-        `израсходуешь ${Math.round(forecastPct)}% своего бюджета 💛`;
-    } else {
-      text +=
-        `⚠️ Без учёта крупных трат, если сохранишь темп расходов — ` +
-        `перерасходуешь бюджет на ${Math.round(forecastPct - 100)}%`;
-    }
-  }
-
-  await bot.sendMessage(chatId, text, MENU_KEYBOARD);
+  await bot.sendMessage(chatId, forecastText(f, budget?.amount), MENU_KEYBOARD);
 }
 
 // ── Точка входа: /budget и menu:budget ───────────────────────────────────────
@@ -146,7 +107,7 @@ export async function showBudget(bot, chatId, telegramId) {
     return;
   }
 
-  const spent = await getSpentThisMonth(userId);
+  const { total: spent } = await getMonthStats(userId);
   const remaining = budget.amount - spent;
   const percent = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
@@ -155,7 +116,8 @@ export async function showBudget(bot, chatId, telegramId) {
     `💰 Бюджет на ${currentMonthName()}: ${formatNum(budget.amount)} ₽\n\n` +
     `✅ Потрачено: ${formatNum(spent)} ₽ (${Math.round(percent)}%)\n` +
     `💳 Остаток: ${formatNum(remaining)} ₽\n\n` +
-    `${progressBar(percent)}`,
+    `${progressBar(percent)}\n\n` +
+    `В бюджет входят все расходы, включая жильё и кредиты.`,
     {
       reply_markup: {
         inline_keyboard: [

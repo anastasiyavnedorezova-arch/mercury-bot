@@ -1,5 +1,6 @@
 import { supabase } from '../db.js';
 import { pickSubscription, expireRow, hasLaterAccess } from '../utils/trial.js';
+import { getMonthExpenses, buildForecast, LARGE_NOTE } from '../utils/budgetCalc.js';
 
 // ── Хелперы дат ───────────────────────────────────────────────────────────────
 
@@ -265,13 +266,6 @@ export async function checkBudgetAlerts(bot) {
   console.log('[budget_alerts] total users with budget:', budgets?.length ?? 0);
   if (!budgets?.length) return;
 
-  const { data: nonSystemCats } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('is_system', false);
-
-  const catIds = nonSystemCats?.map(c => c.id) ?? [];
-
   for (const budget of budgets) {
     try {
       const sub = await getSubscription(budget.user_id);
@@ -284,18 +278,9 @@ export async function checkBudgetAlerts(bot) {
         .single();
       if (!userRow) continue;
 
-      let spentQuery = supabase
-        .from('transactions')
-        .select('amount')
-        .eq('user_id', budget.user_id)
-        .eq('type', 'expense')
-        .gte('transaction_date', thisMonthStart)
-        .lt('transaction_date', nextMonthStart);
-
-      if (catIds.length > 0) spentQuery = spentQuery.in('category_id', catIds);
-
-      const { data: txData } = await spentQuery;
-      const spent = (txData ?? []).reduce((s, t) => s + t.amount, 0);
+      // Считаем все расходы месяца, включая жильё и кредиты — так же, как кабинет
+      const stats = await getMonthExpenses(supabase, budget.user_id, thisMonthStart, nextMonthStart);
+      const spent = stats.total;
       const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
       console.log('[budget_alerts] user:', userRow.id, 'spent:', spent, 'budget:', budget.amount, 'percent:', Math.round(pct), 'day_of_month:', dayOfMonth);
@@ -339,8 +324,7 @@ export async function checkBudgetAlerts(bot) {
 
       // Триггер 3: после 20-го, прогноз >= 100%
       if (dayOfMonth > 20) {
-        const avgDaily = dayOfMonth > 0 ? spent / dayOfMonth : 0;
-        const forecast = spent + avgDaily * remainingDays;
+        const { forecast } = buildForecast(stats, dayOfMonth, daysInMonth);
         const overrun = Math.round(forecast - budget.amount);
 
         if (forecast >= budget.amount) {
@@ -349,7 +333,7 @@ export async function checkBudgetAlerts(bot) {
               userRow.external_id,
               `📌 По текущему темпу бюджет к концу месяца будет превышен ` +
               `примерно на ${formatNum(overrun)} ₽. ` +
-              `Можно скорректировать расходы — хочешь посмотреть детали?`,
+              `Можно скорректировать расходы — хочешь посмотреть детали?\n\n${LARGE_NOTE}`,
               {
                 reply_markup: {
                   inline_keyboard: [[

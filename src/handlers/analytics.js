@@ -7,6 +7,7 @@ import { findUserIdByExternalId } from '../utils/findUser.js';
 import { hadTrial } from '../utils/trial.js';
 import { featurePaywall } from '../utils/paywall.js';
 import { getContributions, goalSaved } from '../utils/goalProgress.js';
+import { getMonthExpenses, buildForecast, forecastText } from '../utils/budgetCalc.js';
 
 // ── Константы ─────────────────────────────────────────────────────────────────
 
@@ -73,26 +74,9 @@ function formatNum(n) {
 
 const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
-// Расходы по нeсистемным категориям текущего месяца (для прогноза, как в budget.js)
-async function getBudgetSpent(userId) {
-  const { data: cats } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('is_system', false);
-
-  const catIds = cats?.map(c => c.id) ?? [];
-  if (catIds.length === 0) return 0;
-
-  const { data } = await supabase
-    .from('transactions')
-    .select('amount')
-    .eq('user_id', userId)
-    .eq('type', 'expense')
-    .gte('transaction_date', getMonthStart())
-    .lt('transaction_date', getNextMonthStart())
-    .in('category_id', catIds);
-
-  return data?.reduce((sum, t) => sum + (t.amount ?? 0), 0) ?? 0;
+// Все расходы месяца, включая крупные (жильё, кредиты, цели) — как в кабинете и в разделе «Бюджет»
+async function getMonthStats(userId) {
+  return getMonthExpenses(supabase, userId, getMonthStart(), getNextMonthStart());
 }
 
 // ── Paywall ───────────────────────────────────────────────────────────────────
@@ -223,20 +207,13 @@ async function analyticsTopExpenses(bot, chatId, userId) {
 async function analyticsTopExpensesMonth(bot, chatId, userId) {
   const now = inTz();
 
-  const { data: nonSystemCats } = await supabase
-    .from('categories')
-    .select('id')
-    .eq('is_system', false);
-  const catIds = nonSystemCats?.map(c => c.id) ?? [];
-
   const { data } = await supabase
     .from('transactions')
     .select('amount, categories(name)')
     .eq('user_id', userId)
     .eq('type', 'expense')
     .gte('transaction_date', getMonthStart(now))
-    .lt('transaction_date', getNextMonthStart(now))
-    .in('category_id', catIds.length > 0 ? catIds : ['00000000-0000-0000-0000-000000000000']);
+    .lt('transaction_date', getNextMonthStart(now));
 
   const rows = data ?? [];
 
@@ -309,9 +286,9 @@ async function analyticsCompare(bot, chatId, userId) {
 // ── 7. Прогноз до конца месяца ────────────────────────────────────────────────
 
 async function analyticsForecast(bot, chatId, userId) {
-  const spent = await getBudgetSpent(userId);
+  const stats = await getMonthStats(userId);
 
-  if (spent === 0) {
+  if (stats.total === 0) {
     await bot.sendMessage(chatId, 'Пока нет данных для прогноза — внеси первые расходы 💛', MENU_KEYBOARD);
     return;
   }
@@ -325,34 +302,10 @@ async function analyticsForecast(bot, chatId, userId) {
     .maybeSingle();
 
   const now = inTz();
-  const passedDays = now.getDate();
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const remainingDays = daysInMonth - passedDays;
-  const avgDaily = spent / passedDays;
-  const forecast = spent + avgDaily * remainingDays;
+  const f = buildForecast(stats, now.getDate(), daysInMonth);
 
-  let text =
-    `📊 Прогноз до конца месяца\n\n` +
-    `Потрачено сейчас: ${formatNum(spent)} ₽\n` +
-    `Среднедневной расход: ${formatNum(avgDaily)} ₽/день\n` +
-    `Прогноз до конца месяца: ${formatNum(forecast)} ₽\n\n`;
-
-  if (!budget) {
-    text += `При текущем темпе до конца месяца потратишь примерно ${formatNum(forecast)} ₽`;
-  } else {
-    const forecastPct = (forecast / budget.amount) * 100;
-    if (forecastPct <= 100) {
-      text +=
-        `Без учёта крупных трат, если сохранишь темп расходов — ` +
-        `израсходуешь ${Math.round(forecastPct)}% своего бюджета 💛`;
-    } else {
-      text +=
-        `⚠️ Без учёта крупных трат, если сохранишь темп расходов — ` +
-        `перерасходуешь бюджет на ${Math.round(forecastPct - 100)}%`;
-    }
-  }
-
-  await bot.sendMessage(chatId, text, MENU_KEYBOARD);
+  await bot.sendMessage(chatId, forecastText(f, budget?.amount), MENU_KEYBOARD);
 }
 
 // ── Ежемесячный отчёт (по нажатию кнопки) ────────────────────────────────────
