@@ -11,11 +11,12 @@ import { baseUrl } from '../emails/config.js';
 
 // Порядок кнопок: запись, история, категории, цель, бюджет, аналитика, подписка, личный кабинет, обратная связь, вопрос
 const MENU_BUTTONS = [
+  // Ширину кнопки задаёт Telegram: одна в строке — на всю ширину, две — по половине
   [
     { text: 'Записать расход или доход', callback_data: 'menu:add' },
-    { text: 'История транзакций', callback_data: 'menu:history' },
   ],
   [
+    { text: 'История транзакций', callback_data: 'menu:history' },
     { text: 'Мои категории', callback_data: 'menu:categories' },
   ],
   [

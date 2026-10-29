@@ -106,6 +106,10 @@ test('главное меню в Telegram: кнопка «Личный каби�
   const cab = tg.flat().find((b) => b.text === 'Личный кабинет');
   assert.equal(cab.url, 'https://stage.example.test/cabinet/login');
   assert.equal(cab.callback_data, undefined);
+  // ширина: «Записать расход или доход» и «Личный кабинет» одни в строке (на всю ширину), остальные парами
+  assert.deepEqual(tg.map((r) => r.length), [1, 2, 2, 2, 1, 2]);
+  assert.equal(tg[0][0].text, 'Записать расход или доход');
+  assert.deepEqual(tg[1].map((b) => b.text), ['История транзакций', 'Мои категории']);
   // остальные кнопки остались с прежними действиями
   assert.equal(tg.flat().find((b) => b.text === 'Задать вопрос').callback_data, 'ask_question');
   // в веб-чате кабинет уже открыт: кнопки нет
