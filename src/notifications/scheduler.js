@@ -5,6 +5,7 @@ import {
   checkBudgetAlerts,
   checkTrialEnding,
   checkSubscriptionEnding,
+  checkFirstRecordNudge,
 } from './index.js';
 import { sendMonthlyAnalytics } from '../handlers/analytics.js';
 import { supabase } from '../db.js';
@@ -45,6 +46,11 @@ export function startScheduler(bot) {
   cron.schedule('0 10 * * *', () => {
     console.log('[scheduler] Running daily checks...');
     runDailyChecks(bot);
+  }, { timezone: 'Europe/Moscow' });
+
+  // Напоминание первого дня (нет ни одной записи через ~3 часа после согласия): проход раз в 15 минут
+  cron.schedule('*/15 * * * *', () => {
+    checkFirstRecordNudge(bot).catch((e) => console.error('[scheduler] nudge:', e.message));
   }, { timezone: 'Europe/Moscow' });
 
   // Цепочка писем: проход раз в 5 минут (по умолчанию выключена: LETTERS_MODE=off)

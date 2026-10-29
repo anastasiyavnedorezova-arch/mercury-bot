@@ -25,12 +25,18 @@ export const AUTH_LINKS = [
 ];
 
 export const GREETING_BUTTONS = [
-  { label: '✍️ Записать первую трату', to: AUTH },
+  { label: '✍️ Записать первую трату', to: 'try' },
   { label: 'Что ещё умею', to: 'more' },
 ];
 
 // Ответы на информационные кнопки — как в настоящем онбординге бота
 export const FLOW = {
+  // Демо (патч 57): посетитель пишет трату в строке чата, разбор идёт в браузере без сервера и без ИИ
+  try: {
+    text:
+      'Попробуй прямо здесь 👇 Напиши трату или доход вместе с суммой в строке внизу, например «кофе 250» или «зарплата 120000». ' +
+      'Это демо: ничего не сохраняется.',
+  },
   more: {
     text: 'Расскажу подробнее 👇',
     buttons: [
@@ -48,7 +54,7 @@ export const FLOW = {
       'Это безопасно. Данные о твоих доходах и расходах хранятся на защищённом сервере в России. ' +
       'Я всегда здесь — просто напиши мне в любой момент.\n\n' +
       'Попробуй прямо сейчас 👇',
-    buttons: [{ label: 'Записать первый расход или доход', to: AUTH }],
+    buttons: [{ label: 'Записать первый расход или доход', to: 'try' }],
   },
   about_goals: {
     text:
@@ -119,6 +125,50 @@ export function replyFor(to) {
   const node = FLOW[to];
   if (node) return { text: node.text, buttons: node.buttons || [], links: [] };
   return { text: AUTH_TEXT, buttons: [], links: AUTH_LINKS };
+}
+
+// ── Демо: разбор короткой записи в браузере (тот же справочник слов, что и в боте: src/utils/categoryHints.js) ──
+
+export const DEMO_NOTE =
+  'Это пример: в демо ничего не сохраняется. Создай аккаунт, и записи будут копиться в истории и аналитике 🙌';
+
+export const DEMO_UNKNOWN_TEXT =
+  'В демо я разбираю только короткие записи вроде «кофе 250». В аккаунте я пойму и более сложные фразы, например с несколькими тратами сразу 🙌\n\n' +
+  'Регистрация бесплатная, а 30 дней пробного периода со всеми функциями включатся сразу 🎁';
+
+export const DEMO_NO_AMOUNT_TEXT =
+  'Напиши трату или доход вместе с суммой, например «кофе 250» или «зарплата 120000» 🙂';
+
+const DEMO_OPENERS = { expense: 'Записал ✅', income: 'Ура, доход записан 🎉' };
+const DEMO_EMOJI = { expense: '💸', income: '💰' };
+const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// parse — функция quickParse(text, userCategories, today) из src/utils/quickParse.js (в браузере её подгружает виджет)
+export function demoReply(text, parse, now = new Date()) {
+  const t = String(text ?? '').trim();
+  if (!/\d/.test(t)) return { text: DEMO_NO_AMOUNT_TEXT, buttons: [], links: [] };
+  let q = null;
+  try { q = parse ? parse(t, [], isoDay(now)) : null; } catch { q = null; }
+  if (!q) return { text: DEMO_UNKNOWN_TEXT, buttons: [], links: AUTH_LINKS };
+  const sign = q.type === 'income' ? '+' : '';
+  const amount = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(q.amount);
+  const label = q.comment ? `${q.category} (${q.comment})` : q.category;
+  const date = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  return {
+    text: `${DEMO_OPENERS[q.type] ?? DEMO_OPENERS.expense}\n${DEMO_EMOJI[q.type] ?? '💸'} ${sign}${amount} ₽ — ${label}\n📅 ${date}\n\n${DEMO_NOTE}`,
+    buttons: [],
+    links: AUTH_LINKS,
+  };
+}
+
+// Разбор подгружается из того же файла, что использует бот (сервер отдаёт его по /js/shared/); сам текст никуда не уходит
+async function loadParser() {
+  try {
+    const m = await import('/js/shared/quickParse.js');
+    return m.quickParse;
+  } catch {
+    return null;
+  }
 }
 
 // Если посетитель уже вошёл в кабинет — кнопка чата ведёт в настоящий чат
@@ -257,7 +307,25 @@ export function initLandingWidget(doc, storage) {
       // Длинный ответ читают с начала: показываем его верх, а не конец (короткий упрётся в низ сам)
       chat.scrollTop = Math.max(0, answer.offsetTop - 12);
       busy = false;
+      if (to === 'try') input.focus({ preventScroll: true });
     }, REPLY_DELAY_MS);
+  }
+
+  // Сообщение посетителя: показываем демо-разбор записи (в браузере, без сервера)
+  function typed(text) {
+    if (busy) return;
+    busy = true;
+    bubble(text, 'user');
+    const dots = typing();
+    scrollDown();
+    Promise.all([loadParser(), new Promise((r) => setTimeout(r, REPLY_DELAY_MS))]).then(([parse]) => {
+      dots.remove();
+      const r = demoReply(text, parse);
+      const answer = bubble(r.text, 'bot');
+      if (r.links.length) links(r.links);
+      chat.scrollTop = Math.max(0, answer.offsetTop - 12);
+      busy = false;
+    });
   }
 
   function open() {
@@ -289,7 +357,7 @@ export function initLandingWidget(doc, storage) {
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
-    act(text);
+    typed(text);
   });
   doc.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && overlay.classList.contains('is-open')) close();

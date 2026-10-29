@@ -245,6 +245,60 @@ export async function checkActivityReminders(bot) {
   }
 }
 
+// ── 2а. Напоминание первого дня: нет ни одной записи через ~3 часа после согласия (патч 57) ─────────────────
+
+export const FIRST_RECORD_NUDGE_TEXT =
+  'Первой записи пока нет. Начни с самого простого: напиши, на что ушли деньги сегодня, например «кофе 250» ☕';
+
+// Только с 9:00 до 21:00 по Москве; ночью откладываем до утра
+export function inNudgeWindow(now = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Moscow', hour: '2-digit', hour12: false }).format(now)) % 24;
+  return hour >= 9 && hour < 21;
+}
+
+// Один раз на человека: согласие принято от 3 до 24 часов назад, ни одной записи, сообщение ещё не отправляли.
+// Запуск каждые 15 минут. Запись в журнал делаем до отправки, чтобы два запуска подряд не написали дважды.
+export async function checkFirstRecordNudge(bot, db = supabase, now = new Date()) {
+  if (!inNudgeWindow(now)) return 0;
+  const from = new Date(now.getTime() - 24 * 3_600_000).toISOString();
+  const to = new Date(now.getTime() - 3 * 3_600_000).toISOString();
+  const { data: users, error } = await db
+    .from('users')
+    .select('id, external_id')
+    .eq('channel', 'telegram')
+    .not('terms_accepted_at', 'is', null)
+    .gte('terms_accepted_at', from)
+    .lte('terms_accepted_at', to);
+  if (error) { console.error('[nudge] users:', error.message); return 0; }
+
+  let sent = 0;
+  for (const user of users ?? []) {
+    try {
+      const { count: txCount } = await db
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      if ((txCount ?? 0) > 0) continue;
+      const { data: already } = await db
+        .from('notifications')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('type', 'first_record_nudge')
+        .limit(1);
+      if (already?.length) continue;
+      await db.from('notifications').insert({ user_id: user.id, type: 'first_record_nudge' });
+      await bot.sendMessage(user.external_id, FIRST_RECORD_NUDGE_TEXT, {
+        reply_markup: { inline_keyboard: [[{ text: '✍️ Записать первую трату', callback_data: 'onboarding:start_transaction' }]] },
+      });
+      sent++;
+    } catch (err) {
+      console.error(`[nudge] user ${user.external_id}:`, err.message);
+    }
+  }
+  if (sent) console.log('[nudge] отправлено:', sent);
+  return sent;
+}
+
 // ── 3. Алерты превышения бюджета ──────────────────────────────────────────────
 
 export async function checkBudgetAlerts(bot) {

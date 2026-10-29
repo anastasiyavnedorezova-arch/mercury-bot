@@ -14,6 +14,7 @@ import { sendLetter } from './emails/send.js';
 import { maySendTo } from './emails/config.js';
 import { addSeoRoutes } from './seo.js';
 import { rateLimit } from './utils/httpLimits.js';
+import { addSharedModuleRoute } from './sharedModules.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +46,9 @@ export function startWebhookServer(bot) {
   });
   // robots.txt, sitemap.xml, noindex для stage — до всех страниц
   addSeoRoutes(app);
+  // Демо на лендинге разбирает короткие записи в браузере тем же кодом, что и бот (патч 57):
+  // отдаём только три чистых модуля, больше ничего из src/ наружу не выходит
+  addSharedModuleRoute(app, path.join(__dirname, 'utils'));
   // ── Clean URL redirects (no .html) ──────────────────────────────────────
   // .html → clean
   app.get('/cabinet/login.html',     (req, res) => res.redirect(301, '/cabinet/login'));

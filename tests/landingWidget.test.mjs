@@ -44,11 +44,14 @@ test('информационные кнопки отвечают как наст
   }
 });
 
-test('действия (записать трату, цель, бюджет, сообщение, меню) ведут к «войди или зарегистрируйся»', () => {
+test('действия (цель, бюджет, запись из аналитики, меню) ведут к «войди или зарегистрируйся»', () => {
   const actions = Object.values(FLOW).flatMap((n) => n.buttons || []).concat(GREETING_BUTTONS).filter((b) => b.to === AUTH);
   assert.deepEqual(actions.map((b) => b.label).sort(), [
-    'Задать бюджет', '✍️ Записать первую трату', 'Записать первый расход или доход', 'Записать расход или доход', 'Поставить цель',
+    'Задать бюджет', 'Записать расход или доход', 'Поставить цель',
   ].sort());
+  // «Записать первую трату» и «Записать первый расход или доход» ведут в демо (патч 57), а не к регистрации
+  const demo = Object.values(FLOW).flatMap((n) => n.buttons || []).concat(GREETING_BUTTONS).filter((b) => b.to === 'try');
+  assert.deepEqual(demo.map((b) => b.label).sort(), ['Записать первый расход или доход', '✍️ Записать первую трату'].sort());
   for (const to of [AUTH, undefined, 'unknown']) {
     const r = replyFor(to);
     assert.equal(r.text, AUTH_TEXT);

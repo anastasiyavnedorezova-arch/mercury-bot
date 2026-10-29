@@ -49,10 +49,11 @@ test('№1 приветствие: через 5 минут, в любое вре
   assert.equal(key({ ...f(6 * 60e3), isNew: false }), null, 'старым аккаунтам приветствие не нужно');
 });
 
-test('№2 активация: 48 часов, есть согласие, нет записей, в окне', () => {
-  const base = { subs: [trial(20 * D)], sent: { welcome: sentRow(47 * H) } };
-  assert.equal(key(facts({ ...base, user: { created_at: ago(47 * H) } })), null);
+test('№2 активация: 24 часа, есть согласие, нет записей, в окне', () => {
+  const base = { subs: [trial(20 * D)], sent: { welcome: sentRow(22 * H) } };
+  assert.equal(key(facts({ ...base, user: { created_at: ago(23 * H) } })), null);
   assert.equal(key(facts({ ...base, user: { created_at: ago(49 * H) } })), 'activation');
+  assert.equal(key(facts({ ...base, user: { created_at: ago(25 * H) } })), 'activation');
   assert.equal(key(facts({ ...base, user: { created_at: ago(49 * H) }, hasTransactions: true })), null);
   assert.equal(key(facts({ ...base, user: { created_at: ago(49 * H), email_letters_accepted: false } })), null);
   assert.equal(key(facts({ ...base, user: { created_at: ago(49 * H), email_unsubscribed_at: ago(H) } })), null);

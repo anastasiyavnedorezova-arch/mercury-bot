@@ -16,7 +16,7 @@ const D = 24 * H;
 export const RULES = {
   welcomeAfter: 5 * MIN,        // №1: через 5 минут после регистрации (cron раз в 5 минут → 5–10 минут)
   welcomeUntil: 24 * H,         // №1: если не успели за сутки — уже не шлём
-  activationAfter: 48 * H,      // №2: через 48 часов после регистрации, если нет ни одной записи
+  activationAfter: 24 * H,      // №2: через 24 часа после регистрации, если нет ни одной записи (было 48, патч 57)
   activationUntil: 10 * D,      //     …но не позже 10 дней после регистрации
   activation2After: 24 * H,     // №2.1: через 24 часа после №2
   helpAfter: 48 * H,            // №2.2: через 48 часов после №2.1
@@ -139,7 +139,7 @@ export function decideLetter(f) {
       return { key: 'activation2', why: '24 ч после №2, записей нет' };
     }
     if (age >= RULES.activationAfter && age <= RULES.activationUntil && ok('activation')) {
-      return { key: 'activation', why: '48 ч после регистрации, записей нет' };
+      return { key: 'activation', why: '24 ч после регистрации, записей нет' };
     }
   }
 
