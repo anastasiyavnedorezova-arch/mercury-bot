@@ -94,3 +94,33 @@ test('лендинг: шаги «Создай аккаунт → Сделай п
   assert.ok(i1 > 0 && i2 > i1 && i3 > i2);
   assert.ok(!h.includes('Сделай свою первую запись!'));
 });
+
+test('главное меню в Telegram: кнопка «Личный кабинет» ведёт на страницу входа, порядок кнопок как заказано', async () => {
+  process.env.APP_BASE_URL = 'https://stage.example.test/';
+  const { mainMenuButtons } = await import('../src/handlers/menu.js');
+  const tg = mainMenuButtons({});
+  assert.deepEqual(tg.flat().map((b) => b.text), [
+    'Записать расход или доход', 'История транзакций', 'Мои категории', 'Моя цель', 'Мой бюджет',
+    'Аналитика', 'Управление подпиской', 'Личный кабинет', 'Обратная связь', 'Задать вопрос',
+  ]);
+  const cab = tg.flat().find((b) => b.text === 'Личный кабинет');
+  assert.equal(cab.url, 'https://stage.example.test/cabinet/login');
+  assert.equal(cab.callback_data, undefined);
+  // остальные кнопки остались с прежними действиями
+  assert.equal(tg.flat().find((b) => b.text === 'Задать вопрос').callback_data, 'ask_question');
+  // в веб-чате кабинет уже открыт: кнопки нет
+  const web = mainMenuButtons({ isWeb: true }).flat().map((b) => b.text);
+  assert.ok(!web.includes('Личный кабинет') && web.length === 9);
+  delete process.env.APP_BASE_URL;
+});
+
+test('ответы бота про личный кабинет: как попасть и зачем нужен', () => {
+  const m = read('src/handlers/message.js');
+  const faq = m.slice(m.indexOf('const FAQ_SYSTEM_PROMPT'), m.indexOf('const FAQ_WEB_NOTE'));
+  assert.ok(faq.includes('Q: Как попасть в личный кабинет?'));
+  assert.ok(faq.includes('кнопка «Личный кабинет»') && faq.includes('вход по почте и паролю') && faq.includes('по кнопке Telegram') && faq.includes('синхронизированы и сохранены в личном кабинете'));
+  assert.ok(faq.includes('Q: Зачем мне личный кабинет?'));
+  for (const s of ['без VPN', 'выгрузить в таблицу (.csv)', 'аналитика, расход бюджета']) assert.ok(faq.includes(s), s);
+  assert.ok(read('public/cabinet/history.html').includes('Выгрузить таблицу в .csv'), 'выгрузка в кабинете есть');
+  assert.ok(m.includes('он уже в кабинете'), 'в веб-чате бот не отправляет человека на кнопку');
+});

@@ -6,8 +6,10 @@ import { showFeedback } from './feedback.js';
 import { showSubscription } from './subscription.js';
 import { showCategories } from './categories.js';
 import { userStates } from '../state.js';
-import { recordHint } from '../utils/botTexts.js';
+import { recordHint, isWebBot } from '../utils/botTexts.js';
+import { baseUrl } from '../emails/config.js';
 
+// Порядок кнопок: запись, история, категории, цель, бюджет, аналитика, подписка, личный кабинет, обратная связь, вопрос
 const MENU_BUTTONS = [
   [
     { text: 'Записать расход или доход', callback_data: 'menu:add' },
@@ -25,14 +27,23 @@ const MENU_BUTTONS = [
     { text: 'Управление подпиской', callback_data: 'menu:subscription' },
   ],
   [
+    { text: 'Личный кабинет', url: 'CABINET_LOGIN' },
+  ],
+  [
     { text: 'Обратная связь', callback_data: 'menu:feedback' },
     { text: 'Задать вопрос', callback_data: 'ask_question' },
   ],
 ];
 
+// Кнопка «Личный кабинет» ведёт на страницу входа (на stage — на stage). В веб-чате её нет: человек уже в кабинете.
+export function mainMenuButtons(bot) {
+  const rows = isWebBot(bot) ? MENU_BUTTONS.filter((r) => !r.some((b) => b.url)) : MENU_BUTTONS;
+  return rows.map((r) => r.map((b) => (b.url ? { ...b, url: `${baseUrl()}/cabinet/login` } : b)));
+}
+
 export async function showMainMenu(bot, chatId) {
   await bot.sendMessage(chatId, 'Главное меню 👇', {
-    reply_markup: { inline_keyboard: MENU_BUTTONS },
+    reply_markup: { inline_keyboard: mainMenuButtons(bot) },
   });
 }
 
