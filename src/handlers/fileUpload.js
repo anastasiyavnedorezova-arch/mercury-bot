@@ -33,8 +33,11 @@ export function getStatementPrompt() {
   "type": "expense" | "income",
   "category": "точное название категории из списка ниже",
   "comment": "название магазина или места если указано, иначе null",
-  "confidence": "high" | "low"
+  "confidence": "high" | "low",
+  "own_transfer": true | false
 }
+
+"own_transfer": true — только если это перевод между СВОИМИ счетами или картами самого владельца выписки (в выписке написано «между своими счетами», «перевод на накопительный счёт», «пополнение вклада с карты» и т.п.). Перевод другому человеку (имя и первая буква фамилии, СБП по номеру телефона) — это НЕ own_transfer: false. Во всех остальных случаях false.
 
 Используй "confidence": "low" если не уверен в сумме, дате или категории.
 
@@ -49,6 +52,23 @@ ${EXPENSE_CATEGORIES.join('\n')}
 
 СЛОВА И НАЗВАНИЯ ПО КАТЕГОРИЯМ:
 ${hintsForPrompt()}`;
+}
+
+// Текст перед разбором. Для фото — с пометкой про тестовый режим (курсивом), для файла — короткий.
+export const STATEMENT_WAIT_PHOTO = '📄 Анализирую выписку...\n<i>Анализ выписки по фото находится в тестовом режиме, я только учусь правильно разбирать изображения 🤓 Если я сделаю ошибку, отправь, пожалуйста, обращение разработчикам, чтобы меня научили лучше 💛</i>';
+export const STATEMENT_WAIT_FILE = '📄 Анализирую выписку, подожди немного...';
+
+export function statementWaitMessage(fileType) {
+  if (fileType === 'photo') {
+    return {
+      text: STATEMENT_WAIT_PHOTO,
+      options: {
+        parse_mode: 'HTML',
+        reply_markup: { inline_keyboard: [[{ text: '💬 Написать разработчикам', callback_data: 'menu:feedback' }]] },
+      },
+    };
+  }
+  return { text: STATEMENT_WAIT_FILE, options: undefined };
 }
 
 function downloadFile(url, destPath) {
@@ -139,16 +159,22 @@ async function checkDuplicates(userId, transactions) {
 
 export function buildSummaryText(transactions) {
   const newOnes = transactions.filter((t) => !t.isDuplicate);
+  const toSave = newOnes.filter((t) => !t.ownTransfer);
+  const transferCount = newOnes.length - toSave.length;
   const dupCount = transactions.length - newOnes.length;
   const show = transactions.slice(0, 20);
 
   let text = `📄 Нашёл ${transactions.length} транзакций в выписке:\n\n`;
-  let num = 0; // номера только у тех, что будут записаны: по ним человек правит категории
+  let num = 0; // номера только у тех, что не дубли: по ним человек правит категории
   for (const tx of show) {
     const emoji = tx.type === 'income' ? '📈' : '📉';
     const dup = tx.isDuplicate ? ' ⚠️дубль' : '';
     const comment = tx.comment ? ` (${tx.comment})` : '';
     const label = tx.isDuplicate ? '' : `${++num}. `;
+    if (tx.ownTransfer && !tx.isDuplicate) {
+      text += `${label}↔️ ${tx.transaction_date} — перевод между своими счетами: ${tx.amount} ₽ — не записываю\n`;
+      continue;
+    }
     text += `${label}${emoji} ${tx.transaction_date} — ${tx.category}: ${tx.amount} ₽${comment}${dup}\n`;
   }
   if (transactions.length > 20) {
@@ -157,10 +183,15 @@ export function buildSummaryText(transactions) {
   if (dupCount > 0) {
     text += `\n⚠️ ${dupCount} уже записаны ранее — пропустим их.\n`;
   }
+  if (transferCount > 0) {
+    text += `\n↔️ Переводы между своими счетами не записываю: это не доход и не расход. Если это не так, напиши, например: «запиши 3 как доход».\n`;
+  }
   if (newOnes.length === 0) {
     text += '\nВсе транзакции уже были записаны ранее.';
+  } else if (toSave.length === 0) {
+    text += '\nЗаписывать нечего: остались только переводы между своими счетами.';
   } else {
-    text += `\nЗаписать ${newOnes.length} новых транзакций?\nЧтобы поправить категорию, напиши номер и категорию, например: «2 — Налоги и штрафы». Можно сразу несколько.`;
+    text += `\nЗаписать ${toSave.length} новых транзакций?\nЧтобы поправить категорию, напиши номер и категорию, например: «2 — Налоги и штрафы». Чтобы не записывать строку, напиши: «не записывай 3». Можно сразу несколько.`;
   }
   return text;
 }
@@ -204,7 +235,8 @@ export async function handleFileUpload(bot, msg, fileType) {
   if (!gate.ok) { await denyAi(bot, chatId, gate); return; }
 
   await bot.sendChatAction(chatId, 'typing');
-  await bot.sendMessage(chatId, '📄 Анализирую выписку, подожди немного...');
+  const wait = statementWaitMessage(fileType);
+  await bot.sendMessage(chatId, wait.text, wait.options);
 
   // Download file
   let tmpPath;
@@ -236,7 +268,9 @@ export async function handleFileUpload(bot, msg, fileType) {
   // Analyze via GPT-4o
   let rawTransactions = [];
   try {
-    rawTransactions = (await analyzeStatement(base64Content, mimeType)).map(refineStatementItem);
+    rawTransactions = (await analyzeStatement(base64Content, mimeType))
+      .map(refineStatementItem)
+      .map((tx) => ({ ...tx, ownTransfer: tx.own_transfer === true }));
     console.log(`[fileUpload] Found ${rawTransactions.length} transactions for user ${telegramId}`);
   } catch (err) {
     console.error('[fileUpload] Vision error:', err.message);
@@ -316,11 +350,36 @@ const CONFIRM_KEYBOARD = {
   },
 };
 
-function buildUpdatedSummary(transactions) {
-  let text = 'Обновил категории 👇\n\n✅ Готовы к записи:\n';
+const KNOWN_CATEGORIES = new Set([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]);
+
+function categoryKind(category) {
+  if (INCOME_CATEGORIES.includes(category)) return 'income';
+  if (EXPENSE_CATEGORIES.includes(category)) return 'expense';
+  return null;
+}
+
+function fmtNums(nums) {
+  return nums.join(', ');
+}
+
+// Список после правок. changes — что именно изменили, чтобы человек видел результат своих слов.
+export function buildUpdatedSummary(transactions, changes = {}) {
+  let text = 'Обновил список 👇\n';
+  const lines = [];
+  for (const c of changes.changed ?? []) lines.push(`• ${c.n} — ${c.category}${c.type ? (c.type === 'income' ? ' (доход)' : ' (расход)') : ''}`);
+  if (changes.removed?.length) lines.push(`• не записываю: ${fmtNums(changes.removed)} (номера в списке ниже пересчитаны)`);
+  if (changes.restored?.length) lines.push(`• возвращаю в запись: ${fmtNums(changes.restored)}`);
+  for (const u of changes.unknown ?? []) lines.push(`• не знаю категорию «${u.category}»${typeof u.n === 'number' ? ` (строка ${u.n})` : ''}, оставил как было`);
+  if (lines.length) text += `\n${lines.join('\n')}\n`;
+
+  text += '\nГотовы к записи:\n';
   transactions.forEach((tx, i) => {
+    if (tx.ownTransfer) {
+      text += `${i + 1}. ↔️ ${tx.transaction_date} — перевод между своими счетами — ${tx.amount} ₽ (не записываю)\n`;
+      return;
+    }
     const comment = tx.comment ? ` (${tx.comment})` : '';
-    const typeLabel = tx.type === 'income' ? ' (доход) ✅' : ' (расход)';
+    const typeLabel = tx.type === 'income' ? ' (доход)' : ' (расход)';
     text += `${i + 1}. ${tx.transaction_date} — ${tx.category} — ${tx.amount} ₽${comment}${typeLabel}\n`;
   });
   text += '\nВсё верно? Записываю?';
@@ -328,32 +387,83 @@ function buildUpdatedSummary(transactions) {
 }
 
 // Правки человека к списку из выписки. Номера в ответе модели — как в списке для человека (с единицы).
-export function applyStatementCorrections(pending, parsed) {
-  const updated = pending.map((tx) => ({ ...tx }));
+// Возвращает {updated, changed, removed, restored, unknown}; номера в changed/removed/restored — как были ДО правки.
+export function applyStatementCorrectionsDetailed(pending, parsed) {
+  let updated = pending.map((tx) => ({ ...tx }));
+  const changed = [];
+  const unknown = [];
   const updates = Array.isArray(parsed?.updates) ? parsed.updates : [];
   const updatedIndexes = new Set(updates.map((u) => u.index - 1));
 
-  // Шаг 1: applyToAll — только для транзакций без индивидуальных правок
-  if (parsed?.applyToAll) {
-    const { category, type } = parsed.applyToAll;
-    updated.forEach((tx, i) => {
-      if (!updatedIndexes.has(i) && (tx.category === 'Остальное' || tx.category === 'Другое' || tx.confidence !== 'high')) {
-        if (category) tx.category = canonicalCategory(category);
-        if (type) tx.type = type;
-      }
-    });
+  // Шаг 1: applyToAll — только записи с категорией «Остальное» и без индивидуальных правок; тип меняется только вместе с категорией
+  if (parsed?.applyToAll && parsed.applyToAll.category) {
+    const category = canonicalCategory(parsed.applyToAll.category);
+    if (KNOWN_CATEGORIES.has(category)) {
+      updated.forEach((tx, i) => {
+        if (updatedIndexes.has(i) || tx.ownTransfer) return;
+        if (tx.category === 'Остальное' || tx.category === 'Другое') {
+          tx.category = category;
+          const kind = categoryKind(category);
+          if (kind) tx.type = kind;
+          changed.push({ n: i + 1, category, type: tx.type });
+        }
+      });
+    } else {
+      unknown.push({ n: '—', category: parsed.applyToAll.category });
+    }
   }
 
   // Шаг 2: индивидуальные правки — приоритет выше applyToAll
   for (const upd of updates) {
     const at = typeof upd.index === 'number' ? upd.index - 1 : -1;
-    if (updated[at]) {
-      if (upd.category) updated[at].category = canonicalCategory(upd.category);
-      if (upd.type) updated[at].type = upd.type;
-      if (upd.comment !== undefined) updated[at].comment = upd.comment;
+    const tx = updated[at];
+    if (!tx) continue;
+    let touched = false;
+    if (upd.category) {
+      const category = canonicalCategory(upd.category);
+      if (KNOWN_CATEGORIES.has(category)) {
+        tx.category = category;
+        touched = true;
+        // тип следует за категорией, если человек не назвал тип сам
+        const kind = categoryKind(category);
+        if (!upd.type && kind) tx.type = kind;
+      } else {
+        unknown.push({ n: upd.index, category: upd.category });
+      }
+    }
+    if (upd.type === 'income' || upd.type === 'expense') { tx.type = upd.type; touched = true; }
+    if (upd.comment !== undefined) { tx.comment = upd.comment; touched = true; }
+    if (touched) {
+      tx.ownTransfer = false; // человек сам правит строку — значит, её надо записать
+      changed.push({ n: upd.index, category: tx.category, type: tx.type });
     }
   }
-  return updated;
+
+  // Шаг 3: «верни в запись» для переводов между своими счетами
+  const restored = [];
+  for (const n of Array.isArray(parsed?.restore) ? parsed.restore : []) {
+    const tx = typeof n === 'number' ? updated[n - 1] : null;
+    if (tx?.ownTransfer) { tx.ownTransfer = false; restored.push(n); }
+  }
+
+  // Шаг 4: «не записывай» — убираем строки (в конце, чтобы номера выше считались по исходному списку)
+  const removed = [...new Set((Array.isArray(parsed?.remove) ? parsed.remove : []).filter((n) => Number.isInteger(n) && n >= 1 && n <= updated.length))].sort((x, y) => x - y);
+  if (removed.length) {
+    const drop = new Set(removed.map((n) => n - 1));
+    updated = updated.filter((_, i) => !drop.has(i));
+  }
+  const removedSet = new Set(removed);
+  return {
+    updated,
+    changed: changed.filter((c) => !removedSet.has(c.n)),
+    removed,
+    restored: restored.filter((n) => !removedSet.has(n)),
+    unknown,
+  };
+}
+
+export function applyStatementCorrections(pending, parsed) {
+  return applyStatementCorrectionsDetailed(pending, parsed).updated;
 }
 
 export async function handleFileTextResponse(bot, msg) {
@@ -375,37 +485,33 @@ export async function handleFileTextResponse(bot, msg) {
 
 Пользователь написал правки: "${msg.text}"
 
-Разбери что пользователь хочет изменить.
+Разбери что пользователь хочет изменить. Трогай ТОЛЬКО строки, которые пользователь назвал. Остальные не меняй.
+
+Что может попросить пользователь:
+1. Поменять категорию или тип строки → updates.
+2. Не записывать строку («не записывай 3», «3 и 5 не делай», «удали 3», «убери 5», «пропусти 2», «без 4») → номера в remove. Слова «удалить», «не делай», «не записывай» — это НЕ категория, их нельзя писать в category.
+3. Вернуть в запись строку, помеченную как перевод между своими счетами (ownTransfer: true), например «запиши 3 как доход» → номер в restore и запись в updates с нужным type.
+4. «Всё остальное в категорию X» → applyToAll.
 
 ВАЖНО по определению type:
-- Если пользователь говорит "возврат", "вернули", "пополнение", "доход", "получил(а)" → type = "income"
+- type указывай ТОЛЬКО если пользователь прямо сказал тип или это «возврат», «вернули», «пополнение», «доход», «получил(а)» → "income"; «расход», «потратил(а)», «покупка», «оплата» → "expense".
 - "возврат товара", "возврат средств", "вернули деньги" = type: "income", category: "Возврат денег". Это ДОХОД, даже если отправитель — магазин или маркетплейс.
-- Если пользователь говорит "расход", "потратил(а)", "покупка", "оплата" → type = "expense"
-- Если тип не упоминается явно → оставить как был в исходной транзакции
+- Если тип не упоминается явно — НЕ пиши поле type, оставь как было.
+- Категорию пиши только из списка выше. Если подходящей нет, не пиши category.
 
 Верни JSON:
 {
   "updates": [
-    {
-      "index": 1,
-      "category": "Возврат денег",
-      "type": "income",
-      "comment": "возврат Озон"
-    },
-    {
-      "index": 2,
-      "category": "Товары в дом",
-      "type": "expense"
-    }
+    { "index": 1, "category": "Возврат денег", "type": "income", "comment": "возврат Озон" },
+    { "index": 2, "category": "Товары в дом" }
   ],
-  "applyToAll": {
-    "category": "Товары в дом",
-    "type": "expense"
-  }
+  "remove": [3, 5],
+  "restore": [],
+  "applyToAll": { "category": "Товары в дом" }
 }
 
-index — это n транзакции из списка (первая имеет n = 1).
-applyToAll — если пользователь говорит "остальное всё в категорию X" — применить ко всем у кого категория "Остальное" или confidence не high. Если applyToAll не нужен — верни null.
+index и номера в remove/restore — это n транзакции из списка (первая имеет n = 1).
+applyToAll — только если пользователь прямо сказал "остальное всё в категорию X": применится к строкам с категорией «Остальное». Если applyToAll не нужен — верни null. Пустые updates, remove, restore — пустые массивы.
 Верни ТОЛЬКО валидный JSON без пояснений.`;
 
   let parsed;
@@ -428,12 +534,29 @@ applyToAll — если пользователь говорит "остальн�
     return true;
   }
 
-  const updated = applyStatementCorrections(state.pendingTransactions, parsed);
+  const result = applyStatementCorrectionsDetailed(state.pendingTransactions, parsed);
+  const nothing = !result.changed.length && !result.removed.length && !result.restored.length && !result.unknown.length;
+  if (nothing) {
+    await bot.sendMessage(chatId,
+      'Не понял, что поправить 🤔 Напиши, например: «2 — Налоги и штрафы» или «не записывай 3». Или нажми кнопку.',
+      CONFIRM_KEYBOARD);
+    return true;
+  }
 
-  // Save updated state
-  userStates.set(telegramId, { ...state, pendingTransactions: updated });
+  // Все строки убраны — записывать нечего
+  if (!result.updated.length) {
+    if (state.fileTimeoutId) clearTimeout(state.fileTimeoutId);
+    userStates.delete(telegramId);
+    await bot.sendMessage(chatId, 'Убрал все строки, выписка не сохранена.', {
+      reply_markup: { inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]] },
+    });
+    return true;
+  }
 
-  const summaryText = buildUpdatedSummary(updated);
+  const summaryText = buildUpdatedSummary(result.updated, result);
+  // «Показать снова» должно показывать уже обновлённый список
+  userStates.set(telegramId, { ...state, pendingTransactions: result.updated, summaryText });
+
   const parts = splitMessage(summaryText);
   for (let i = 0; i < parts.length - 1; i++) {
     await bot.sendMessage(chatId, parts[i]);
@@ -497,10 +620,18 @@ export async function handleFileCallback(bot, query) {
     if (state.fileTimeoutId) clearTimeout(state.fileTimeoutId);
     userStates.delete(telegramId);
 
+    const toSave = state.pendingTransactions.filter((tx) => !tx.ownTransfer);
+    if (!toSave.length) {
+      await bot.sendMessage(chatId, 'Записывать нечего: остались только переводы между своими счетами.', {
+        reply_markup: { inline_keyboard: [[{ text: '☰ Главное меню', callback_data: 'menu:main' }]] },
+      });
+      return;
+    }
+
     await bot.sendChatAction(chatId, 'typing');
 
     let savedCount = 0;
-    for (const tx of state.pendingTransactions) {
+    for (const tx of toSave) {
       try {
         await saveTransaction(
           state.userId,
