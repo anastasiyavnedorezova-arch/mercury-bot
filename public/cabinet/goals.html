@@ -241,6 +241,9 @@
         }
         .goal-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
         .goal-card.faded { opacity: 0.35; pointer-events: none; }
+        .goal-card.locked { background: #F8FAFC; }
+        .goal-card.locked .goal-name, .goal-card.locked .goal-meta, .goal-card.locked .goal-monthly-section, .goal-card.locked .goal-progress-section { opacity: 0.6; }
+        .locked-note { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6B7280; margin: 4px 0 8px; }
         .goal-name { font-size: 20px; font-weight: 600; line-height: 28px; color: var(--color-text-main); letter-spacing: -0.01em; padding-right: 36px; }
         .goal-meta { display: flex; flex-direction: column; gap: 2px; }
         .goal-meta-label { font-size: 11px; font-weight: 500; color: var(--color-text-disabled); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -538,19 +541,6 @@
   </div>
 </div>
 
-<!-- MODAL: Выбрать цель (expired, несколько целей) -->
-<div class="modal-overlay" id="modalChooseGoal" style="display:none;">
-  <div class="modal" style="max-width:500px;">
-    <button class="modal-close-btn" onclick="closeModal('modalChooseGoal')">&#10005;</button>
-    <div class="modal-title">Выбери одну цель</div>
-    <div class="modal-body">Подписка закончилась. Выбери одну цель, которую хочешь видеть.</div>
-    <div class="modal-radio-list" id="chooseGoalList"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary btn-sm" onclick="closeModal('modalChooseGoal')">Отмена</button>
-      <button class="btn btn-primary btn-sm" id="btnConfirmChoose" onclick="confirmChooseGoal()">Подтвердить</button>
-    </div>
-  </div>
-</div>
 
 
 <script type="module">
@@ -586,7 +576,7 @@
   function openModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'flex'; }
   function closeModal(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
   function closeAllModals() {
-    ['modalAddGoal','modal-delete-goal','modalChooseGoal','modal-topup'].forEach(closeModal);
+    ['modalAddGoal','modal-delete-goal','modal-topup'].forEach(closeModal);
   }
 
   // ── Delete goal modal ────────────────────────────────────
@@ -648,31 +638,27 @@
     container.innerHTML = html;
   }
 
-  function renderExpiredSingle(container, goals, goalToShow) {
-    var html = expiredBanner() + '<div class="goals-grid">';
-    goals.forEach(function(g) { html += renderGoalCard(g, g.id !== goalToShow.id); });
+  // Подписки нет (free): рабочая цель одна, её выбирает человек; остальные (g.locked) можно смотреть и удалять
+  function renderExpired(container, goals) {
+    var hasLocked = goals.some(function(g) { return g.locked; });
+    var html = expiredBanner(hasLocked) + '<div class="goals-grid">';
+    goals.forEach(function(g) { html += renderGoalCard(g); });
     html += '</div>';
     container.innerHTML = html;
-  }
-
-  function renderExpiredMultiple(container, goals) {
-    var html = expiredBanner() + '<div class="goals-grid">';
-    goals.forEach(function(g) { html += renderGoalCard(g, true); });
-    html += '</div>';
-    container.innerHTML = html;
-    buildChooseModal();
-    openModal('modalChooseGoal');
   }
 
   // ── Card helpers ─────────────────────────────────────────
-  function expiredBanner() {
+  function expiredBanner(hasLocked) {
     return '<div class="expired-banner">' +
-      '<div class="expired-text"><strong>У тебя закончилась подписка.</strong> Для доступа ко всем целям оплати подписку.</div>' +
+      '<div class="expired-text"><strong>У тебя закончилась подписка.</strong> ' +
+        (hasLocked ? 'Пока её нет, рабочая цель одна: выбери, какую пополнять и менять. Остальные можно смотреть и удалять, с подпиской они снова заработают.' : 'Для доступа ко всем целям оплати подписку.') +
+      '</div>' +
       '<a href="/cabinet/profile?plans=1" class="btn btn-accent btn-sm">Оплатить подписку</a>' +
     '</div>';
   }
 
-  function renderGoalCard(g, faded) {
+  function renderGoalCard(g) {
+    var locked = !!g.locked;
     var target = parseFloat(g.future_value) || parseFloat(g.target_amount) || 0;
     // saved считает сервер: стартовая сумма + взносы именно на эту цель
     var saved = parseFloat(g.saved);
@@ -688,9 +674,10 @@
     var gId = String(g.id).replace(/'/g,"&#39;");
     var gName = escH(g.name).replace(/'/g,"&#39;");
 
-    return '<div class="goal-card' + (faded ? ' faded' : '') + '">' +
+    return '<div class="goal-card' + (locked ? ' locked' : '') + '">' +
       '<button class="goal-trash-btn" title="Удалить" aria-label="Удалить цель" onclick="window.openDeleteGoalModal(\'' + gId + '\',\'' + gName + '\')"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1.75 3.5h10.5M4.667 3.5V2.333h4.666V3.5M5.833 6.417v3.5M8.167 6.417v3.5M2.917 3.5l.583 8.167h7L11.083 3.5" stroke="#E5484D" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
       '<div class="goal-name">' + escH(g.name) + '</div>' +
+      (locked ? '<div class="locked-note">🔒 Доступно в подписке</div>' : '') +
       '<div class="goal-meta">' +
         '<div class="goal-meta-label">Когда:</div>' +
         '<div class="goal-meta-value">' + fmtGoalDate(g.target_date) + '</div>' +
@@ -712,8 +699,10 @@
         '<div class="goal-progress-amount">' + fmtNum(saved) + ' ₽ (' + pct + '%)</div>' +
       '</div>' +
       '<div class="card-actions">' +
-        '<button class="btn btn-mini-dark btn-sm" onclick="window.openModal(\'modalAddGoal\');">Редактировать</button>' +
-        (faded ? '' : '<button class="btn btn-primary btn-sm btn-topup" onclick="window.openTopUpModal(\'' + gId + '\',\'' + gName + '\')">Пополнить</button>') +
+        (locked
+          ? '<button class="btn btn-primary btn-sm" onclick="window.makeWorkingGoal(\'' + gId + '\')">Сделать рабочей</button>'
+          : '<button class="btn btn-mini-dark btn-sm" onclick="window.openModal(\'modalAddGoal\');">Редактировать</button>' +
+            '<button class="btn btn-primary btn-sm btn-topup" onclick="window.openTopUpModal(\'' + gId + '\',\'' + gName + '\')">Пополнить</button>') +
       '</div>' +
     '</div>';
   }
@@ -742,39 +731,6 @@
     '</div>';
   }
 
-  // ── Choose goal modal ────────────────────────────────────
-  var chosenGoalId = null;
-
-  function buildChooseModal() {
-    var list = document.getElementById('chooseGoalList');
-    list.innerHTML = '';
-    allGoals.forEach(function(g) {
-      var item = document.createElement('div');
-      item.className = 'modal-radio-item';
-      item.dataset.id = g.id;
-      item.innerHTML =
-        '<div class="radio-circle"><div class="radio-dot"></div></div>' +
-        '<span class="radio-label">' + escH(g.name) + '</span>';
-      item.addEventListener('click', function() {
-        document.querySelectorAll('#chooseGoalList .modal-radio-item').forEach(function(el) { el.classList.remove('selected'); });
-        item.classList.add('selected');
-        chosenGoalId = g.id;
-        document.getElementById('btnConfirmChoose').disabled = false;
-      });
-      list.appendChild(item);
-    });
-    document.getElementById('btnConfirmChoose').disabled = true;
-    chosenGoalId = null;
-  }
-
-  function confirmChooseGoal() {
-    if (!chosenGoalId) return;
-    localStorage.setItem('mercury_chosen_goal', String(chosenGoalId));
-    closeModal('modalChooseGoal');
-    var cont = document.getElementById('goalsContainer');
-    renderPage(cont, allGoals, subStatus);
-  }
-
   // ── Main load function ───────────────────────────────────
   var allGoals = [];
   var subStatus = null;
@@ -793,17 +749,21 @@
       return;
     }
 
-    // Expired
-    var stored = localStorage.getItem('mercury_chosen_goal');
-    if (goals.length > 1 && !stored) {
-      renderExpiredMultiple(cont, goals);
-      return;
-    }
+    // Подписки нет: рабочая цель одна, выбор хранится на сервере
+    renderExpired(cont, goals);
+  }
 
-    var goalToShow = goals.length === 1
-      ? goals[0]
-      : (goals.find(function(g) { return String(g.id) === stored; }) || goals[0]);
-    renderExpiredSingle(cont, goals, goalToShow);
+  // «Сделать рабочей»: сервер запоминает выбор, страница перерисовывается
+  async function makeWorkingGoal(goalId) {
+    try {
+      var res = await fetch('/api/goals/' + encodeURIComponent(goalId) + '/work', { method: 'POST', headers: authHeaders() });
+      if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
+      if (!res.ok) { alert('Не получилось выбрать цель. Попробуй ещё раз'); return; }
+      await loadPage();
+    } catch (e) {
+      console.error('[goals] work error:', e);
+      alert('Нет связи. Попробуй ещё раз');
+    }
   }
 
   async function loadPage() {
@@ -880,10 +840,10 @@
   window.closeAllModals      = closeAllModals;
   window.openDeleteGoalModal = openDeleteGoalModal;
   window.confirmDeleteGoal   = confirmDeleteGoal;
-  window.confirmChooseGoal   = confirmChooseGoal;
+  window.makeWorkingGoal     = makeWorkingGoal;
 
   // Close modals on overlay click
-  ['modalAddGoal','modal-delete-goal','modalChooseGoal','modal-topup'].forEach(function(id) {
+  ['modalAddGoal','modal-delete-goal','modal-topup'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('click', function(e) {
       if (e.target === el) closeModal(id);

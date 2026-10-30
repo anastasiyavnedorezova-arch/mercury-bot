@@ -6,6 +6,7 @@ import { parseAmount, parseAmountStrict } from '../utils/parseAmount.js';
 import { applyGoalSaved, isGoalStateExpired } from '../utils/goalEdit.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 import { getContributions, goalSaved } from '../utils/goalProgress.js';
+import { maxGoals, splitGoals, getWorkingGoalId, setWorkingGoal, GOAL_LOCKED_NOTE, GOAL_LOCKED_SHORT } from '../utils/goalAccess.js';
 
 // ── Константы и форматирование ────────────────────────────────────────────────
 
@@ -77,20 +78,40 @@ async function getActiveGoals(userId) {
 
 // ── Карточка цели: текст + кнопки ────────────────────────────────────────────
 
-function goalCardText(goal, total, maxCount) {
+function goalCardHeader(total, maxCount) {
+  return total > maxCount
+    ? `У тебя ${total} ${pluralGoal(total)}. Пока подписки нет, рабочая цель одна.\n\n`
+    : `У тебя установлена ${total} ${pluralGoal(total)} из ${maxCount}.\n\n`;
+}
+
+function goalCardText(goal, total, maxCount, locked = false) {
   return (
-    `У тебя установлена ${total} ${pluralGoal(total)} из ${maxCount}.\n\n` +
+    goalCardHeader(total, maxCount) +
     `🎯 Твоя цель: ${goal.name}\n` +
     `📅 Срок: ${formatGoalDate(goal.target_date)}\n` +
     `💰 Нужно накопить: ${formatNum(goal.future_value)} ₽ (с учётом инфляции)\n` +
     `💡 Нужно откладывать: ${formatNum(goal.monthly_payment)} ₽/мес\n\n` +
+    (locked ? `${GOAL_LOCKED_NOTE}\n\n` : '') +
     `Что хочешь сделать?`
   );
 }
 
 // canAdd — лимит не достигнут, показываем кнопку добавления
-function goalCardKeyboard(goal, canAdd) {
+function goalCardKeyboard(goal, canAdd, locked = false, hasLocked = false) {
   const id = goal.id;
+  if (locked) {
+    // Цель закрыта тарифом: смотреть, сделать рабочей, удалить
+    return {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '📊 Оценить прогресс', callback_data: `goal:progress:${id}` }],
+          [{ text: '⭐ Сделать рабочей', callback_data: `goal:work:${id}` }],
+          [{ text: '🗑 Удалить', callback_data: `goal:delete:${id}` }],
+          [{ text: '🎯 Все цели', callback_data: 'menu:goal' }],
+        ],
+      },
+    };
+  }
   const keyboard = [
     [
       { text: '➕ Пополнить', callback_data: `goal:topup:${id}` },
@@ -103,6 +124,8 @@ function goalCardKeyboard(goal, canAdd) {
   ];
   if (canAdd) {
     keyboard.push([{ text: '➕ Добавить новую цель', callback_data: 'goal:add_new' }]);
+  } else if (hasLocked) {
+    keyboard.push([{ text: '🎯 Все цели', callback_data: 'menu:goal' }]);
   } else {
     keyboard.push([{ text: '☰ Главное меню', callback_data: 'menu:main' }]);
   }
@@ -134,7 +157,7 @@ export async function showGoal(bot, chatId, telegramId) {
     return;
   }
 
-  const maxCount = access === 'free' ? 1 : 3;
+  const maxCount = maxGoals(access);
   const canAdd = goals.length < maxCount;
 
   if (goals.length === 1) {
@@ -143,13 +166,18 @@ export async function showGoal(bot, chatId, telegramId) {
   }
 
   // Несколько целей — показываем список одним сообщением
-  let text = `У тебя ${goals.length} ${pluralGoal(goals.length)} из ${maxCount}:\n\n`;
+  const { working, locked } = splitGoals(goals, access, access === 'free' ? await getWorkingGoalId(supabase, userId) : null);
+  const lockedIds = new Set(locked.map((g) => g.id));
+  const mark = (g) => (access !== 'free' ? '🎯' : lockedIds.has(g.id) ? '🔒' : '✅');
+  let text = access === 'free'
+    ? `У тебя ${goals.length} ${pluralGoal(goals.length)}. Пока подписки нет, рабочая цель одна (✅), остальные можно смотреть и удалять (🔒). С подпиской вернутся все.\n\n`
+    : `У тебя ${goals.length} ${pluralGoal(goals.length)} из ${maxCount}:\n\n`;
   for (const g of goals) {
-    text += `🎯 ${g.name} — ${formatGoalDate(g.target_date)}, ${formatNum(g.monthly_payment)} ₽/мес\n`;
+    text += `${mark(g)} ${g.name} — ${formatGoalDate(g.target_date)}, ${formatNum(g.monthly_payment)} ₽/мес\n`;
   }
   text += '\nВыбери цель для управления:';
 
-  const keyboard = goals.map(g => [{ text: `🎯 ${g.name}`, callback_data: `goal:show:${g.id}` }]);
+  const keyboard = goals.map(g => [{ text: `${mark(g)} ${g.name}`, callback_data: `goal:show:${g.id}` }]);
   if (canAdd) keyboard.push([{ text: '➕ Добавить новую цель', callback_data: 'goal:add_new' }]);
   keyboard.push([{ text: '☰ Главное меню', callback_data: 'menu:main' }]);
 
@@ -498,6 +526,10 @@ async function showGoalProgress(bot, chatId, userId, goal) {
   const accumulated = goalSaved(goal, await getContributions(supabase, userId));
   const percent = Math.min(100, Math.round((accumulated / goal.future_value) * 100));
   const remaining = Math.max(0, goal.future_value - accumulated);
+  // закрытая тарифом цель: только просмотр, без «Пополнить»
+  const access = await getUserAccess(userId);
+  const isLocked = access === 'free'
+    && splitGoals(await getActiveGoals(userId), access, await getWorkingGoalId(supabase, userId)).locked.some((g) => g.id === goal.id);
 
   let text =
     `🎯 ${goal.name}\n\n` +
@@ -526,7 +558,7 @@ async function showGoalProgress(bot, chatId, userId, goal) {
   await bot.sendMessage(chatId, text, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: '➕ Пополнить', callback_data: `goal:topup:${goal.id}` }],
+        ...(isLocked ? [[{ text: '⭐ Сделать рабочей', callback_data: `goal:work:${goal.id}` }]] : [[{ text: '➕ Пополнить', callback_data: `goal:topup:${goal.id}` }]]),
         [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
       ],
     },
@@ -607,7 +639,7 @@ export async function handleGoalCallback(bot, query) {
     const userId = await getUserId(telegramId);
     if (!userId) return;
     const [{ data: goal }, goals, access] = await Promise.all([
-      supabase.from('goals').select('*').eq('id', parts[2]).single(),
+      supabase.from('goals').select('*').eq('id', parts[2]).eq('user_id', userId).single(),
       getActiveGoals(userId),
       getUserAccess(userId),
     ]);
@@ -615,13 +647,48 @@ export async function handleGoalCallback(bot, query) {
       await bot.sendMessage(chatId, 'Цель не найдена 🤔');
       return;
     }
-    const maxCount = access === 'free' ? 1 : 3;
+    const maxCount = maxGoals(access);
+    const { locked } = splitGoals(goals, access, access === 'free' ? await getWorkingGoalId(supabase, userId) : null);
+    const isLocked = locked.some((g) => g.id === goal.id);
     await bot.sendMessage(
       chatId,
-      goalCardText(goal, goals.length, maxCount),
-      goalCardKeyboard(goal, goals.length < maxCount)
+      goalCardText(goal, goals.length, maxCount, isLocked),
+      goalCardKeyboard(goal, goals.length < maxCount, isLocked, locked.length > 0)
     );
     return;
+  }
+
+  // ── Сделать рабочей: goal:work:{goalId} (на free) ────────────────────────
+
+  if (parts[1] === 'work' && parts[2]) {
+    const userId = await getUserId(telegramId);
+    if (!userId) return;
+    const r = await setWorkingGoal(supabase, userId, parts[2]);
+    if (!r.ok) {
+      await bot.sendMessage(chatId, 'Цель не найдена 🤔', MENU_KEYBOARD);
+      return;
+    }
+    await bot.sendMessage(
+      chatId,
+      `Готово, теперь рабочая цель «${r.goal.name}» ⭐\nЕё можно пополнять и менять. Остальные цели сохранены: смотреть и удалять можно, а с подпиской всё вернётся 💛`,
+      { reply_markup: { inline_keyboard: [[{ text: '🎯 Все цели', callback_data: 'menu:goal' }], [{ text: '☰ Главное меню', callback_data: 'menu:main' }]] } }
+    );
+    return;
+  }
+
+  // ── Правка закрытой тарифом цели не открывается ──────────────────────────
+
+  if (parts[1] === 'edit' || (parts[1] || '').startsWith('edit_')) {
+    const userId = await getUserId(telegramId);
+    if (!userId) return;
+    const access = await getUserAccess(userId);
+    if (access === 'free') {
+      const { locked } = splitGoals(await getActiveGoals(userId), access, await getWorkingGoalId(supabase, userId));
+      if (locked.some((g) => g.id === parts[2])) {
+        await bot.sendMessage(chatId, GOAL_LOCKED_SHORT, MENU_KEYBOARD);
+        return;
+      }
+    }
   }
 
   // ── Прогресс: goal:progress:{goalId} ─────────────────────────────────────

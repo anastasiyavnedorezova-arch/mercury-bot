@@ -24,6 +24,7 @@ import { rememberUnrecognized, clearUnrecognized, takeUnrecognized, looksLikeMas
 import { splitAmountAndWords } from '../utils/categoryHints.js';
 import { maybeAskToLearn } from './learn.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
+import { getUsableGoals, GOAL_LOCKED_SHORT } from '../utils/goalAccess.js';
 import { GOAL_CATEGORY, getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
 import { isGoalStateExpired } from '../utils/goalEdit.js';
 import { parseAmountStrict } from '../utils/parseAmount.js';
@@ -258,7 +259,7 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
   const isMulti = Array.isArray(parsed);
   const items = isMulti ? parsed : [parsed];
   // Взнос на цель: одна цель — берём её; несколько — по названию в тексте, иначе спрашиваем кнопками
-  const goals = items.some(isGoalItem) ? await getActiveGoals(supabase, userId) : [];
+  const goals = items.some(isGoalItem) ? await getUsableGoals(supabase, userId, access) : [];
   const { toSave, pending, dropped } = planGoalContributions(goals, items, rawMessage);
 
   if (toSave.length > 0) {
@@ -290,7 +291,8 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
 
 // Ответ на «На какую цель?»: кнопка (goal:contrib:<id>) или название цели текстом.
 async function finishGoalPick(bot, chatId, telegramId, state, goalId) {
-  const goals = await getActiveGoals(supabase, state.userId);
+  const access = await getUserAccess(state.userId);
+  const goals = await getUsableGoals(supabase, state.userId, access);
   const goal = goals.find((g) => g.id === goalId);
   if (!goal) {
     userStates.delete(telegramId);
@@ -312,7 +314,6 @@ async function finishGoalPick(bot, chatId, telegramId, state, goalId) {
     await bot.sendMessage(chatId, TEXTS.goalPickStale, MENU_KEYBOARD);
     return;
   }
-  const access = await getUserAccess(state.userId);
   item.comment = goal.name;
   const txId = await saveTransaction(state.userId, item, state.rawMessage, goal.id);
   if (txId === null) {
@@ -367,9 +368,16 @@ export async function handleGoalTopupCallback(bot, query) {
     await bot.sendMessage(chatId, 'Не нашёл твой аккаунт. Напиши /start для регистрации.');
     return;
   }
-  const goal = (await getActiveGoals(supabase, userId)).find((g) => g.id === query.data.split(':')[2]);
+  const goalId = query.data.split(':')[2];
+  const goal = (await getActiveGoals(supabase, userId)).find((g) => g.id === goalId);
   if (!goal) {
     await bot.sendMessage(chatId, 'Цель не найдена 🤔', MENU_KEYBOARD);
+    return;
+  }
+  // На free пополнять можно только рабочую цель
+  const usable = await getUsableGoals(supabase, userId, await getUserAccess(userId));
+  if (!usable.some((g) => g.id === goal.id)) {
+    await bot.sendMessage(chatId, GOAL_LOCKED_SHORT, MENU_KEYBOARD);
     return;
   }
   userStates.set(telegramId, { awaitingGoalTopup: true, goalId: goal.id, userId, createdAt: Date.now() });
@@ -398,7 +406,8 @@ async function handleGoalTopupText(bot, msg) {
   }
 
   userStates.delete(telegramId);
-  const goals = await getActiveGoals(supabase, state.userId);
+  const topupAccess = await getUserAccess(state.userId);
+  const goals = await getUsableGoals(supabase, state.userId, topupAccess);
   const goal = goals.find((g) => g.id === state.goalId);
   if (!goal) {
     await bot.sendMessage(chatId, 'Цель не найдена 🤔', MENU_KEYBOARD);
@@ -411,7 +420,7 @@ async function handleGoalTopupText(bot, msg) {
     return true;
   }
   await attachGoalInfoSafe(state.userId, goals, [{ item, goalId: goal.id }]);
-  await sendConfirmation(bot, chatId, item, txId, await getUserAccess(state.userId));
+  await sendConfirmation(bot, chatId, item, txId, topupAccess);
   return true;
 }
 
@@ -424,7 +433,7 @@ async function handleGoalPickText(bot, msg) {
   if (!state?.awaitingGoalPick) return false;
 
   const text = String(msg.text ?? '').trim();
-  const goals = await getActiveGoals(supabase, state.userId);
+  const goals = await getUsableGoals(supabase, state.userId, await getUserAccess(state.userId));
   const hit = text && !/\d/.test(text)
     ? goals.find((g) => g.name.trim().toLowerCase() === text.toLowerCase()) ?? matchGoalByText(goals, text)
     : null;

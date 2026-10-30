@@ -2,6 +2,8 @@
 // Раньше «накоплено» считали как initial_saved + сумма ВСЕХ записей категории «Цель», поэтому
 // при двух целях один взнос прибавлялся к обеим. Теперь у взноса есть goal_id, считаем по нему.
 
+import { getUsableGoals } from './goalAccess.js';
+
 export const GOAL_CATEGORY = 'Цель';
 
 export const isGoalItem = (item) => item?.type === 'goal' || item?.category === GOAL_CATEGORY;
@@ -119,7 +121,7 @@ export function attachGoalInfo(item, goal, contributions) {
 
 // После смены категории: «Цель» → привязываем к цели (если цель одна), иначе спрашиваем;
 // другая категория → привязку снимаем. Возвращает { status, goals?, userId? }.
-export async function syncTxGoalLink(db, txId) {
+export async function syncTxGoalLink(db, txId, access = null) {
   const { data: tx } = await db
     .from('transactions')
     .select('id, user_id, type, goal_id, categories(name)')
@@ -136,7 +138,8 @@ export async function syncTxGoalLink(db, txId) {
   }
 
   if (tx.type !== 'goal') await db.from('transactions').update({ type: 'goal' }).eq('id', txId);
-  const goals = await getActiveGoals(db, tx.user_id);
+  // на free взнос можно привязать только к рабочей цели
+  const goals = access === 'free' ? await getUsableGoals(db, tx.user_id, access) : await getActiveGoals(db, tx.user_id);
   if (goals.length === 0) return { status: 'no_goals', userId: tx.user_id };
   if (goals.length === 1) {
     await db.from('transactions').update({ goal_id: goals[0].id }).eq('id', txId);

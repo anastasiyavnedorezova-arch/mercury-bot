@@ -16,6 +16,8 @@ import { hadTrial, startTrial, rowsHadTrial } from './utils/trial.js';
 import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } from './cabinet/categories.js';
 import { updateTransaction } from './cabinet/historyEdit.js';
 import { addGoalContribution } from './cabinet/goalContribution.js';
+import { isUuid } from './cabinet/categories.js';
+import { splitGoals, getWorkingGoalId, setWorkingGoal } from './utils/goalAccess.js';
 import { rateLimit, userKey } from './utils/httpLimits.js';
 import { displayMessage } from './utils/messageText.js';
 import { getContributions, goalSaved } from './utils/goalProgress.js';
@@ -242,7 +244,15 @@ router.get('/api/goals', requireAuth, async (req, res) => {
     if (error) throw error;
     // saved = стартовая сумма + взносы именно на эту цель (то же число, что в боте и на Дашборде)
     const contributions = await getContributions(supabase, req.userId);
-    res.json({ data: (data || []).map((g) => ({ ...g, saved: goalSaved(g, contributions) })) });
+    // Тариф free: рабочая цель одна, остальные закрыты (locked): смотреть и удалять можно
+    const access = await getUserAccess(req.userId);
+    const active = (data || []).filter((g) => g.status === 'active');
+    const workingId = access === 'free' ? await getWorkingGoalId(supabase, req.userId) : null;
+    const lockedIds = new Set(splitGoals(active, access, workingId).locked.map((g) => g.id));
+    res.json({
+      data: (data || []).map((g) => ({ ...g, saved: goalSaved(g, contributions), locked: lockedIds.has(g.id) })),
+      access,
+    });
   } catch (err) {
     console.error('[cabinet] /api/goals error:', err.message);
     res.status(500).json({ error: 'Internal server error' });
@@ -254,14 +264,27 @@ router.get('/api/goals', requireAuth, async (req, res) => {
 // ──────────────────────────────────────────
 router.post('/api/goals/:id/contribute', requireAuth, limitGoalTopUp, async (req, res) => {
   try {
-    if ((await getUserAccess(req.userId)) === 'free') {
-      return res.status(403).json({ error: 'Forbidden', message: 'Записывать взносы можно на пробном или платном тарифе' });
-    }
-    const r = await addGoalContribution(supabase, req.userId, req.params.id, req.body);
+    const access = await getUserAccess(req.userId);
+    const r = await addGoalContribution(supabase, req.userId, req.params.id, req.body, undefined, access);
     res.status(r.status).json(r.json);
   } catch (err) {
     console.error('[cabinet] POST /api/goals/:id/contribute error:', err.message);
     res.status(500).json({ error: 'Internal server error', message: 'Не удалось записать взнос. Попробуй ещё раз' });
+  }
+});
+
+// ──────────────────────────────────────────
+// POST /api/goals/:id/work — «Сделать рабочей» (тариф free: рабочая цель одна)
+// ──────────────────────────────────────────
+router.post('/api/goals/:id/work', requireAuth, limitGoalTopUp, async (req, res) => {
+  try {
+    if (!isUuid(req.params.id)) return res.status(404).json({ error: 'Not found', message: 'Цель не найдена' });
+    const r = await setWorkingGoal(supabase, req.userId, req.params.id);
+    if (!r.ok) return res.status(404).json({ error: 'Not found', message: 'Цель не найдена' });
+    res.json({ ok: true, working_goal_id: r.goal.id });
+  } catch (err) {
+    console.error('[cabinet] POST /api/goals/:id/work error:', err.message);
+    res.status(500).json({ error: 'Internal server error', message: 'Не удалось выбрать цель. Попробуй ещё раз' });
   }
 });
 

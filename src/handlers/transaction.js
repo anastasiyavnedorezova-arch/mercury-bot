@@ -257,7 +257,7 @@ export async function handleTransactionCallback(bot, query) {
 
     await supabase.from('transactions').update({ category_id: picked.id }).eq('id', txId).eq('user_id', userId);
     // «Цель» ↔ другая категория: привязка к цели должна совпадать с категорией
-    const link = await syncTxGoalLink(supabase, txId);
+    const link = await syncTxGoalLink(supabase, txId, await getUserAccess(userId));
     await fetchAndShowTx(bot, chatId, txId);
     await learnFromCorrection(bot, chatId, userId, before, picked);
     if (link.status === 'needs_pick') {
