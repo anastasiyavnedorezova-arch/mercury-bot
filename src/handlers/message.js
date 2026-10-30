@@ -21,7 +21,7 @@ import { parseAmount } from '../utils/parseAmount.js';
 import { quickParse } from '../utils/quickParse.js';
 import { rememberPhrase, recallPhrase, memoryNote } from '../utils/phraseMemory.js';
 import { rememberUnrecognized, clearUnrecognized, takeUnrecognized, looksLikeMash } from '../utils/learnSignal.js';
-import { splitAmountAndWords } from '../utils/categoryHints.js';
+import { splitAmountAndWords, incomeCategoryFor } from '../utils/categoryHints.js';
 import { maybeAskToLearn } from './learn.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
 import { getUsableGoals, getGoalsByAccess, GOAL_LOCKED_SHORT, GOAL_CHOOSE_SHORT } from '../utils/goalAccess.js';
@@ -53,6 +53,7 @@ const getUserId = (externalId) => findUserIdByExternalId(supabase, externalId);
 // goalId — только для взноса на цель (type=goal): к какой цели он относится
 export async function saveTransaction(userId, parsed, rawMessage, goalId = null) {
   const access = await getUserAccess(userId);
+  parsed.category = incomeCategoryFor(parsed.type, parsed.category); // доход без подходящей категории — «Другие доходы», а не расходная «Остальное»
   const category = await resolveCategory(supabase, userId, parsed.category, access);
   parsed.category_saved = category.name; // категория, которая реально попала в базу — её показываем пользователю
   if (category.lockedFrom) parsed.category_locked = category.lockedFrom; // своя категория закрыта тарифом free: скажем об этом пользователю
@@ -502,6 +503,7 @@ const MANUAL_GROUPS = {
     'Доход за работу': ['Зарплата', 'Фриланс и подработка', 'Продажа и соцвыплаты'],
     'Доходность вложений': ['Проценты по вкладу', 'Инвестиционный доход', 'Кэшбек и бонусы'],
     'Подарки и возвраты': ['Подарки мне', 'Возврат денег', 'Долг мне вернули'],
+    'Другое': ['Другие доходы'],
   },
 };
 

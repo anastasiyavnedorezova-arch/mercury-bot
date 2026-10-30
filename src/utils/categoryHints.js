@@ -14,8 +14,13 @@ export const EXPENSE_CATEGORIES = [
 
 export const INCOME_CATEGORIES = [
   'Зарплата', 'Фриланс и подработка', 'Продажа и соцвыплаты', 'Проценты по вкладу', 'Инвестиционный доход',
-  'Кэшбек и бонусы', 'Подарки мне', 'Возврат денег', 'Долг мне вернули',
+  'Кэшбек и бонусы', 'Подарки мне', 'Возврат денег', 'Долг мне вернули', 'Другие доходы',
 ];
+
+// Куда идёт доход, если ни одна категория не подошла («Остальное» — расходная, доходу она не подходит)
+export const INCOME_FALLBACK_CATEGORY = 'Другие доходы';
+export const incomeCategoryFor = (type, category) =>
+  type === 'income' && (category === 'Остальное' || category === 'Другое') ? INCOME_FALLBACK_CATEGORY : category;
 
 // words — слова, которыми человек называет саму категорию или покупку: записью считается только фраза целиком
 //         («развлечения 400»); brands — магазины, организации, сервисы: узнаются и внутри фразы («золотое яблоко помада 3400»).
@@ -216,6 +221,7 @@ export function canonicalCategory(name) {
 // Магазин или организация (ФНС, Золотое яблоко) определяют категорию расхода всегда; общие слова — только вместо «Остальное».
 export function refineStatementItem(tx) {
   const out = { ...tx, category: canonicalCategory(tx.category) };
+  if (out.type === 'income') { out.category = incomeCategoryFor('income', out.category); return out; }
   if (out.type !== 'expense') return out;
   const brand = matchBrandInText(`${tx.description ?? ''} ${tx.comment ?? ''}`);
   if (brand) {
