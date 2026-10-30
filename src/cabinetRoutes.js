@@ -17,7 +17,7 @@ import { createUserCategory, updateUserCategory, listGroups, mapCategoryRow } fr
 import { updateTransaction } from './cabinet/historyEdit.js';
 import { addGoalContribution } from './cabinet/goalContribution.js';
 import { isUuid } from './cabinet/categories.js';
-import { splitGoals, getWorkingGoalId, setWorkingGoal } from './utils/goalAccess.js';
+import { splitGoals, getWorkingGoalId, setWorkingGoal, GOAL_CHOSEN_MESSAGE } from './utils/goalAccess.js';
 import { rateLimit, userKey } from './utils/httpLimits.js';
 import { displayMessage } from './utils/messageText.js';
 import { getContributions, goalSaved } from './utils/goalProgress.js';
@@ -248,10 +248,12 @@ router.get('/api/goals', requireAuth, async (req, res) => {
     const access = await getUserAccess(req.userId);
     const active = (data || []).filter((g) => g.status === 'active');
     const workingId = access === 'free' ? await getWorkingGoalId(supabase, req.userId) : null;
-    const lockedIds = new Set(splitGoals(active, access, workingId).locked.map((g) => g.id));
+    const split = splitGoals(active, access, workingId);
+    const lockedIds = new Set(split.locked.map((g) => g.id));
     res.json({
       data: (data || []).map((g) => ({ ...g, saved: goalSaved(g, contributions), locked: lockedIds.has(g.id) })),
       access,
+      needs_choice: split.needsChoice, // free и несколько целей: рабочая ещё не выбрана (выбор делается один раз)
     });
   } catch (err) {
     console.error('[cabinet] /api/goals error:', err.message);
@@ -279,7 +281,11 @@ router.post('/api/goals/:id/contribute', requireAuth, limitGoalTopUp, async (req
 router.post('/api/goals/:id/work', requireAuth, limitGoalTopUp, async (req, res) => {
   try {
     if (!isUuid(req.params.id)) return res.status(404).json({ error: 'Not found', message: 'Цель не найдена' });
-    const r = await setWorkingGoal(supabase, req.userId, req.params.id);
+    const r = await setWorkingGoal(supabase, req.userId, req.params.id, await getUserAccess(req.userId));
+    if (!r.ok && r.status === 409) {
+      const message = r.reason === 'paid' ? 'С подпиской все цели работают, выбирать не нужно' : GOAL_CHOSEN_MESSAGE;
+      return res.status(409).json({ error: 'Conflict', message });
+    }
     if (!r.ok) return res.status(404).json({ error: 'Not found', message: 'Цель не найдена' });
     res.json({ ok: true, working_goal_id: r.goal.id });
   } catch (err) {

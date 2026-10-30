@@ -2,7 +2,7 @@
 import { isUuid } from './categories.js';
 import { GOAL_CATEGORY, getContributions, goalProgress } from '../utils/goalProgress.js';
 import { todayStr } from '../utils/dateTz.js';
-import { getUsableGoals, GOAL_LOCKED_MESSAGE } from '../utils/goalAccess.js';
+import { getGoalsByAccess, GOAL_LOCKED_MESSAGE, GOAL_CHOOSE_MESSAGE } from '../utils/goalAccess.js';
 
 const fail = (status, message) => ({ status, json: { error: message, message } });
 
@@ -25,8 +25,8 @@ export async function addGoalContribution(db, userId, goalId, body = {}, today =
   if (goalErr) throw goalErr;
   if (!goal) return fail(404, 'Цель не найдена');
   if (access === 'free') {
-    const usable = await getUsableGoals(db, userId, access);
-    if (!usable.some((g) => g.id === goal.id)) return fail(403, GOAL_LOCKED_MESSAGE);
+    const split = await getGoalsByAccess(db, userId, access);
+    if (!split.usable.some((g) => g.id === goal.id)) return fail(403, split.needsChoice ? GOAL_CHOOSE_MESSAGE : GOAL_LOCKED_MESSAGE);
   }
 
   const { data: cat, error: catErr } = await db

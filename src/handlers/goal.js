@@ -6,7 +6,10 @@ import { parseAmount, parseAmountStrict } from '../utils/parseAmount.js';
 import { applyGoalSaved, isGoalStateExpired } from '../utils/goalEdit.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 import { getContributions, goalSaved } from '../utils/goalProgress.js';
-import { maxGoals, splitGoals, getWorkingGoalId, setWorkingGoal, GOAL_LOCKED_NOTE, GOAL_LOCKED_SHORT } from '../utils/goalAccess.js';
+import {
+  maxGoals, splitGoals, getWorkingGoalId, setWorkingGoal,
+  GOAL_LOCKED_NOTE, GOAL_CHOOSE_NOTE, GOAL_LOCKED_SHORT, GOAL_CHOOSE_SHORT, GOAL_CHOSEN_MESSAGE,
+} from '../utils/goalAccess.js';
 
 // ── Константы и форматирование ────────────────────────────────────────────────
 
@@ -66,6 +69,12 @@ function parseRuDate(text) {
 
 const getUserId = (telegramId) => findUserIdByExternalId(supabase, telegramId);
 
+// Активные цели человека с учётом тарифа и сделанного выбора рабочей цели
+async function getGoalsByAccessFor(userId, access) {
+  const goals = await getActiveGoals(userId);
+  return { goals, ...splitGoals(goals, access, access === 'free' ? await getWorkingGoalId(supabase, userId) : null) };
+}
+
 async function getActiveGoals(userId) {
   const { data } = await supabase
     .from('goals')
@@ -84,28 +93,28 @@ function goalCardHeader(total, maxCount) {
     : `У тебя установлена ${total} ${pluralGoal(total)} из ${maxCount}.\n\n`;
 }
 
-function goalCardText(goal, total, maxCount, locked = false) {
+function goalCardText(goal, total, maxCount, locked = false, needsChoice = false) {
   return (
     goalCardHeader(total, maxCount) +
     `🎯 Твоя цель: ${goal.name}\n` +
     `📅 Срок: ${formatGoalDate(goal.target_date)}\n` +
     `💰 Нужно накопить: ${formatNum(goal.future_value)} ₽ (с учётом инфляции)\n` +
     `💡 Нужно откладывать: ${formatNum(goal.monthly_payment)} ₽/мес\n\n` +
-    (locked ? `${GOAL_LOCKED_NOTE}\n\n` : '') +
+    (locked ? `${needsChoice ? GOAL_CHOOSE_NOTE : GOAL_LOCKED_NOTE}\n\n` : '') +
     `Что хочешь сделать?`
   );
 }
 
 // canAdd — лимит не достигнут, показываем кнопку добавления
-function goalCardKeyboard(goal, canAdd, locked = false, hasLocked = false) {
+function goalCardKeyboard(goal, canAdd, locked = false, hasLocked = false, canChoose = false) {
   const id = goal.id;
   if (locked) {
-    // Цель закрыта тарифом: смотреть, сделать рабочей, удалить
+    // Цель закрыта тарифом: смотреть и удалять; «Сделать рабочей» только пока выбор ещё не сделан
     return {
       reply_markup: {
         inline_keyboard: [
           [{ text: '📊 Оценить прогресс', callback_data: `goal:progress:${id}` }],
-          [{ text: '⭐ Сделать рабочей', callback_data: `goal:work:${id}` }],
+          ...(canChoose ? [[{ text: '⭐ Сделать рабочей', callback_data: `goal:work:${id}` }]] : []),
           [{ text: '🗑 Удалить', callback_data: `goal:delete:${id}` }],
           [{ text: '🎯 Все цели', callback_data: 'menu:goal' }],
         ],
@@ -166,12 +175,14 @@ export async function showGoal(bot, chatId, telegramId) {
   }
 
   // Несколько целей — показываем список одним сообщением
-  const { working, locked } = splitGoals(goals, access, access === 'free' ? await getWorkingGoalId(supabase, userId) : null);
+  const { locked, needsChoice } = splitGoals(goals, access, access === 'free' ? await getWorkingGoalId(supabase, userId) : null);
   const lockedIds = new Set(locked.map((g) => g.id));
-  const mark = (g) => (access !== 'free' ? '🎯' : lockedIds.has(g.id) ? '🔒' : '✅');
-  let text = access === 'free'
-    ? `У тебя ${goals.length} ${pluralGoal(goals.length)}. Пока подписки нет, рабочая цель одна (✅), остальные можно смотреть и удалять (🔒). С подпиской вернутся все.\n\n`
-    : `У тебя ${goals.length} ${pluralGoal(goals.length)} из ${maxCount}:\n\n`;
+  const mark = (g) => (access !== 'free' || needsChoice ? '🎯' : lockedIds.has(g.id) ? '🔒' : '✅');
+  let text = access !== 'free'
+    ? `У тебя ${goals.length} ${pluralGoal(goals.length)} из ${maxCount}:\n\n`
+    : needsChoice
+      ? `У тебя ${goals.length} ${pluralGoal(goals.length)}. Пока подписки нет, рабочая цель одна: выбери её, это можно сделать один раз. Остальные цели сохранятся, их можно смотреть и удалять, а с подпиской они снова заработают.\n\n`
+      : `У тебя ${goals.length} ${pluralGoal(goals.length)}. Пока подписки нет, рабочая цель одна (✅), остальные можно смотреть и удалять (🔒). С подпиской вернутся все.\n\n`;
   for (const g of goals) {
     text += `${mark(g)} ${g.name} — ${formatGoalDate(g.target_date)}, ${formatNum(g.monthly_payment)} ₽/мес\n`;
   }
@@ -528,8 +539,9 @@ async function showGoalProgress(bot, chatId, userId, goal) {
   const remaining = Math.max(0, goal.future_value - accumulated);
   // закрытая тарифом цель: только просмотр, без «Пополнить»
   const access = await getUserAccess(userId);
-  const isLocked = access === 'free'
-    && splitGoals(await getActiveGoals(userId), access, await getWorkingGoalId(supabase, userId)).locked.some((g) => g.id === goal.id);
+  const split = access === 'free' ? splitGoals(await getActiveGoals(userId), access, await getWorkingGoalId(supabase, userId)) : null;
+  const isLocked = Boolean(split?.locked.some((g) => g.id === goal.id));
+  const canChoose = isLocked && split.needsChoice;
 
   let text =
     `🎯 ${goal.name}\n\n` +
@@ -558,7 +570,9 @@ async function showGoalProgress(bot, chatId, userId, goal) {
   await bot.sendMessage(chatId, text, {
     reply_markup: {
       inline_keyboard: [
-        ...(isLocked ? [[{ text: '⭐ Сделать рабочей', callback_data: `goal:work:${goal.id}` }]] : [[{ text: '➕ Пополнить', callback_data: `goal:topup:${goal.id}` }]]),
+        ...(isLocked
+          ? (canChoose ? [[{ text: '⭐ Сделать рабочей', callback_data: `goal:work:${goal.id}` }]] : [])
+          : [[{ text: '➕ Пополнить', callback_data: `goal:topup:${goal.id}` }]]),
         [{ text: '☰ Главное меню', callback_data: 'menu:main' }],
       ],
     },
@@ -648,31 +662,65 @@ export async function handleGoalCallback(bot, query) {
       return;
     }
     const maxCount = maxGoals(access);
-    const { locked } = splitGoals(goals, access, access === 'free' ? await getWorkingGoalId(supabase, userId) : null);
+    const { locked, needsChoice } = splitGoals(goals, access, access === 'free' ? await getWorkingGoalId(supabase, userId) : null);
     const isLocked = locked.some((g) => g.id === goal.id);
     await bot.sendMessage(
       chatId,
-      goalCardText(goal, goals.length, maxCount, isLocked),
-      goalCardKeyboard(goal, goals.length < maxCount, isLocked, locked.length > 0)
+      goalCardText(goal, goals.length, maxCount, isLocked, needsChoice),
+      goalCardKeyboard(goal, goals.length < maxCount, isLocked, locked.length > 0, needsChoice)
     );
     return;
   }
 
-  // ── Сделать рабочей: goal:work:{goalId} (на free) ────────────────────────
+  // ── Сделать рабочей: goal:work:{goalId} (на free, один раз, с подтверждением) ──
 
   if (parts[1] === 'work' && parts[2]) {
     const userId = await getUserId(telegramId);
     if (!userId) return;
-    const r = await setWorkingGoal(supabase, userId, parts[2]);
-    if (!r.ok) {
+    const access = await getUserAccess(userId);
+    const { goals, working, needsChoice } = await getGoalsByAccessFor(userId, access);
+    const goal = goals.find((g) => g.id === parts[2]);
+    if (!goal) {
       await bot.sendMessage(chatId, 'Цель не найдена 🤔', MENU_KEYBOARD);
+      return;
+    }
+    if (access !== 'free' || (!needsChoice && working?.id !== goal.id)) {
+      await bot.sendMessage(chatId, access !== 'free' ? 'С подпиской все цели работают, выбирать не нужно 💛' : GOAL_CHOSEN_MESSAGE, MENU_KEYBOARD);
       return;
     }
     await bot.sendMessage(
       chatId,
-      `Готово, теперь рабочая цель «${r.goal.name}» ⭐\nЕё можно пополнять и менять. Остальные цели сохранены: смотреть и удалять можно, а с подпиской всё вернётся 💛`,
+      `Сделать цель «${goal.name}» рабочей?\n\nПока подписки нет, выбор нельзя изменить: пополнять и менять можно будет только её. Остальные цели сохранятся, их можно смотреть и удалять, а с подпиской они снова заработают.`,
+      {
+        reply_markup: {
+          inline_keyboard: [[
+            { text: '✅ Да, сделать рабочей', callback_data: `goal:work_yes:${goal.id}` },
+            { text: 'Нет', callback_data: 'goal:work_cancel' },
+          ]],
+        },
+      }
+    );
+    return;
+  }
+
+  if (parts[1] === 'work_yes' && parts[2]) {
+    const userId = await getUserId(telegramId);
+    if (!userId) return;
+    const r = await setWorkingGoal(supabase, userId, parts[2], await getUserAccess(userId));
+    if (!r.ok) {
+      await bot.sendMessage(chatId, r.reason === 'chosen' ? GOAL_CHOSEN_MESSAGE : 'Цель не найдена 🤔', MENU_KEYBOARD);
+      return;
+    }
+    await bot.sendMessage(
+      chatId,
+      `Готово, рабочая цель «${r.goal.name}» ⭐\nЕё можно пополнять и менять. Остальные цели сохранены: смотреть и удалять можно, а с подпиской всё вернётся 💛`,
       { reply_markup: { inline_keyboard: [[{ text: '🎯 Все цели', callback_data: 'menu:goal' }], [{ text: '☰ Главное меню', callback_data: 'menu:main' }]] } }
     );
+    return;
+  }
+
+  if (action === 'goal:work_cancel') {
+    await bot.sendMessage(chatId, 'Хорошо, ничего не меняю 💛', MENU_KEYBOARD);
     return;
   }
 
@@ -683,9 +731,9 @@ export async function handleGoalCallback(bot, query) {
     if (!userId) return;
     const access = await getUserAccess(userId);
     if (access === 'free') {
-      const { locked } = splitGoals(await getActiveGoals(userId), access, await getWorkingGoalId(supabase, userId));
+      const { locked, needsChoice } = splitGoals(await getActiveGoals(userId), access, await getWorkingGoalId(supabase, userId));
       if (locked.some((g) => g.id === parts[2])) {
-        await bot.sendMessage(chatId, GOAL_LOCKED_SHORT, MENU_KEYBOARD);
+        await bot.sendMessage(chatId, needsChoice ? GOAL_CHOOSE_SHORT : GOAL_LOCKED_SHORT, MENU_KEYBOARD);
         return;
       }
     }

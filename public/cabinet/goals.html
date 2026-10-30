@@ -639,19 +639,22 @@
   }
 
   // Подписки нет (free): рабочая цель одна, её выбирает человек; остальные (g.locked) можно смотреть и удалять
+  // needsChoice: целей больше одной и рабочая ещё не выбрана (выбор делается один раз, потом остальные закрыты до подписки)
   function renderExpired(container, goals) {
     var hasLocked = goals.some(function(g) { return g.locked; });
-    var html = expiredBanner(hasLocked) + '<div class="goals-grid">';
+    var html = expiredBanner(hasLocked, needsChoice) + '<div class="goals-grid">';
     goals.forEach(function(g) { html += renderGoalCard(g); });
     html += '</div>';
     container.innerHTML = html;
   }
 
   // ── Card helpers ─────────────────────────────────────────
-  function expiredBanner(hasLocked) {
+  function expiredBanner(hasLocked, choose) {
     return '<div class="expired-banner">' +
       '<div class="expired-text"><strong>У тебя закончилась подписка.</strong> ' +
-        (hasLocked ? 'Пока её нет, рабочая цель одна: выбери, какую пополнять и менять. Остальные можно смотреть и удалять, с подпиской они снова заработают.' : 'Для доступа ко всем целям оплати подписку.') +
+        (choose ? 'Пока её нет, рабочая цель одна: выбери, какую пополнять и менять. Выбор делается один раз. Остальные можно смотреть и удалять, с подпиской они снова заработают.'
+          : hasLocked ? 'Пока её нет, рабочая цель одна, остальные можно смотреть и удалять. С подпиской они снова заработают.'
+          : 'Для доступа ко всем целям оплати подписку.') +
       '</div>' +
       '<a href="/cabinet/profile?plans=1" class="btn btn-accent btn-sm">Оплатить подписку</a>' +
     '</div>';
@@ -700,7 +703,7 @@
       '</div>' +
       '<div class="card-actions">' +
         (locked
-          ? '<button class="btn btn-primary btn-sm" onclick="window.makeWorkingGoal(\'' + gId + '\')">Сделать рабочей</button>'
+          ? (needsChoice ? '<button class="btn btn-primary btn-sm" onclick="window.makeWorkingGoal(\'' + gId + '\',\'' + gName + '\')">Сделать рабочей</button>' : '')
           : '<button class="btn btn-mini-dark btn-sm" onclick="window.openModal(\'modalAddGoal\');">Редактировать</button>' +
             '<button class="btn btn-primary btn-sm btn-topup" onclick="window.openTopUpModal(\'' + gId + '\',\'' + gName + '\')">Пополнить</button>') +
       '</div>' +
@@ -733,6 +736,7 @@
 
   // ── Main load function ───────────────────────────────────
   var allGoals = [];
+  var needsChoice = false;
   var subStatus = null;
   var container = null;
 
@@ -754,11 +758,17 @@
   }
 
   // «Сделать рабочей»: сервер запоминает выбор, страница перерисовывается
-  async function makeWorkingGoal(goalId) {
+  async function makeWorkingGoal(goalId, goalName) {
+    if (!window.confirm('Сделать цель «' + (goalName || '') + '» рабочей?\n\nПока подписки нет, выбор нельзя изменить: пополнять и менять можно будет только её. Остальные цели сохранятся, их можно смотреть и удалять, а с подпиской они снова заработают.')) return;
     try {
       var res = await fetch('/api/goals/' + encodeURIComponent(goalId) + '/work', { method: 'POST', headers: authHeaders() });
       if (res.status === 401) { window.location.replace('/cabinet/login'); return; }
-      if (!res.ok) { alert('Не получилось выбрать цель. Попробуй ещё раз'); return; }
+      if (!res.ok) {
+        var d = await res.json().catch(function() { return {}; });
+        alert(d.message || 'Не получилось выбрать цель. Попробуй ещё раз');
+        await loadPage();
+        return;
+      }
       await loadPage();
     } catch (e) {
       console.error('[goals] work error:', e);
@@ -783,6 +793,7 @@
       var goalsData = await goalsRes.json();
       subStatus = meData.subscription ? meData.subscription.status : null;
       allGoals = (goalsData.data || []).filter(function(g) { return g.status === 'active'; });
+      needsChoice = !!goalsData.needs_choice;
       renderHeader({ username: meData.username || 'Пользователь', subscription: meData.subscription || null });
       renderPage(container, allGoals, subStatus);
     } catch(e) {

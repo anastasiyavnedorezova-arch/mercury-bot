@@ -24,7 +24,7 @@ import { rememberUnrecognized, clearUnrecognized, takeUnrecognized, looksLikeMas
 import { splitAmountAndWords } from '../utils/categoryHints.js';
 import { maybeAskToLearn } from './learn.js';
 import { mentionsMarketplace, isWebBot, buildConfirmationText, buildMultiConfirmationText, buildMultiKeyboard, buildGoalPickText, buildGoalPickKeyboard, textForPendingAmount, TEXTS } from '../utils/botTexts.js';
-import { getUsableGoals, GOAL_LOCKED_SHORT } from '../utils/goalAccess.js';
+import { getUsableGoals, getGoalsByAccess, GOAL_LOCKED_SHORT, GOAL_CHOOSE_SHORT } from '../utils/goalAccess.js';
 import { GOAL_CATEGORY, getActiveGoals, getContributions, attachGoalInfo, planGoalContributions, matchGoalByText, isGoalItem, normalizeGoalItem } from '../utils/goalProgress.js';
 import { isGoalStateExpired } from '../utils/goalEdit.js';
 import { parseAmountStrict } from '../utils/parseAmount.js';
@@ -259,7 +259,8 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
   const isMulti = Array.isArray(parsed);
   const items = isMulti ? parsed : [parsed];
   // Взнос на цель: одна цель — берём её; несколько — по названию в тексте, иначе спрашиваем кнопками
-  const goals = items.some(isGoalItem) ? await getUsableGoals(supabase, userId, access) : [];
+  const goalsInfo = items.some(isGoalItem) ? await getGoalsByAccess(supabase, userId, access) : null;
+  const goals = goalsInfo?.usable ?? [];
   const { toSave, pending, dropped } = planGoalContributions(goals, items, rawMessage);
 
   if (toSave.length > 0) {
@@ -281,7 +282,10 @@ async function processAndSave(bot, chatId, telegramId, parsed, rawMessage) {
     }
   }
 
-  if (dropped > 0) {
+  if (dropped > 0 && goalsInfo?.needsChoice) {
+    // free и несколько целей, рабочая ещё не выбрана: взнос не пишем, просим выбрать
+    await bot.sendMessage(chatId, GOAL_CHOOSE_SHORT, { reply_markup: { inline_keyboard: [[{ text: '🎯 Выбрать рабочую цель', callback_data: 'menu:goal' }]] } });
+  } else if (dropped > 0) {
     await bot.sendMessage(chatId, TEXTS.goalNone, NO_GOAL_KEYBOARD);
   }
   if (pending.length > 0) {
@@ -375,9 +379,9 @@ export async function handleGoalTopupCallback(bot, query) {
     return;
   }
   // На free пополнять можно только рабочую цель
-  const usable = await getUsableGoals(supabase, userId, await getUserAccess(userId));
-  if (!usable.some((g) => g.id === goal.id)) {
-    await bot.sendMessage(chatId, GOAL_LOCKED_SHORT, MENU_KEYBOARD);
+  const split = await getGoalsByAccess(supabase, userId, await getUserAccess(userId));
+  if (!split.usable.some((g) => g.id === goal.id)) {
+    await bot.sendMessage(chatId, split.needsChoice ? GOAL_CHOOSE_SHORT : GOAL_LOCKED_SHORT, MENU_KEYBOARD);
     return;
   }
   userStates.set(telegramId, { awaitingGoalTopup: true, goalId: goal.id, userId, createdAt: Date.now() });
