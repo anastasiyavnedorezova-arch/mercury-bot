@@ -23,7 +23,7 @@ test('лендинг: заголовок, описание и соцсети с 
   const ld = h.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   assert.ok(ld, 'нет JSON-LD');
   const data = JSON.parse(ld[1]);
-  assert.ok(data['@graph'].every((x) => x.name === NAME));
+  assert.ok(data['@graph'].filter((x) => x['@type'] !== 'FAQPage').every((x) => x.name === NAME));
 });
 
 test('кабинет: у каждой страницы название в <title>, логотип с нужным alt', () => {

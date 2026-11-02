@@ -155,7 +155,8 @@ test('шапка лендинга: «Войти» и «Создать аккау
 test('FAQ: вопрос про семейный бюджет один (на лендинге и в кабинете), ответ объединён', () => {
   const cabinetFaq = fs.readFileSync('public/cabinet/faq.html', 'utf8');
   for (const [name, src] of [['лендинг', html], ['кабинет', cabinetFaq]]) {
-    assert.equal((src.match(/Как вести семейный бюджет/g) || []).length, 1, `${name}: дубль вопроса`);
+    const visible = src.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, '');
+    assert.equal((visible.match(/Как вести семейный бюджет/g) || []).length, 1, `${name}: дубль вопроса`);
     assert.ok(src.includes('Общий семейный бюджет появится в ближайшем обновлении, о нём расскажем в рассылке'), `${name}: объединённый ответ`);
     assert.ok(!src.includes('Раздел сейчас в разработке'), `${name}: старый ответ про «раздел в разработке»`);
   }
