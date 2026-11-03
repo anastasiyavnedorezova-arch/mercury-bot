@@ -300,6 +300,160 @@ body {
 
 
 /* ================================================
+   ШАПКА НА ПЛАНШЕТАХ (769–1100px): на этой ширине меню и кнопки не помещаются, показываем бургер, как на телефоне
+   ================================================ */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .header { padding: 0; }
+
+  /* Шапка — без капсулы, прямоугольная */
+  .header__wrap {
+    border-radius: 0;
+    padding: 4px 8px 4px 4px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--white);
+  }
+
+  .header__nav,
+  .header__actions { display: none; }
+
+  /* Бургер */
+  .header__burger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+    border-radius: 8px;
+    transition: background 0.18s;
+  }
+
+  .header__burger:hover { background: var(--bg); }
+
+  .header__burger span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--text-main);
+    border-radius: 999px;
+    transition: transform 0.25s ease, opacity 0.2s ease;
+    transform-origin: center;
+  }
+
+  .header__burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .header__burger.is-open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .header__burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* Оверлей */
+  .header__overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.40);
+    z-index: 98;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .header__overlay.is-open {
+    display: block;
+    opacity: 1;
+  }
+
+  /* Карточка меню — по центру под хедером */
+  .header__mobile {
+    display: block;
+    position: fixed;
+    top: 62px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px) scale(0.98);
+    width: calc(100% - 32px);
+    max-width: 350px;
+    background: var(--white);
+    border-radius: 16px;
+    outline: 1px solid #E2E8F0;
+    outline-offset: -1px;
+    padding: 20px 16px;
+    z-index: 99;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .header__mobile.is-open {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .header__mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+  }
+
+  .header__mobile-nav a {
+    display: block;
+    width: 100%;
+    padding: 6px 0;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 18px;
+    color: #1E2A38;
+    text-align: center;
+    text-decoration: none;
+    transition: color 0.18s;
+  }
+
+  .header__mobile-nav a:hover { color: var(--blue); }
+
+  .header__mobile-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header__mobile-actions .btn {
+    height: 40px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 10px;
+  }
+
+  /* Войти — secondary */
+  .header__mobile-actions .btn--secondary {
+    background: var(--white);
+    color: var(--text-main);
+    outline: 1px solid #E2E8F0;
+    outline-offset: -1px;
+  }
+
+  /* Войти — secondary по центру */
+  .header__mobile-actions .btn--secondary {
+    width: auto;
+    min-width: 140px;
+    justify-content: center;
+  }
+
+  /* Создать аккаунт — синяя на всю ширину */
+  .header__mobile-actions .btn--blue {
+    background: var(--blue);
+    color: var(--white);
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ================================================
    АДАПТИВ — 768px
    ================================================ */
 @media (max-width: 768px) {

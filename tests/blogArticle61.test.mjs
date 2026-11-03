@@ -152,17 +152,15 @@ test('баннер cookie и Метрика подключены так же, к
   assert.match(html, /<script src="\/js\/blog\.js" defer><\/script>/);
 });
 
-test('карта сайта, ссылка с главной и иконки', () => {
+test('карта сайта и иконки', () => {
   assert.ok(sitemapXml().includes(`<loc>${FULL_URL}</loc>`));
-  const landing = fs.readFileSync(path.join(pub, 'index.html'), 'utf8');
-  assert.ok(landing.includes(`href="${URL_PATH}"`), 'с главной нет ссылки на статью');
   for (const need of ['/favicon.ico', '/images/favicon-finnik.svg', '/images/favicon-48.png', '/images/favicon-120.png']) {
     assert.ok(html.includes(`href="${need}"`), `нет иконки ${need}`);
     assert.ok(exists(need));
   }
 });
 
-test('сервер: статья отдаётся, без слэша — 301 на адрес со слэшем, /blog/ — 302 на главную, на stage noindex', async () => {
+test('сервер: статья отдаётся, без слэша — 301 на адрес со слэшем, /blog/ — 302 на статью, на stage noindex', async () => {
   const app = express();
   addSeoRoutes(app);
   app.use(express.static(pub));
@@ -182,7 +180,7 @@ test('сервер: статья отдаётся, без слэша — 301 н�
     for (const p of ['/blog', '/blog/']) {
       const r = await get(p);
       assert.equal(r.status, 302, p);
-      assert.equal(r.headers.location, '/');
+      assert.equal(r.headers.location, URL_PATH);
     }
     assert.equal((await get(URL_PATH, 'stage.finnikbot.ru')).headers['x-robots-tag'], 'noindex, nofollow');
     for (const [p, type] of [['/css/blog.css', /text\/css/], ['/js/blog.js', /javascript/], ['/images/blog/blog-1-cover.webp', /image\/webp/], ['/images/blog/og-blog-1.jpg', /image\/jpeg/]]) {

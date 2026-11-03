@@ -29,8 +29,9 @@ export function addSeoRoutes(app) {
     if (isStageHost(req.headers.host)) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     next();
   });
-  // Раздела «Блог» пока нет: адрес /blog/ временно ведёт на главную (302, чтобы поисковики не запоминали это навсегда)
-  app.get('/blog', (req, res) => res.redirect(302, '/'));
+  // Страницы-списка «Блог» пока нет: адрес /blog/ временно ведёт на единственную статью (302, чтобы поисковики не запоминали это навсегда).
+  // Когда статей станет 3+, здесь вместо редиректа отдаём страницу блога.
+  app.get('/blog', (req, res) => res.redirect(302, '/blog/kak-vesti-uchet-rashodov/'));
   app.get('/robots.txt', (req, res) => res.type('text/plain; charset=utf-8').send(robotsTxt(req.headers.host)));
   app.get('/sitemap.xml', (req, res) => {
     if (isStageHost(req.headers.host)) return res.status(404).end();
