@@ -76,16 +76,38 @@ test('JSON-LD: Article, BreadcrumbList и FAQPage; дата совпадает �
   assert.equal(bc[0].item, 'https://finnikbot.ru/');
 });
 
-test('FAQPage: 4 вопроса и ответа слово в слово как на странице', () => {
-  const items = [...html.matchAll(/<details[^>]*>\s*<summary>([\s\S]*?)<\/summary>\s*<p class="faq__a">([\s\S]*?)<\/p>\s*<\/details>/g)]
+test('FAQPage: 4 вопроса и ответа слово в слово как на странице (вопросы заданы явно, не берутся тем же разбором)', () => {
+  // Явный список: так ошибка разбора (например, захват всего текста статьи в «вопрос») не пройдёт незамеченной
+  const EXPECTED = [
+    'Нужно ли записывать каждую мелкую покупку',
+    'Можно ли начать в середине месяца',
+    'Обязательно ли сразу устанавливать бюджет',
+    'Можно ли вести учет без Telegram',
+  ];
+  const start = html.indexOf('<div class="faq">');
+  assert.ok(start > 0, 'нет блока FAQ');
+  const block = html.slice(start, html.indexOf('</div>', start));
+  const items = [...block.matchAll(/<details[^>]*>\s*<summary>([^<]*)<\/summary>\s*<p class="faq__a">([\s\S]*?)<\/p>\s*<\/details>/g)]
     .map((m) => ({ q: clean(m[1]), a: clean(m[2]) }));
-  assert.equal(items.length, 4);
+  assert.deepEqual(items.map((i) => i.q), EXPECTED);
   const faq = jsonLd()['@graph'][2];
-  assert.equal(faq.mainEntity.length, items.length);
+  assert.equal(faq.mainEntity.length, EXPECTED.length);
   items.forEach((v, i) => {
-    assert.equal(faq.mainEntity[i].name, v.q, `вопрос ${i + 1}`);
-    assert.equal(faq.mainEntity[i].acceptedAnswer.text, v.a, `ответ ${i + 1}`);
+    const e = faq.mainEntity[i];
+    assert.equal(e['@type'], 'Question');
+    assert.equal(e.name, EXPECTED[i], `вопрос ${i + 1}`);
+    assert.equal(e.acceptedAnswer.text, v.a, `ответ ${i + 1}`);
+    assert.ok(e.name.length <= 120, `слишком длинный вопрос ${i + 1}: ${e.name.length} знаков`);
+    assert.ok(e.acceptedAnswer.text.length >= 40 && e.acceptedAnswer.text.length <= 600, `длина ответа ${i + 1}`);
+    assert.ok(!/Содержание статьи|Частые вопросы/.test(e.name + e.acceptedAnswer.text), 'в разметку попал текст статьи');
   });
+  // Все тексты разметки короткие: в JSON-LD нет куска статьи
+  assert.ok(JSON.stringify(jsonLd()).length < 6000, 'JSON-LD подозрительно большой');
+});
+
+test('метки Open Graph для статьи: префикс article объявлен (иначе валидатор Яндекса даёт ошибку)', () => {
+  assert.match(html, /<head prefix="og: https:\/\/ogp\.me\/ns# article: https:\/\/ogp\.me\/ns\/article#">/);
+  assert.match(html, /<meta property="article:published_time" content="\d{4}-\d{2}-\d{2}">/);
 });
 
 test('на странице не осталось макетных заглушек, автора и «Скоро в блоге»', () => {

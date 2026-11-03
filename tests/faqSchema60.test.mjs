@@ -54,3 +54,11 @@ test('в разметке нет HTML-тегов и повторяющихся �
   assert.equal(new Set(names).size, names.length);
   for (const e of faq.mainEntity) assert.doesNotMatch(e.acceptedAnswer.text, /<[a-z\/]/i);
 });
+
+test('в разметке вопросов нет «раздутых» текстов: вопрос короткий, ответ в разумных пределах', () => {
+  const faq = jsonLd()['@graph'].find((n) => n['@type'] === 'FAQPage');
+  for (const [i, e] of faq.mainEntity.entries()) {
+    assert.ok(e.name.length <= 120, `вопрос ${i + 1} слишком длинный: ${e.name.length}`);
+    assert.ok(e.acceptedAnswer.text.length >= 20 && e.acceptedAnswer.text.length <= 800, `длина ответа ${i + 1}`);
+  }
+});
