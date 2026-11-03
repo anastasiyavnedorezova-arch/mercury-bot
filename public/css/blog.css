@@ -294,3 +294,49 @@ h1 { font-size: clamp(30px, 4.1vw, 52px); line-height: 1.1; font-weight: 800; le
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 /* Талисман тёмно-синий, поэтому в тёмной карточке ему нужна светлая подложка, как у остальных картинок статьи */
 .cta .ph--mascot { background: #E4EAF3; border-radius: 28px; padding: 10px; }
+
+/* ---------- Статья 2: таблицы, цитаты, шаги, встроенная кнопка ---------- */
+.inline-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; padding: 20px 24px; background: var(--blue-bg); border-radius: 20px; }
+.inline-cta p { flex: 1 1 260px; font-size: 16.5px; line-height: 1.55; color: var(--dark); margin: 0; }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 18px; background: var(--white); }
+.tbl { width: 100%; border-collapse: collapse; font-size: 16px; font-variant-numeric: tabular-nums; }
+.tbl th, .tbl td { padding: 13px 18px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tbl thead th { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: #F8FAFC; }
+.tbl tbody tr:last-child td { border-bottom: 0; }
+.tbl .num { text-align: right; }
+.tbl .in { color: var(--green-text); font-weight: 700; }
+.tbl .out { color: var(--dark); font-weight: 700; }
+.tbl .dash { color: var(--dim); }
+.tbl-note { font-size: 14px; line-height: 1.5; color: var(--muted); margin-top: 10px; }
+.cmp { border: 1px solid var(--border); border-radius: 20px; overflow: hidden; background: var(--white); }
+.cmp table { width: 100%; border-collapse: collapse; font-size: 15.5px; line-height: 1.5; }
+.cmp th, .cmp td { padding: 16px 18px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+.cmp tbody tr:last-child > * { border-bottom: 0; }
+.cmp thead th { font-size: 13px; font-weight: 800; color: var(--dark); background: #F8FAFC; }
+.cmp thead th.is-finnik { background: var(--dark); color: var(--white); }
+.cmp tbody th { width: 17%; font-weight: 700; color: var(--dark); }
+.cmp td.is-finnik { background: #F1F5F9; color: var(--dark); font-weight: 600; }
+@media (max-width: 760px) {
+  .cmp thead { display: none; }
+  .cmp table, .cmp tbody, .cmp tr, .cmp th, .cmp td { display: block; width: 100%; }
+  .cmp tr { padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .cmp tbody tr:last-child { border-bottom: 0; }
+  .cmp tbody th { width: 100%; padding: 0 18px 8px; border: 0; font-size: 16px; }
+  .cmp td { padding: 6px 18px; border: 0; }
+  .cmp td::before { content: attr(data-label); display: block; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .cmp td.is-finnik { background: #F1F5F9; margin: 6px 12px 0; width: auto; border-radius: 12px; padding: 10px 14px; }
+}
+.quote { margin: 0; padding: 22px 26px; border-left: 4px solid var(--blue); background: var(--white); border-radius: 0 18px 18px 0; box-shadow: 0 4px 16px rgba(15,23,42,.04); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.quote blockquote { margin: 0; font-size: 18px; line-height: 1.6; color: var(--dark); font-weight: 600; }
+.quote figcaption { margin-top: 12px; font-size: 13.5px; color: var(--muted); }
+.list-dots { display: flex; flex-direction: column; gap: 10px; }
+.list-dots li { position: relative; padding-left: 26px; font-size: 17px; line-height: 1.6; }
+.list-dots li::before { content: ""; position: absolute; left: 4px; top: .72em; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); }
+.steps { counter-reset: st; display: flex; flex-direction: column; gap: 14px; }
+.steps li { counter-increment: st; display: grid; grid-template-columns: 40px 1fr; gap: 16px; align-items: start; padding: 16px 18px; background: var(--white); border: 1px solid var(--border); border-radius: 16px; font-size: 16.5px; line-height: 1.6; }
+.steps li::before { content: counter(st); width: 40px; height: 40px; border-radius: 50%; background: var(--dark); color: var(--white); font-weight: 800; font-size: 16px; display: grid; place-items: center; }
+.steps li:last-child::before { background: var(--green); }
+@media (max-width: 600px) {
+  .tbl { font-size: 12.5px; } .tbl th, .tbl td { padding: 9px 5px; white-space: normal; } .tbl .num { white-space: nowrap; } .tbl thead th { font-size: 9px; letter-spacing: 0; }
+  .tbl th:first-child, .tbl td:first-child { padding-left: 12px; } .tbl th:last-child, .tbl td:last-child { padding-right: 12px; }
+}

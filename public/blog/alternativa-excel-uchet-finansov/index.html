@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head prefix="og: https://ogp.me/ns# article: https://ogp.me/ns/article#">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Альтернатива Excel для учета финансов | Финник · Деньги</title>
+  <meta name="description" content="Альтернатива Excel для учета финансов: когда таблица утомляет, чем бот отличается от приложения и как перейти на учет расходов сообщениями в Telegram.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Финник · Деньги">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Альтернатива Excel: учет финансов без таблиц и сложных приложений">
+  <meta property="og:description" content="Альтернатива Excel для учета финансов: когда таблица утомляет, чем бот отличается от приложения и как перейти на учет расходов сообщениями в Telegram.">
+  <meta property="og:url" content="https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/">
+  <meta property="og:image" content="https://finnikbot.ru/images/blog/og-blog-2.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Слева ноутбук с таблицей Excel и банковскими картами, справа телефон с чатом Финника и талисманом">
+  <meta property="article:published_time" content="2026-10-30">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" href="/images/favicon-finnik.svg">
+  <link rel="icon" type="image/png" sizes="48x48" href="/images/favicon-48.png">
+  <link rel="icon" type="image/png" sizes="120x120" href="/images/favicon-120.png">
+  <link rel="apple-touch-icon" href="/images/bot-app-icon-180.png">
+  <link rel="preload" href="/fonts/manrope/manrope-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/manrope/manrope-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/blog.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "@id": "https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/#article",
+      "headline": "Альтернатива Excel: учет финансов без таблиц и сложных приложений",
+      "description": "Альтернатива Excel для учета финансов: когда таблица утомляет, чем бот отличается от приложения и как перейти на учет расходов сообщениями в Telegram.",
+      "inLanguage": "ru",
+      "datePublished": "2026-10-30",
+      "dateModified": "2026-10-30",
+      "image": [
+        "https://finnikbot.ru/images/blog/og-blog-2.jpg"
+      ],
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "Финник · Деньги",
+        "url": "https://finnikbot.ru/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Финник · Деньги",
+        "url": "https://finnikbot.ru/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://finnikbot.ru/images/bot-app-icon-512.png"
+        }
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Главная",
+          "item": "https://finnikbot.ru/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Блог",
+          "item": "https://finnikbot.ru/blog/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Альтернатива Excel",
+          "item": "https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/#faq",
+      "inLanguage": "ru",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Я вела таблицу. Как перенести данные из нее в Финника",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Сохрани нужные транзакции из таблицы в PDF или сделай скриншоты. Отправь файл или изображения Финнику в Telegram на расшифровку. После добавления проверь корректность записей в боте или в личном кабинете — в разделе «История транзакций». Если часть покупок уже внесена, проверь, нет ли дублей. Распознавание файлов и изображений доступно только в пробном периоде и по подписке."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Мне удобнее смотреть результаты таблицей. Можно выгрузить записи",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Да. Открой раздел «История транзакций» в личном кабинете и выбери нужный период в фильтре «Даты». Перед выгрузкой проверь, есть ли внизу списка кнопка «Загрузить ещё»: если есть, нажимай ее, пока не загрузятся все записи за выбранный период. Затем нажми «Выгрузить таблицу в .csv». Файл открывается в Excel и Google Таблицах."
+          }
+        }
+      ]
+    }
+  ]
+}
+  </script>
+</head>
+<body>
+<!-- ===================== ШАПКА ===================== -->
+<header class="header" id="header">
+  <div class="header__wrap">
+    <a href="/" class="header__logo" aria-label="Финник · Деньги — главная">
+      <img src="/images/logo-finnik-main.svg" width="174" height="45" alt="Финник · Деньги">
+    </a>
+    <nav class="header__nav" aria-label="Основная навигация">
+      <a href="/#how" class="header__nav-link">Как работает бот</a>
+      <a href="/#pricing" class="header__nav-link">Тарифы</a>
+      <a href="/#pricing" class="header__nav-link">Подписка</a>
+      <a href="/#faq" class="header__nav-link">Вопросы и ответы</a>
+      <a href="/blog/" class="header__nav-link">Блог</a>
+    </nav>
+    <div class="header__actions">
+      <a href="/cabinet/login" class="btn btn--secondary">Войти</a>
+      <a href="/cabinet/register" class="btn btn--primary">Создать аккаунт</a>
+    </div>
+    <button class="header__burger" id="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+  <div class="header__overlay" id="menuOverlay" aria-hidden="true"></div>
+  <div class="header__mobile" id="mobileMenu" aria-hidden="true" role="dialog" aria-label="Меню навигации">
+    <nav class="header__mobile-nav">
+      <a href="/#how">Как работает бот</a>
+      <a href="/#pricing">Тарифы</a>
+      <a href="/#pricing">Подписка</a>
+      <a href="/#faq">Вопросы и ответы</a>
+      <a href="/blog/">Блог</a>
+    </nav>
+    <div class="header__mobile-actions">
+      <a href="/cabinet/login" class="btn btn--secondary">Войти</a>
+      <a href="/cabinet/register" class="btn btn--blue">Создать аккаунт</a>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== СТАТЬЯ ===================== -->
+<main class="page">
+  <div class="page__in">
+
+    <nav class="crumbs" aria-label="Хлебные крошки">
+      <a href="/">Главная</a><span aria-hidden="true">›</span>
+      <a href="/blog/">Блог</a><span aria-hidden="true">›</span>
+      <span aria-current="page">Альтернатива Excel</span>
+    </nav>
+
+    <header class="top">
+      <div>
+        <span class="tag">Учет расходов</span>
+        <h1>Альтернатива Excel: учет финансов без таблиц и сложных приложений</h1>
+        <p class="lead">Таблица расходов в Excel помогает собрать покупки в одном месте и увидеть, куда уходят деньги. Но сначала ее нужно настроить, а затем регулярно заполнять: дата, сумма, категория, комментарий.</p>
+        <div class="meta">
+          <span>Опубликовано: <time datetime="2026-10-30">30.10.2026</time></span>
+          <span>Чтение: 6 минут</span>
+        </div>
+      </div>
+      <figure class="ph"><img src="/images/blog/blog-2-cover.webp" width="1200" height="630" alt="Слева ноутбук с таблицей Excel и банковскими картами, справа телефон с чатом Финника и талисманом" fetchpriority="high"></figure>
+    </header>
+
+    <div class="layout">
+
+      <aside class="side" aria-label="Содержание статьи">
+        <nav class="toc" aria-label="Содержание">
+          <p class="toc__title">Содержание</p>
+          <ol>
+            <li><a href="#s-when">Когда таблица утомляет</a></li>
+            <li><a href="#s-example">Что приходится заполнять</a></li>
+            <li><a href="#s-choose">Excel, приложение или бот</a></li>
+            <li><a href="#s-telegram">Учет в Telegram</a></li>
+            <li><a href="#s-totals">Какие итоги смотреть</a></li>
+            <li><a href="#s-switch">Как перейти с таблицы</a></li>
+            <li><a href="#s-try">Начни с одной покупки</a></li>
+            <li><a href="#s-faq">Вопросы и ответы</a></li>
+          </ol>
+        </nav>
+        <div class="side-cta">
+          <b>Попробуй Финника</b>
+          <p>30 дней полного доступа без оплаты и привязки карты.</p>
+          <a class="btn btn--amber btn--full" href="/cabinet/register">Попробовать бесплатно</a>
+        </div>
+      </aside>
+
+      <article class="article">
+
+        <details class="toc-m">
+          <summary>Содержание статьи</summary>
+          <ol>
+            <li><a href="#s-when">Когда таблица утомляет</a></li>
+            <li><a href="#s-example">Что приходится заполнять</a></li>
+            <li><a href="#s-choose">Excel, приложение или бот</a></li>
+            <li><a href="#s-telegram">Учет в Telegram</a></li>
+            <li><a href="#s-totals">Какие итоги смотреть</a></li>
+            <li><a href="#s-switch">Как перейти с таблицы</a></li>
+            <li><a href="#s-try">Начни с одной покупки</a></li>
+            <li><a href="#s-faq">Вопросы и ответы</a></li>
+          </ol>
+        </details>
+
+        <p>Если после нескольких попыток файл снова остается без записей, попробуй другой формат. Таблица для учета расходов — один из способов следить за деньгами. Можно записывать покупки в переписке, без заполнения строк и форм.</p>
+        <p>Финнику достаточно написать <b>«обед 450»</b>. Бот определит сумму и категорию и создаст запись. Сервис работает в Telegram и в чате на сайте.</p>
+
+        <div class="inline-cta">
+          <p>Не нужно создавать файл и придумывать структуру: можно проверить подход на одной покупке.</p>
+          <a class="btn btn--amber btn--lg" href="/cabinet/register">Попробовать учет сообщениями</a>
+        </div>
+
+        <h2 id="s-when">Когда таблица для учета расходов удобна, а когда начинает утомлять</h2>
+        <p>Таблица расходов и доходов в Excel подойдет, если тебе нравится самостоятельно работать с данными. Можно выбрать структуру, написать формулы, построить диаграммы и настроить отчеты под свои задачи.</p>
+        <p>Похожий подход — таблица расходов в Гугл Таблицах. Ее можно открыть в браузере или мобильном приложении и заполнять с разных устройств.</p>
+        <p>Но поддерживать учет бывает сложнее, чем создать файл:</p>
+        <ul class="pains">
+          <li>После каждой покупки нужно открывать таблицу и заполнять строку.</li>
+          <li>Операции по нескольким картам приходится собирать из разных источников.</li>
+          <li>Наличные расходы легко забыть, если не записать их сразу.</li>
+          <li>Для новых категорий и отчетов может потребоваться дополнительная настройка.</li>
+          <li>После перерыва накапливаются покупки, которые уже трудно вспомнить.</li>
+        </ul>
+        <p>Таблица расходов в Экселе может оставаться удобной для подробных расчетов, но утомлять при ежедневном вводе. В таком случае стоит попробовать способ, в котором проще сделать самую частую операцию — записать покупку.</p>
+
+        <h2 id="s-example">Пример таблицы для учета расходов: что приходится заполнять</h2>
+        <p>Простая таблица для учета расходов и доходов может выглядеть так:</p>
+        <div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Дата</th><th>Операция</th><th>Категория</th><th class="num">Доход, ₽</th><th class="num">Расход, ₽</th></tr></thead>
+              <tbody>
+                <tr><td>1 ноября</td><td>Зарплата</td><td>Работа</td><td class="num in">80 000</td><td class="num dash">—</td></tr>
+                <tr><td>2 ноября</td><td>Продукты</td><td>Продукты</td><td class="num dash">—</td><td class="num out">1 800</td></tr>
+                <tr><td>2 ноября</td><td>Обед</td><td>Кафе</td><td class="num dash">—</td><td class="num out">450</td></tr>
+                <tr><td>3 ноября</td><td>Такси</td><td>Транспорт</td><td class="num dash">—</td><td class="num out">650</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="tbl-note">Суммы приведены для примера.</p>
+        </div>
+        <p>Чтобы получить итоги, нужно отдельно подсчитать доходы, расходы и суммы по категориям — вручную или с помощью формул.</p>
+        <figure class="ph"><img src="/images/blog/blog-2-table-vs-message.webp" width="1440" height="720" alt="Пять полей строки таблицы расходов и одно сообщение «Перекресток 3200»: Финник записал 3 200 ₽ в категорию «Продукты»" loading="lazy" decoding="async"></figure>
+        <p>В финансовом боте исходная информация похожая, но способ ввода другой. Вместо заполнения строки ты пишешь «обед 450». Финник разбирает сообщение и создает запись, которую можно проверить и исправить.</p>
+
+        <h2 id="s-choose">Excel, приложение или финансовый бот: что выбрать</h2>
+        <p>Возможности приложений различаются: некоторые поддерживают загрузку банковских операций, другие требуют ручного ввода. Поэтому сравнивать полезнее конкретные действия, которые придется выполнять каждый день.</p>
+        <div class="cmp">
+          <table>
+            <thead><tr><th scope="col">Критерий</th><th scope="col">Excel / Google Таблицы</th><th scope="col">Приложение для личных финансов</th><th scope="col" class="is-finnik">Финник · Деньги</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Добавить покупку</th><td data-label="Excel / Google Таблицы">Заполнить строку</td><td data-label="Приложение">Заполнить форму или использовать импорт, если он есть</td><td class="is-finnik" data-label="Финник · Деньги">Отправить покупку и сумму сообщением</td></tr>
+              <tr><th scope="row">Указать категорию</th><td data-label="Excel / Google Таблицы">Вписать или выбрать из списка</td><td data-label="Приложение">Выбрать вручную либо проверить автоматическую категорию</td><td class="is-finnik" data-label="Финник · Деньги">Бот определяет категорию; ее можно исправить</td></tr>
+              <tr><th scope="row">Учесть разные карты и наличные</th><td data-label="Excel / Google Таблицы">Собрать записи в одном файле</td><td data-label="Приложение">Зависит от возможностей приложения</td><td class="is-finnik" data-label="Финник · Деньги">Сообщать о покупках в один чат</td></tr>
+              <tr><th scope="row">Добавить накопившиеся операции</th><td data-label="Excel / Google Таблицы">Внести вручную или настроить импорт</td><td data-label="Приложение">Зависит от поддерживаемых форматов</td><td class="is-finnik" data-label="Финник · Деньги">Отправить скриншот истории или выписку в Telegram на распознавание</td></tr>
+              <tr><th scope="row">Посмотреть итоги</th><td data-label="Excel / Google Таблицы">Настроить формулы, сводные таблицы или диаграммы</td><td data-label="Приложение">Открыть отчеты приложения</td><td class="is-finnik" data-label="Финник · Деньги">Посмотреть историю и аналитику сервиса</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Таблица дает свободу настройки. Приложение для учета расходов и доходов может подойти, если тебе удобны его формы и отчеты. Финансовый бот стоит попробовать, если проще написать сообщение, чем заполнять поля.</p>
+
+        <h2 id="s-telegram">Как работает учет расходов в Telegram</h2>
+        <p>В Финнике запись начинается с обычной фразы: <b>«Кофе 250»</b>.</p>
+        <figure class="ph"><img src="/images/blog/blog-1-chat-edit.webp" width="1440" height="900" alt="Чат Финника: после записи «Кинопоиск 299» и «Вкусвилл 530» под каждой записью кнопки «Исправить» и «Удалить»" loading="lazy" decoding="async"></figure>
+        <p>Бот определяет сумму и категорию. Под записью доступны действия для исправления и удаления. Если категория не подошла, ее можно поменять.</p>
+        <p>Для первой покупки не нужно создавать файл и продумывать структуру бюджета. Можно сразу проверить, подходит ли тебе такой способ.</p>
+        <p>Один из пользователей, тестировавших бота, описал начало работы так:</p>
+        <figure class="quote"><blockquote><p>«Думал, придется долго настраивать. Написал “обед 450” — и первая запись уже готова. Вообще не надо думать, куда и как записать — удобно».</p></blockquote><figcaption>Один из пользователей, тестировавших бота</figcaption></figure>
+
+        <h3>Когда неудобно печатать — отправь голосовое</h3>
+        <p>В Telegram можно сказать: «Такси 650 рублей». Финник распознает сообщение и создаст запись. Голосовые сообщения пока доступны только в Telegram.</p>
+        <p>Результат стоит проверять: если сумма или категория определились неверно, запись можно исправить.</p>
+
+        <h3>Когда карт несколько — собирай расходы в одном месте</h3>
+        <p>Если оплачиваешь покупки разными картами и наличными, общую картину приходится собирать из нескольких источников.</p>
+        <figure class="ph"><img src="/images/blog/blog-1-statement.webp" width="1440" height="900" alt="Три шага: загрузить фото выписки, проверить расшифровку, исправить текстом. Финник распознал 6 операций и предложил записать" loading="lazy" decoding="async"></figure>
+        <p>Финнику можно сообщать обо всех покупках в один чат. А если операций накопилось много — отправить в Telegram скриншот истории из банковского приложения или выписку. Бот распознает данные и предложит операции для добавления. Перед подтверждением проверь суммы, даты и категории, убери лишнее.</p>
+        <p>Распознавание изображений и выписок доступно в Telegram в пробном периоде и по подписке. Распознавание фото работает в тестовом режиме.</p>
+        <p>Одна из участниц тестирования поделилась таким опытом:</p>
+        <figure class="quote"><blockquote><p>«Не хотелось восстанавливать расходы за месяц. Закинула скрин истории из банка, бот все сам расшифровал и записал».</p></blockquote><figcaption>Одна из участниц тестирования</figcaption></figure>
+        <p class="callout callout--warn"><b>Важно.</b> Финник не подключается к банковскому аккаунту и не получает покупки автоматически. В историю попадает то, что ты сообщаешь или отправляешь. Наличные расходы тоже нужно добавить самостоятельно.</p>
+
+        <h3>Если пропустил несколько дней — добавь покупки позже</h3>
+        <figure class="ph"><img src="/images/blog/blog-1-fix-date.webp" width="1440" height="900" alt="Запись «Вчера 500 на тройку» добавлена за сегодня, дату исправили кнопкой «Исправить» → «Дату» на 02.11.2026" loading="lazy" decoding="async"></figure>
+        <p>Перерыв не обязывает начинать учет заново с первого числа. Запиши покупку, как обычно: Финник добавит ее с сегодняшней датой. Если покупка была раньше, нажми «Исправить», выбери «Дату» и напиши нужный день в формате ДД.ММ.ГГГГ, например 02.11.2026.</p>
+        <p>Если пропущено сразу несколько дней, отправь Финнику скриншот истории или выписку из банковского приложения: он запишет каждую операцию с датой из выписки. Если восстанавливаешь операции таким способом, проверь, какие покупки уже внесены, чтобы избежать повторных записей.</p>
+
+        <h3>Категории можно настроить под себя</h3>
+        <figure class="ph"><img src="/images/blog/blog-1-categories.webp" width="1440" height="900" alt="Форма «Добавить категорию» в личном кабинете: категория «Ремонт» и подсказки для бота" loading="lazy" decoding="async"></figure>
+        <p>Готовые категории не всегда отражают то, что хочется отслеживать. Например, тебе может быть важно отдельно видеть расходы на питомца, спорт или хобби.</p>
+        <p>В Финнике можно создавать собственные категории — эта возможность доступна в пробном периоде и по подписке. Если бот выбрал категорию неверно, запись можно поправить. Финник запоминает исправленные фразы, чтобы учитывать их при следующих записях.</p>
+        <p>Так финансовый трекер постепенно становится удобнее для твоих повседневных покупок. Автоматическое определение категорий при этом стоит проверять.</p>
+
+        <h2 id="s-totals">Таблица расходов в месяц: какие итоги полезно смотреть</h2>
+        <p>Независимо от способа записи, в конце месяца полезно увидеть общую картину:</p>
+        <ul class="list-dots">
+          <li>Сколько денег поступило и сколько потрачено.</li>
+          <li>На какие категории ушло больше всего.</li>
+          <li>Какие расходы выросли по сравнению с прошлым месяцем.</li>
+          <li>Как меняются траты относительно доходов.</li>
+        </ul>
+        <p>Если ты ведешь таблицу расходов в месяц, эти итоги можно собрать с помощью формул и отчетов. В Финнике для этого есть аналитика доходов и расходов, распределение по категориям и сравнение с прошлым месяцем.</p>
+        <p>Иногда уже разделение покупок по категориям помогает заметить то, что терялось среди отдельных операций:</p>
+        <figure class="quote"><blockquote><p>«Казалось, я и так знаю свои расходы. Когда увидела их по категориям, поняла, сколько и где утекает незаметно».</p></blockquote><figcaption>Одна из участниц тестирования</figcaption></figure>
+        <figure class="ph"><img src="/images/blog/blog-1-budget-warning.webp" width="1440" height="900" alt="Финник предупреждает о риске превысить месячный бюджет" loading="lazy" decoding="async"></figure>
+        <p>Если установить месячный бюджет, Финник будет следить за темпом трат, прогнозировать расходы к концу месяца и предупреждать о риске превысить лимит.</p>
+        <p class="callout callout--warn"><b>Прогноз зависит от внесенных данных:</b> если часть покупок не записана, картина будет неполной. Бюджет с предупреждениями и аналитика по запросу доступны в пробном периоде и по подписке.</p>
+
+        <h2 id="s-switch">Как перейти с таблицы на учет сообщениями</h2>
+        <p>Чтобы проверить новый формат, необязательно сразу переносить всю историю из Excel.</p>
+        <ol class="steps">
+          <li><div><b>Добавь одну обычную покупку.</b> Например, «продукты 1800».</div></li>
+          <li><div><b>Проверь запись.</b> Посмотри, правильно ли определились сумма и категория.</div></li>
+          <li><div><b>Попробуй исправление.</b> Важно, чтобы ошибку было легко поправить.</div></li>
+          <li><div><b>Несколько дней записывай текущие расходы.</b> Проверь, удобно ли возвращаться в чат после покупок.</div></li>
+          <li><div><b>Посмотри историю и итоги.</b> Оцени, хватает ли информации для контроля бюджета.</div></li>
+        </ol>
+        <p>Так ты проверишь сам процесс, прежде чем тратить время на перенос старых данных.</p>
+        <p>Как выбрать способ учета и не бросить его через несколько дней, читай в статье <a class="inline" href="/blog/kak-vesti-uchet-rashodov/">«Как вести учет расходов без таблиц и не бросить»</a>.</p>
+        <p>Одна из пользовательниц описала разницу так:</p>
+        <figure class="quote"><blockquote><p>«Таблицы я всегда забрасывала или забывала… Одну карту, вторую пока проверишь, надоедает. А вот отправлять сообщение после покупки оказалось сильно проще».</p></blockquote><figcaption>Одна из пользовательниц Финника</figcaption></figure>
+
+        <section class="cta" id="s-try" aria-labelledby="cta-title">
+          <div>
+            <h2 id="cta-title">Попробуй начать с одного сообщения</h2>
+            <p>Если ты ищешь альтернативу Excel для учета финансов, начни с простого действия: запиши следующую покупку в чат.</p>
+            <p>Финник работает в Telegram и в личном кабинете на сайте. Отдельное приложение устанавливать не нужно. Базовая запись доходов и расходов, история и ежемесячная аналитика доступны бесплатно.</p>
+            <p>Новому аккаунту предоставляются <b>30 дней полного доступа без оплаты и привязки карты.</b> После можно остаться на бесплатном тарифе или выбрать подписку. Автоматического продления нет.</p>
+            <p>Напиши «обед 450» и проверь, подходит ли тебе учет финансов в переписке.</p>
+            <div class="cta__actions">
+              <a class="btn btn--amber btn--lg" href="/cabinet/register">Попробовать Финника бесплатно</a>
+              <a class="btn btn--ghost btn--lg" href="https://t.me/FinnikMoneyBot" target="_blank" rel="noopener">Открыть в Telegram</a>
+            </div>
+          </div>
+          <figure class="ph ph--mascot"><img src="/images/blog/finnik-mascot-phone.webp" width="600" height="600" alt="Талисман Финника с телефоном в руках" loading="lazy" decoding="async"></figure>
+        </section>
+
+        <h2 id="s-faq">Вопросы и ответы</h2>
+        <div class="faq">
+          <details open>
+            <summary>Я вела таблицу. Как перенести данные из нее в Финника</summary>
+            <p class="faq__a">Сохрани нужные транзакции из таблицы в PDF или сделай скриншоты. Отправь файл или изображения Финнику в Telegram на расшифровку. После добавления проверь корректность записей в боте или в личном кабинете — в разделе «История транзакций». Если часть покупок уже внесена, проверь, нет ли дублей. Распознавание файлов и изображений доступно только в пробном периоде и по подписке.</p>
+          </details>
+          <details>
+            <summary>Мне удобнее смотреть результаты таблицей. Можно выгрузить записи</summary>
+            <p class="faq__a">Да. Открой раздел «История транзакций» в личном кабинете и выбери нужный период в фильтре «Даты». Перед выгрузкой проверь, есть ли внизу списка кнопка «Загрузить ещё»: если есть, нажимай ее, пока не загрузятся все записи за выбранный период. Затем нажми «Выгрузить таблицу в .csv». Файл открывается в Excel и Google Таблицах.</p>
+          </details>
+        </div>
+
+      </article>
+    </div>
+  </div>
+</main>
+
+<!-- ===================== ПОДВАЛ ===================== -->
+<footer class="footer" id="footer">
+  <div class="footer__container">
+    <div class="footer__top">
+      <a href="/" class="footer__logo" aria-label="Финник · Деньги — главная">
+        <img src="/images/logo-footer.svg" alt="Финник · Деньги — твой финансовый помощник">
+      </a>
+      <div class="footer__contacts">
+        <a href="/blog/" class="footer__contact-pill">
+          <img src="/images/icon_blog.svg" width="24" height="24" alt="" aria-hidden="true">
+          <span>Блог</span>
+        </a>
+        <a href="mailto:hello@finnikbot.ru" class="footer__contact-pill">
+          <img src="/images/icon_mail.svg" width="24" height="24" alt="" aria-hidden="true">
+          <span>hello@finnikbot.ru</span>
+        </a>
+        <a href="https://t.me/FinnikMoneyBot" class="footer__contact-pill" target="_blank" rel="noopener">
+          <img src="/images/icon_telegram.svg" width="24" height="24" alt="" aria-hidden="true">
+          <span>Запустить бота</span>
+        </a>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__legal">Индивидуальный предприниматель Захарова Анастасия Вячеславовна, ИНН 504230305760, ОГРНИП 326508100607489. hello@finnikbot.ru</p>
+      <div class="footer__docs">
+        <a href="/legal/offer" class="footer__doc-link">Публичная оферта</a>
+        <a href="/legal/privacy" class="footer__doc-link">Политика конфиденциальности</a>
+        <a href="/legal/consent" class="footer__doc-link">Согласие на обработку данных</a>
+        <a href="/legal/cookies" class="footer__doc-link">Cookies</a>
+        <a href="#" class="footer__doc-link" data-cookie-settings>Настройки cookie</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/blog.js" defer></script>
+<script src="/js/consent.js" defer></script>
+</body>
+</html>

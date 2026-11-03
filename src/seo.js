@@ -1,6 +1,6 @@
 // robots.txt, sitemap.xml и запрет индексации тестовой среды (stage.*).
 export const SITE_URL = 'https://finnikbot.ru';
-const PUBLIC_PAGES = ['/', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies', '/blog/kak-vesti-uchet-rashodov/'];
+const PUBLIC_PAGES = ['/', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies', '/blog/kak-vesti-uchet-rashodov/', '/blog/alternativa-excel-uchet-finansov/'];
 
 export const isStageHost = (host = '') => /^stage\./i.test(String(host).split(':')[0]);
 
