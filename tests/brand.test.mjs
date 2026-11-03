@@ -84,7 +84,7 @@ test('robots.txt и sitemap.xml: боевой сайт открыт, кабин�
   assert.ok(!/Disallow: \/\n/.test(prod));
   assert.match(robotsTxt('stage.finnikbot.ru'), /Disallow: \/\n/);
   const sm = sitemapXml();
-  for (const p of ['/', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies']) assert.ok(sm.includes(`<loc>https://finnikbot.ru${p}</loc>`), p);
+  for (const p of ['/', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies', '/blog/kak-vesti-uchet-rashodov/']) assert.ok(sm.includes(`<loc>https://finnikbot.ru${p}</loc>`), p);
   assert.ok(!sm.includes('/cabinet'));
 });
 
