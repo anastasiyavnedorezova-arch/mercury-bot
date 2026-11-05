@@ -1,6 +1,6 @@
 /* Баннер cookie, счётчик Яндекс Метрики и метки источника (utm). Подключается на страницах сайта.
  *  - Метрика загружается ТОЛЬКО после нажатия «Принять»; Вебвизор, карта кликов и аналитика форм выключены.
- *  - В Метрику уходят только имена целей (register, pay_start, paid, bot_click): без почты, сумм и текстов.
+ *  - В Метрику уходят только имена целей (register, pay_start, paid, bot_click, calc_done): без почты, сумм и текстов.
  *  - Метки источника (utm_*, домен сайта, с которого пришли) запоминаются в браузере, чтобы сохранить их при регистрации.
  *  - Выбор хранится в localStorage (finnik_consent). Изменить выбор: любая ссылка с атрибутом data-cookie-settings. */
 (function (root) {
@@ -10,7 +10,7 @@
   var CONSENT_KEY = 'finnik_consent';
   var UTM_KEY = 'finnik_utm';
   var UTM_FIELDS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
-  var GOALS = { register: 1, pay_start: 1, paid: 1, bot_click: 1 };
+  var GOALS = { register: 1, pay_start: 1, paid: 1, bot_click: 1, calc_done: 1 };
 
   // ── Вспомогательные функции (без обращения к странице, их проверяют тесты) ──
   function cleanValue(v) {

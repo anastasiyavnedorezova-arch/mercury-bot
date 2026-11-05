@@ -169,7 +169,7 @@ test('ссылки: всё от корня, внутренние адреса с
   const body = html.slice(html.indexOf('<body>'));
   const hrefs = [...body.matchAll(/<a\b[^>]*href="([^"]*)"/g)].map((m) => m[1]);
   assert.ok(hrefs.length > 20);
-  const known = new Set(['/', '/blog/', '/blog/kak-vesti-uchet-rashodov/', '/cabinet/login', '/cabinet/register', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies']);
+  const known = new Set(['/', '/blog/', '/blog/kak-vesti-uchet-rashodov/', '/blog/skolko-otkladyvat-s-zarplaty/', '/cabinet/login', '/cabinet/register', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies']);
   for (const h of hrefs) {
     if (h.startsWith('#') || h.startsWith('mailto:') || h.startsWith('https://t.me/FinnikMoneyBot')) continue;
     const p = h.split('#')[0].split('?')[0];
