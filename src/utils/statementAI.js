@@ -2,6 +2,14 @@ import OpenAI from 'openai';
 import { textAIConfig } from './textAI.js';
 import { MAX_STATEMENT_BYTES, StatementInputError, statementPdfImages } from './statementPdf.js';
 
+export class StatementResponseError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = 'StatementResponseError';
+    this.code = code;
+  }
+}
+
 export function statementAIConfig(env = process.env) {
   const provider = (env.AI_STATEMENT_PROVIDER || 'openai').trim().toLowerCase();
   if (!['openai', 'yandex'].includes(provider)) throw new Error('AI_STATEMENT_PROVIDER must be openai or yandex');
@@ -16,11 +24,13 @@ export function statementAIConfig(env = process.env) {
 
 export function parseStatementResult(response) {
   const choice = response.choices?.[0];
-  if (choice?.finish_reason === 'length') throw new Error('Statement response was truncated');
+  if (choice?.finish_reason === 'length') throw new StatementResponseError('STATEMENT_TRUNCATED', 'Statement response was truncated');
   const raw = choice?.message?.content;
-  if (typeof raw !== 'string') throw new Error('Statement response is missing');
-  const result = JSON.parse(raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
-  if (!Array.isArray(result)) throw new Error('Statement response must be an array');
+  if (typeof raw !== 'string') throw new StatementResponseError('STATEMENT_EMPTY', 'Statement response is missing');
+  let result;
+  try { result = JSON.parse(raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')); }
+  catch { throw new StatementResponseError('STATEMENT_JSON', 'Statement response is invalid JSON'); }
+  if (!Array.isArray(result)) throw new StatementResponseError('STATEMENT_NOT_ARRAY', 'Statement response must be an array');
   for (const tx of result) {
     if (!tx || !['income', 'expense'].includes(tx.type) || typeof tx.amount !== 'number'
       || !Number.isFinite(tx.amount) || tx.amount <= 0 || typeof tx.category !== 'string'
@@ -28,7 +38,7 @@ export function parseStatementResult(response) {
       || !Number.isFinite(Date.parse(tx.transaction_date))
       || new Date(tx.transaction_date).toISOString().slice(0, 10) !== tx.transaction_date
       || (tx.own_transfer !== undefined && typeof tx.own_transfer !== 'boolean')) {
-      throw new Error('Statement contains an invalid transaction');
+      throw new StatementResponseError('STATEMENT_INVALID_TRANSACTION', 'Statement contains an invalid transaction');
     }
   }
   return result;
@@ -65,6 +75,8 @@ export function createStatementAI(env = process.env, Client = OpenAI, renderPdf 
         ] }],
         max_tokens: config.provider === 'yandex' ? 8000 : 4000,
         temperature: 0,
+        // Qwen reasoning can consume the entire output budget without producing JSON.
+        ...(config.provider === 'yandex' && /\/qwen[^/]*$/i.test(config.model) ? { reasoning_effort: 'none' } : {}),
       });
       return parseStatementResult(response);
     },

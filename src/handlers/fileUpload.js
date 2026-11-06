@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import https from 'https';
+import { downloadTelegramMedia } from '../utils/telegramDownload.js';
 import { createStatementAI } from '../utils/statementAI.js';
 import { createTextAI } from '../utils/textAI.js';
 import { StatementInputError } from '../utils/statementPdf.js';
@@ -41,6 +41,7 @@ export function getStatementPrompt() {
 }
 
 "own_transfer": true — только если это перевод между СВОИМИ счетами или картами самого владельца выписки (в выписке написано «между своими счетами», «перевод на накопительный счёт», «пополнение вклада с карты» и т.п.). Перевод другому человеку (имя и первая буква фамилии, СБП по номеру телефона) — это НЕ own_transfer: false. Во всех остальных случаях false.
+Внесение наличных в банкомате на счёт владельца — также перемещение собственных денег: own_transfer: true, это не новый доход.
 
 Используй "confidence": "low" если не уверен в сумме, дате или категории.
 
@@ -53,6 +54,7 @@ ${EXPENSE_CATEGORIES.join('\n')}
 Любое название не из этих списков система не поймёт, а запись уйдёт в «Остальное». «Остальное» — только для РАСХОДА, если ни одна категория расходов не подходит. Для ДОХОДА (непонятное пополнение, поступление без пояснений) используй «Другие доходы», никогда не «Остальное».
 Имя отправителя не объясняет назначение поступления. Например, «Пополнение от Николая З.» +8000 — это «Другие доходы», confidence: "low". Не считай перевод подарком, возвратом долга или зарплатой без явного указания этого назначения в самой выписке.
 Налоговая служба (ФНС), налоги, штрафы, ГИБДД — «Налоги и штрафы». Золотое яблоко, Летуаль, Рив Гош — «Красота и уход за собой», не «Продукты».
+OZON, Wildberries и другие маркетплейсы без описания купленного товара — «Остальное», confidence: "low". Не выдумывай вид покупки по одному названию маркетплейса.
 
 СЛОВА И НАЗВАНИЯ ПО КАТЕГОРИЯМ:
 ${hintsForPrompt()}`;
@@ -75,25 +77,12 @@ export function statementWaitMessage(fileType) {
   return { text: STATEMENT_WAIT_FILE, options: undefined };
 }
 
-function downloadFile(url, destPath) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(destPath);
-    https.get(url, (response) => {
-      response.pipe(file);
-      file.on('finish', () => file.close(resolve));
-    }).on('error', (err) => {
-      fs.unlink(destPath, () => {});
-      reject(err);
-    });
-  });
-}
-
 async function downloadTelegramFile(bot, fileId) {
   const file = await bot.getFile(fileId);
   const url = telegramFileUrl(file.file_path);
   const ext = path.extname(file.file_path) || '.jpg';
   const tmpPath = path.join('/tmp', `stmt_${Date.now()}${ext}`);
-  await downloadFile(url, tmpPath);
+  await downloadTelegramMedia(url, tmpPath);
   return { tmpPath, filePath: file.file_path };
 }
 
@@ -239,7 +228,7 @@ export async function handleFileUpload(bot, msg, fileType) {
         : mimeFromExt(downloaded.tmpPath);
     }
   } catch (err) {
-    console.error('[fileUpload] Download error:', err.message);
+    console.error('[fileUpload] Download error:', err.code || 'TELEGRAM_DOWNLOAD_FAILED');
     await bot.sendMessage(chatId, 'Не смог загрузить файл. Попробуй ещё раз 🙏');
     return;
   }
@@ -256,7 +245,7 @@ export async function handleFileUpload(bot, msg, fileType) {
     console.log(`[fileUpload] Found ${rawTransactions.length} transactions for user ${telegramId}`);
   } catch (err) {
     console.error('[fileUpload] Vision error:', statementAI.provider === 'yandex'
-      ? `provider=yandex status=${Number(err.status) || 'n/a'} type=${err.name}` : err.message);
+      ? `provider=yandex status=${Number(err.status) || 'n/a'} type=${err.name} code=${String(err.code || 'unknown').replace(/[^a-zA-Z0-9_]/g, '').slice(0, 60)}` : err.message);
     if (err instanceof StatementInputError) {
       await bot.sendMessage(chatId, err.userMessage);
       return;

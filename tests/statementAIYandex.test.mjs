@@ -35,6 +35,7 @@ test('image request goes directly to Yandex with no logging and returns transfer
     assert.equal(headers.get('x-data-logging-enabled'), 'false');
     assert.equal(headers.get('openai-project'), 'test-folder');
     assert.equal(body.model, 'gpt://test-folder/qwen3.6-35b-a3b');
+    assert.equal(body.reasoning_effort, 'none');
     assert.deepEqual(body.messages[0].content, [
       { type: 'text', text: 'parse statement' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,cG5n' } },
     ]);
@@ -61,6 +62,7 @@ test('malformed, non-array, truncated or invalid responses are rejected before s
   assert.deepEqual(parseStatementResult(result([])), []);
   assert.throws(() => parseStatementResult(result({ transactions: [tx()] })), /array/);
   assert.throws(() => parseStatementResult(result([tx()], 'length')), /truncated/);
+  assert.throws(() => parseStatementResult(result([tx()], 'length')), (e) => e.code === 'STATEMENT_TRUNCATED');
   for (const bad of [{ amount: -1 }, { amount: '100' }, { type: 'goal' }, { transaction_date: '2026-02-30' }, { own_transfer: 'true' }]) {
     assert.throws(() => parseStatementResult(result([tx(bad)])), /invalid transaction/);
   }
