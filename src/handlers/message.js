@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { createTextAI } from '../utils/textAI.js';
 import { reserveAi, denyAi } from '../utils/aiLimit.js';
 import { parseWithRetry } from '../utils/llmRetry.js';
 import { replyIfQuota } from '../utils/openaiErrors.js';
@@ -31,7 +31,7 @@ import { parseAmountStrict } from '../utils/parseAmount.js';
 import { todayStr } from '../utils/dateTz.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const textAI = createTextAI();
 
 const MENU_KEYBOARD = {
   reply_markup: {
@@ -169,8 +169,7 @@ const FAQ_WEB_NOTE = `
 ВАЖНО: сейчас пользователь пишет из веб-чата в личном кабинете, то есть он уже в кабинете: если спросят, как в него попасть, скажи, что он уже здесь, а в Telegram-боте есть кнопка «Личный кабинет» в главном меню. Здесь пока нельзя отправлять голосовые сообщения и фото или скриншоты — не предлагай их. Записывать траты нужно текстом. Если спросят про голос или скриншоты — скажи, что это пока работает только в Telegram-боте 💛`;
 
 async function callFaqLLM(question, bot) {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const response = await textAI.complete({
     messages: [
       { role: 'system', content: FAQ_SYSTEM_PROMPT + (isWebBot(bot) ? FAQ_WEB_NOTE : '') },
       { role: 'user', content: question },
@@ -183,8 +182,7 @@ async function callFaqLLM(question, bot) {
 
 async function callLLM(userText, userCategories = [], { retryHint } = {}) {
   const today = todayStr();
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const response = await textAI.complete({
     messages: [
       { role: 'system', content: getSystemPrompt(userCategories) },
       // Дата и сообщение — на разных строках: в записи «Сегодня 2026-09-27. 3917 …» модель могла принять «27. 3917» за число
