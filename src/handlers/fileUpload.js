@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
-import OpenAI from 'openai';
+import { createStatementAI } from '../utils/statementAI.js';
+import { createTextAI } from '../utils/textAI.js';
+import { StatementInputError } from '../utils/statementPdf.js';
 import { supabase } from '../db.js';
 import { userStates } from '../state.js';
 import { getUserAccess } from '../utils/access.js';
@@ -12,7 +14,8 @@ import { replyIfQuota } from '../utils/openaiErrors.js';
 import { telegramFileUrl } from '../utils/endpoints.js';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, hintsForPrompt, canonicalCategory, refineStatementItem } from '../utils/categoryHints.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const statementAI = createStatementAI();
+const correctionAI = createTextAI();
 
 export function getStatementPrompt() {
   const today = todayStr();
@@ -97,6 +100,7 @@ function mimeFromExt(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === '.png') return 'image/png';
   if (ext === '.pdf') return 'application/pdf';
+  if (ext === '.webp') return 'image/webp';
   return 'image/jpeg';
 }
 
@@ -116,31 +120,8 @@ function splitMessage(text, maxLen = 4096) {
   return parts;
 }
 
-async function analyzeStatement(base64Content, mimeType) {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: getStatementPrompt() },
-          {
-            type: 'image_url',
-            image_url: {
-              url: `data:${mimeType};base64,${base64Content}`,
-              detail: 'high',
-            },
-          },
-        ],
-      },
-    ],
-    max_tokens: 4000,
-    temperature: 0,
-  });
-
-  const raw = response.choices[0].message.content.trim();
-  const cleaned = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
-  return JSON.parse(cleaned);
+export async function analyzeStatement(base64Content, mimeType) {
+  return statementAI.analyze(base64Content, mimeType, getStatementPrompt());
 }
 
 async function checkDuplicates(userId, transactions) {
@@ -265,7 +246,7 @@ export async function handleFileUpload(bot, msg, fileType) {
   const base64Content = fs.readFileSync(tmpPath).toString('base64');
   fs.unlink(tmpPath, () => {});
 
-  // Analyze via GPT-4o
+  // Analyze with the configured statement provider; confirmation is unchanged.
   let rawTransactions = [];
   try {
     rawTransactions = (await analyzeStatement(base64Content, mimeType))
@@ -273,7 +254,12 @@ export async function handleFileUpload(bot, msg, fileType) {
       .map((tx) => ({ ...tx, ownTransfer: tx.own_transfer === true }));
     console.log(`[fileUpload] Found ${rawTransactions.length} transactions for user ${telegramId}`);
   } catch (err) {
-    console.error('[fileUpload] Vision error:', err.message);
+    console.error('[fileUpload] Vision error:', statementAI.provider === 'yandex'
+      ? `provider=yandex status=${Number(err.status) || 'n/a'} type=${err.name}` : err.message);
+    if (err instanceof StatementInputError) {
+      await bot.sendMessage(chatId, err.userMessage);
+      return;
+    }
     if (await replyIfQuota(err, bot, chatId)) return;
     await bot.sendMessage(chatId,
       'Не смог распознать выписку. Попробуй скриншот или другой файл 🙏');
@@ -516,8 +502,7 @@ applyToAll — только если пользователь прямо ска�
 
   let parsed;
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const response = await correctionAI.complete({
       messages: [{ role: 'user', content: correctionPrompt }],
       temperature: 0,
       max_tokens: 3000,
