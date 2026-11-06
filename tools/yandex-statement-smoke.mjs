@@ -25,6 +25,7 @@ try {
   assert.equal(rows.find((r) => r.amount === 85000).category, 'Зарплата');
   assert.equal(rows.find((r) => r.amount === 2500).category, 'Налоги и штрафы');
   assert.equal(rows.find((r) => r.amount === 1999).category, 'Красота и уход за собой');
+  assert.equal(rows.find((r) => r.amount === 8000).category, 'Другие доходы');
   const removed = rows.findIndex((r) => r.amount === 1290.5) + 1;
   const corrected = applyStatementCorrectionsDetailed(rows, { remove: [removed] });
   assert.equal(corrected.updated.filter((r) => !r.ownTransfer).length, 4);
