@@ -329,6 +329,22 @@
 
 
 /* ============================================================ PROFILE CARDS GRID */
+
+.email-news-card{align-self:start;overflow:hidden}
+.email-news-card .card-title{margin:0;font-size:14px;line-height:20px;font-weight:700;color:var(--color-text-second)}
+.email-news-hint{margin:0;color:var(--color-text-disabled);font-size:12px;font-weight:500;line-height:16px}
+.email-news-row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;padding:8px 0;cursor:pointer;color:var(--color-text-main);font-size:14px;font-weight:400;line-height:20px}
+.email-news-switch{position:relative;flex:none;display:inline-block;width:45px;height:25px}
+.email-news-switch input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer;z-index:1}
+.email-news-track{display:block;width:45px;height:25px;border-radius:999px;background:var(--color-text-disabled);transition:background .15s}
+.email-news-track::after{content:'';position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:var(--color-white);box-shadow:0 3px 1px rgba(0,0,0,.06),0 3px 8px rgba(0,0,0,.15);transition:transform .15s}
+.email-news-switch input:checked+.email-news-track{background:#2FBF71}
+.email-news-switch input:checked+.email-news-track::after{transform:translateX(20px)}
+.email-news-switch input:focus-visible+.email-news-track{outline:3px solid var(--color-brand-primary);outline-offset:3px}
+.email-news-switch input:disabled{cursor:wait}
+.email-news-switch:has(input:disabled){opacity:.6}
+.email-news-status{margin:0;white-space:pre-line;color:var(--color-text-main);font-size:16px;font-weight:700;line-height:24px}
+@media(prefers-reduced-motion:reduce){.email-news-track,.email-news-track::after{transition:none}}
 .profile-top-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
 .profile-card{background:var(--color-white);border:1px solid var(--color-border);border-radius:24px;box-shadow:var(--shadow-card);padding:24px;display:flex;flex-direction:column;gap:12px}
 
@@ -585,18 +601,19 @@
           </div>
         </div>
 
+        <section class="profile-card email-news-card" aria-labelledby="emailNewsTitle">
+          <h2 id="emailNewsTitle" class="card-title">Новости, скидки и уведомления по e-mail</h2>
+          <p id="emailNewsDescription" class="email-news-hint">Укажи e-mail в личных данных выше для получения писем</p>
+          <label class="email-news-row">
+            <span>Хочу получать письма</span>
+            <span class="email-news-switch">
+              <input id="emailNewsEnabled" type="checkbox" role="switch" disabled aria-describedby="emailNewsDescription emailNewsStatus">
+              <span class="email-news-track" aria-hidden="true"></span>
+            </span>
+          </label>
+          <p id="emailNewsStatus" class="email-news-status" role="status" aria-live="polite">Письма отключены 💤</p>
+        </section>
       </div><!-- /profile-top-grid -->
-
-      <section class="profile-card email-news-card" aria-labelledby="emailNewsTitle" style="margin-bottom:16px">
-        <h2 id="emailNewsTitle" class="card-title" style="margin:0">Новости и предложения по email</h2>
-        <p id="emailNewsDescription" style="margin:0;line-height:1.6">Обновления Финника, предупреждения о технических работах и промокоды на скидки.</p>
-        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;min-height:44px">
-          <input id="emailNewsEnabled" type="checkbox" disabled aria-describedby="emailNewsDescription emailNewsStatus" style="width:22px;height:22px;accent-color:var(--color-green,#22c55e)">
-          <span>Хочу получать эти письма</span>
-        </label>
-        <p style="margin:0;font-size:14px;line-height:1.5;color:var(--color-text-secondary,#64748b)">Изменить выбор можно здесь в любой момент. Сервисные письма об аккаунте и подписке продолжат приходить.</p>
-        <p id="emailNewsStatus" role="status" aria-live="polite" style="margin:0;font-size:14px;line-height:1.5"></p>
-      </section>
 
       <!-- DANGER ZONE -->
       <div class="danger-zone">
@@ -958,6 +975,7 @@
 <script type="module">
   import { initLayout, loadUser, getToken, authHeaders, initLogoutModal } from './layout.js';
   import { initBotWidgetTrigger } from './bot-widget.js';
+  import { createEmailNewsSettings } from './email-news.js';
 
   document.addEventListener('DOMContentLoaded', function() {
     initLayout('profile');
@@ -972,6 +990,7 @@
     };
     window.closeModal = function(id) {
       document.getElementById(id).classList.remove('visible');
+      if (id === 'modalEditProfile') emailNews.cancelEmailEntry();
       document.body.style.overflow = '';
     };
 
@@ -994,6 +1013,7 @@
       if (res.status === 401) { window.location.href = '/cabinet/login'; return; }
       const data = await res.json();
       renderProfile(data);
+      return data;
     }
 
     function fmtDateNoTime(iso) {
@@ -1003,39 +1023,28 @@
       return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
     }
 
-    let emailNewsSaved = false;
-    let emailNewsCanEnable = false;
-    function renderEmailNews(data) {
-      const input = document.getElementById('emailNewsEnabled');
-      const status = document.getElementById('emailNewsStatus');
-      emailNewsSaved = data.email_letters_accepted === true;
-      emailNewsCanEnable = !!data.email && !data.email_delivery_blocked;
-      input.checked = emailNewsSaved;
-      input.disabled = !emailNewsCanEnable && !emailNewsSaved;
-      status.textContent = !data.email ? 'Добавь e-mail в личных данных, чтобы включить письма.'
-        : data.email_delivery_blocked ? 'Письма на этот адрес сейчас недоступны. Если нужна помощь, напиши на hello@finnikbot.ru.' : '';
-    }
-    document.getElementById('emailNewsEnabled').addEventListener('change', async function () {
-      const input = this, status = document.getElementById('emailNewsStatus');
-      const accepted = input.checked;
-      input.disabled = true;
-      status.textContent = 'Сохраняю…';
-      try {
+    const emailNews = createEmailNewsSettings({
+      savePreference: async accepted => {
         const response = await fetch('/api/profile/email-preference', {method:'POST',headers:authHeaders(),body:JSON.stringify({accepted})});
-        if (response.status === 401) { window.location.href = '/cabinet/login'; return; }
-        const result = await response.json();
+        if (response.status === 401) { window.location.href = '/cabinet/login'; throw new Error('auth'); }
         if (!response.ok) throw new Error('save');
-        emailNewsSaved = result.accepted;
-        input.checked = emailNewsSaved;
-        status.textContent = emailNewsSaved ? 'Письма включены 💌' : 'Письма отключены. Предлагать подписку больше не буду 💛';
-      } catch {
-        input.checked = emailNewsSaved;
-        status.textContent = 'Не получилось сохранить выбор. Попробуй ещё раз.';
-      } finally { input.disabled = !emailNewsCanEnable && !emailNewsSaved; }
+        return response.json();
+      },
+      openPersonalData: () => window.openEditProfile(true),
+      changed: state => {
+        const input = document.getElementById('emailNewsEnabled');
+        input.checked = state.accepted;
+        input.disabled = !state.loaded || state.busy || (state.blocked && !state.accepted);
+        document.getElementById('emailNewsDescription').hidden = !!state.email;
+        document.getElementById('emailNewsStatus').textContent = state.error || (state.busy ? 'Сохраняю…'
+          : state.blocked ? 'Письма на этот адрес сейчас недоступны. Напиши на hello@finnikbot.ru.'
+          : state.accepted ? 'Письма включены 💌\nПроверь, что мы не в спаме' : 'Письма отключены 💤');
+      },
     });
+    document.getElementById('emailNewsEnabled').addEventListener('change', function () { emailNews.toggle(this.checked); });
 
     function renderProfile(data) {
-      renderEmailNews(data);
+      emailNews.render(data);
       // Личные данные
       const nameEl = document.getElementById('personalName');
       if (data.web_username) {
@@ -1341,42 +1350,50 @@
     })();
 
     // ---- EDIT PROFILE ----
-    window.openEditProfile = function() {
+    window.openEditProfile = function(fromEmailSwitch = false) {
+      if (!fromEmailSwitch) emailNews.cancelEmailEntry();
       const name = document.getElementById('personalName').textContent;
       const email = document.getElementById('personalEmail').textContent;
       document.getElementById('editName').value = (name === '—') ? '' : name.trim();
       document.getElementById('editEmail').value = (email === '—') ? '' : email.trim();
       document.getElementById('editEmailError').style.display = 'none';
       window.openModal('modalEditProfile');
+      if (fromEmailSwitch) document.getElementById('editEmail').focus();
     };
 
     function isValidEmail(value) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
     }
 
+    let profileSaveBusy = false;
     window.saveProfile = async function() {
+      if (profileSaveBusy) return;
       const name = document.getElementById('editName').value.trim();
       const email = document.getElementById('editEmail').value.trim();
       const errorEl = document.getElementById('editEmailError');
-      if (email && !isValidEmail(email)) {
-        errorEl.textContent = 'Введи корректный e-mail';
+      const enableRequested = emailNews.wantsEmailConsent();
+      if ((email && !isValidEmail(email)) || (enableRequested && !email)) {
+        errorEl.textContent = email ? 'Введи корректный e-mail' : 'Укажи e-mail, чтобы получать письма';
         errorEl.style.display = 'block';
         return;
       }
       errorEl.style.display = 'none';
-      const res = await fetch('/api/profile', {
-        method: 'PUT',
-        headers: authHeaders(),
-        body: JSON.stringify({ web_username: name, email: email })
-      });
-      if (res.ok) {
+      profileSaveBusy = true;
+      try {
+        const res = await fetch('/api/profile', {method:'PUT',headers:authHeaders(),body:JSON.stringify({web_username:name,email})});
+        if (!res.ok) {
+          const data = await res.json();
+          errorEl.textContent = data.error === 'Invalid email format' ? 'Введи корректный e-mail' : data.error === 'email_taken' ? 'Этот e-mail уже используется' : 'Ошибка сохранения';
+          errorEl.style.display = 'block';
+          return;
+        }
         window.closeModal('modalEditProfile');
-        loadProfile();
-      } else {
-        const data = await res.json();
-        errorEl.textContent = data.error === 'Invalid email format' ? 'Введи корректный e-mail' : 'Ошибка сохранения';
+        const profile = await loadProfile();
+        if (profile) await emailNews.personalDataSaved(profile, enableRequested);
+      } catch {
+        errorEl.textContent = 'Не получилось сохранить данные. Попробуй ещё раз.';
         errorEl.style.display = 'block';
-      }
+      } finally { profileSaveBusy = false; }
     };
 
     // ---- TELEGRAM ----

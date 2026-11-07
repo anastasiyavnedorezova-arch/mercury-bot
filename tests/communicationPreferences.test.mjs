@@ -114,7 +114,7 @@ test('profile preference endpoint requires active authenticated owner and valida
 test('registration label and profile controls explain scope and preserve independent opt-in',()=>{
  const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
  assert.ok(read('public/cabinet/register.html').includes(REGISTRATION_EMAIL_TEXT));
- const profile=read('public/cabinet/profile.html');assert.match(profile,/Новости и предложения по email/);assert.match(profile,/emailNewsEnabled/);assert.match(profile,/Сервисные письма об аккаунте и подписке/);
+ const profile=read('public/cabinet/profile.html');assert.match(profile,/Новости, скидки и уведомления по e-mail/);assert.match(profile,/emailNewsEnabled/);
  assert.equal(EMAIL_OFFERS.length,3);assert.ok(EMAIL_OFFERS.every(t=>t.includes('скидки')));
 });
 
