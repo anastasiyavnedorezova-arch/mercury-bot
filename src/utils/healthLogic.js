@@ -64,6 +64,7 @@ const LABELS = {
   disk: 'Место на диске',
   cert: 'Сертификаты (сайт и ретранслятор)',
   ai_usage: 'Расход ИИ за сегодня',
+  relay_backup: 'Резервный ретранслятор',
 };
 export const labelOf = (name) => LABELS[name] || name;
 
@@ -76,6 +77,7 @@ const HINTS = {
   disk: 'Диск почти заполнен. Посмотрите: df -h и du -sh /var/log /root/backups.',
   cert: 'Сертификат скоро истечёт или недоступен. Проверьте: certbot certificates и certbot renew --dry-run на том сервере, о котором речь (сайт — основной сервер, relay.finnikbot.ru — ретранслятор).',
   ai_usage: 'Общий дневной предел запросов к ИИ почти исчерпан. Посмотрите, кто тратит: node --env-file=/etc/finnik-prod.env tools/ai-usage.mjs (в /opt/finnik/app). Если рост от рекламы — поднимите AI_GLOBAL_DAILY_LIMIT, если нет — найдите источник.',
+  relay_backup: 'Резервный путь до Telegram/OpenAI или его сертификат недоступен. Проверьте quicksrv и relay-backup.finnikbot.ru. Основной бот может продолжать работать через Hostkey; не переключайте его на неисправный резерв.',
 };
 
 const fmtMsk = (ms) =>

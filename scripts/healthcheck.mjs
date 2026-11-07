@@ -4,17 +4,15 @@
 //   node scripts/healthcheck.mjs              — обычная проверка
 //   node scripts/healthcheck.mjs --test-email — отправить тестовое письмо и выйти
 //   node scripts/healthcheck.mjs --test-telegram — отправить тестовое сообщение в Telegram (бот оповещений) и выйти
-// Тревога уходит двумя путями сразу: письмом и в Telegram. Считается доставленной, если дошёл хотя бы один путь.
+// Каждый получатель и Telegram имеют своё состояние доставки и независимые повторы.
 import fs from 'node:fs';
 import path from 'node:path';
 import { runChecks } from '../src/utils/healthChecks.js';
-import { evaluate, revertOnSendFailure, buildEmail, buildTelegramText } from '../src/utils/healthLogic.js';
-import { sendEmail } from '../src/utils/email.js';
-import { alertConfigured, sendTelegramAlert } from '../src/utils/alertTelegram.js';
+import { sendTelegramAlert } from '../src/utils/alertTelegram.js';
+import { dispatchHealthAlerts, sendHealthTestEmail } from '../src/utils/healthDelivery.js';
 
 const stateDir = process.env.STATE_DIRECTORY || '/var/lib/finnik-health';
 const stateFile = process.env.HEALTHCHECK_STATE_FILE || path.join(stateDir, 'state.json');
-const to = process.env.ADMIN_NOTIFY_EMAIL || process.env.MAIL_FROM_EMAIL;
 // Название проекта в сообщениях Telegram: один бот оповещений может обслуживать несколько проектов (ALERT_PROJECT)
 const project = (process.env.ALERT_PROJECT || '').trim() || 'Финник';
 
@@ -24,20 +22,16 @@ function loadState() {
 function saveState(state) {
   fs.mkdirSync(path.dirname(stateFile), { recursive: true });
   const tmp = `${stateFile}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(state));
+  fs.writeFileSync(tmp, JSON.stringify(state), { mode: 0o600 });
+  fs.chmodSync(tmp, 0o600);
   fs.renameSync(tmp, stateFile);
 }
 
 async function main() {
   if (process.argv.includes('--test-email')) {
-    if (!to) { console.error('[health] нет адреса: задайте ADMIN_NOTIFY_EMAIL или MAIL_FROM_EMAIL'); process.exit(1); }
-    const r = await sendEmail({
-      to,
-      subject: '🧪 Финник: тест оповещений',
-      text: 'Это тестовое письмо проверки здоровья бота. Если вы его видите, оповещения будут доходить.',
-    });
-    console.log('[health] test email:', r.ok ? 'отправлено' : `не отправлено (${r.error || r.status || 'skipped'})`);
-    process.exit(r.ok ? 0 : 1);
+    const results = await sendHealthTestEmail();
+    for (const r of results) console.log('[health] test email:', r.destination || 'no_recipient', r.ok ? 'отправлено' : 'НЕ отправлено');
+    process.exit(results.every((r) => r.ok) ? 0 : 1);
   }
 
   if (process.argv.includes('--test-telegram')) {
@@ -49,24 +43,16 @@ async function main() {
   const now = Date.now();
   const prev = loadState();
   const results = await runChecks(process.env);
-  const { state, actions } = evaluate(prev, results, now);
 
   for (const r of results) console.log(`[health] ${r.name}: ${r.ok ? 'ok' : 'FAIL — ' + r.detail}`);
 
-  let finalState = state;
-  if (actions.length) {
-    const mail = buildEmail(actions, now);
-    const what = actions.map((a) => a.kind + ':' + a.name).join(', ');
-    const [r, tg] = await Promise.all([
-      to ? sendEmail({ to, ...mail }) : Promise.resolve({ ok: false, error: 'no_recipient' }),
-      alertConfigured() ? sendTelegramAlert(buildTelegramText(actions, now, project)) : Promise.resolve({ ok: false, skipped: true, error: 'не настроен' }),
-    ]);
-    console.log(`[health] письмо (${what}): ${r.ok ? 'отправлено' : 'НЕ отправлено (' + (r.error || r.status || 'skipped') + ')'}`);
-    console.log(`[health] Telegram (${what}): ${tg.ok ? 'отправлено' : tg.skipped ? 'пропущено (не настроен)' : 'НЕ отправлено (' + tg.error + ')'}`);
-    if (!r.ok && !tg.ok) finalState = revertOnSendFailure(prev, state, actions);
+  const delivery = await dispatchHealthAlerts(prev, results, now);
+  for (const r of delivery.outcomes) {
+    if (!r.skipped) console.log(`[health] ${r.destination} (${r.actions.join(', ')}): ${r.ok ? 'отправлено' : 'НЕ отправлено; повтор в следующую проверку'}`);
   }
-  saveState(finalState);
-  process.exit(results.every((r) => r.ok) ? 0 : 1);
+  if (!delivery.configured) console.error('[health] не настроены получатели оповещений');
+  saveState(delivery.state);
+  process.exit(results.every((r) => r.ok) && delivery.configured && !delivery.outcomes.some((r) => r.ok === false) ? 0 : 1);
 }
 
 main().catch((err) => { console.error('[health] внутренняя ошибка:', err.message); process.exit(2); });

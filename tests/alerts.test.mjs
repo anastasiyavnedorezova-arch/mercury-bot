@@ -132,7 +132,7 @@ test('сертификаты: по умолчанию проверяются и 
 });
 
 test('все проверки зарегистрированы и подписаны по-русски', () => {
-  assert.deepEqual(Object.keys(ALL_CHECKS), ['app', 'db', 'telegram', 'openai', 'backup', 'disk', 'cert', 'ai_usage']);
+  assert.deepEqual(Object.keys(ALL_CHECKS), ['app', 'db', 'telegram', 'openai', 'backup', 'disk', 'cert', 'ai_usage', 'relay_backup']);
   for (const n of Object.keys(ALL_CHECKS)) assert.notEqual(labelOf(n), n, `нет подписи для ${n}`);
 });
 
@@ -155,9 +155,9 @@ test('расход ИИ: тревога с 80% общего предела (ло
 test('скрипт проверки: два канала, тест-режим Telegram, подключён alert-setup', () => {
   const s = read('scripts/healthcheck.mjs');
   assert.match(s, /--test-telegram/);
-  assert.match(s, /sendTelegramAlert\(buildTelegramText\(actions, now, project\)/);
+  assert.match(s, /dispatchHealthAlerts\(prev, results, now\)/);
   assert.match(s, /ALERT_PROJECT/);
-  assert.match(s, /!r\.ok && !tg\.ok/);               // откат состояния, только если не дошёл ни один путь
+  assert.match(s, /saveState\(delivery.state\)/); // результат независимой доставки каждому адресату
   assert.match(read('tools/alert-setup.mjs'), /getUpdates/);
   assert.doesNotMatch(read('tools/alert-setup.mjs'), /console\.(log|error)\([^)]*token/);
 });
