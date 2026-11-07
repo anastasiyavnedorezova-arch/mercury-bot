@@ -180,16 +180,55 @@ export async function checkAiUsage(env = process.env) {
   }
 }
 
+// The backup is checked even while the main application uses another relay.
+// No paid inference requests: getMe, models and certificate expiry only.
+export async function checkBackupRelay(env = process.env, now = Date.now(), {
+  fetchImpl = fetch, checkCertImpl = checkCert,
+} = {}) {
+  const name = 'relay_backup';
+  let base;
+  try {
+    base = new URL(env.BACKUP_RELAY_BASE_URL);
+    if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash || base.pathname !== '/') throw new Error();
+  } catch { return { name, ok: false, detail: 'неверно задан BACKUP_RELAY_BASE_URL' }; }
+  const root = base.origin;
+  const probe = async (kind, path, headers = {}) => {
+    try {
+      const response = await fetchImpl(root + path, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
+      if (!response.ok) return `${kind}: HTTP ${response.status}`;
+      if (kind === 'Telegram') {
+        const body = await response.json();
+        if (body?.ok !== true) return 'Telegram: неверный ответ API';
+      }
+      return null;
+    } catch (err) { return `${kind}: ${reason(err)}`; }
+  };
+  const checks = await Promise.all([
+    env.TELEGRAM_BOT_TOKEN
+      ? probe('Telegram', `/telegram/bot${env.TELEGRAM_BOT_TOKEN}/getMe`)
+      : 'Telegram: не задан токен',
+    env.OPENAI_API_KEY
+      ? probe('OpenAI', '/openai/v1/models', { Authorization: `Bearer ${env.OPENAI_API_KEY}` })
+      : 'OpenAI: не задан ключ',
+    checkCertImpl({ ...env, HEALTH_CERT_HOST: base.hostname, HEALTH_CERT_PORT: base.port || '443' }, now)
+      .then((result) => result.ok ? null : result.detail),
+  ]);
+  const bad = checks.filter(Boolean);
+  return bad.length ? { name, ok: false, detail: `${base.host}: ${bad.join('; ')}` } : { name, ok: true };
+}
+
 export const ALL_CHECKS = {
   app: checkApp, db: checkDb, telegram: checkTelegram, openai: checkOpenAI,
   backup: checkBackup, disk: checkDisk, cert: checkCert, ai_usage: checkAiUsage,
+  relay_backup: checkBackupRelay,
 };
 
 // HEALTHCHECK_SKIP=db,openai — пропустить проверки; HEALTHCHECK_FORCE_FAIL=telegram — имитировать поломку (для проверки писем)
 export async function runChecks(env = process.env) {
   const skip = new Set((env.HEALTHCHECK_SKIP || '').split(',').map((s) => s.trim()).filter(Boolean));
   const force = new Set((env.HEALTHCHECK_FORCE_FAIL || '').split(',').map((s) => s.trim()).filter(Boolean));
-  const names = Object.keys(ALL_CHECKS).filter((n) => !skip.has(n));
+  const names = Object.keys(ALL_CHECKS).filter((n) => !skip.has(n)
+    && (n !== 'relay_backup' || env.BACKUP_RELAY_BASE_URL?.trim() || force.has(n)));
   return Promise.all(
     names.map((n) => (force.has(n)
       ? Promise.resolve({ name: n, ok: false, detail: 'тестовая имитация поломки' })
