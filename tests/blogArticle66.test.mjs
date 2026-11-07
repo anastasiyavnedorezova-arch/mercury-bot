@@ -258,7 +258,7 @@ test('карта сайта, иконки, статьи 1 и 2 на месте',
   assert.ok(sm.includes(`<loc>${FULL_URL}</loc>`));
   assert.ok(sm.includes('<loc>https://finnikbot.ru/blog/kak-vesti-uchet-rashodov/</loc>'));
   assert.ok(sm.includes('<loc>https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/</loc>'));
-  assert.equal((sm.match(/<url>/g) || []).length, 8);
+  assert.equal((sm.match(/<url>/g) || []).length, 9);
   for (const need of ['/favicon.ico', '/images/favicon-finnik.svg', '/images/favicon-48.png', '/images/favicon-120.png']) {
     assert.ok(html.includes(`href="${need}"`), `нет иконки ${need}`);
     assert.ok(exists(need));

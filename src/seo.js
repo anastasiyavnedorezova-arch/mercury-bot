@@ -1,6 +1,6 @@
 // robots.txt, sitemap.xml и запрет индексации тестовой среды (stage.*).
 export const SITE_URL = 'https://finnikbot.ru';
-const PUBLIC_PAGES = ['/', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies', '/blog/kak-vesti-uchet-rashodov/', '/blog/alternativa-excel-uchet-finansov/', '/blog/skolko-otkladyvat-s-zarplaty/'];
+const PUBLIC_PAGES = ['/', '/blog/', '/legal/offer', '/legal/privacy', '/legal/consent', '/legal/cookies', '/blog/kak-vesti-uchet-rashodov/', '/blog/alternativa-excel-uchet-finansov/', '/blog/skolko-otkladyvat-s-zarplaty/'];
 
 export const isStageHost = (host = '') => /^stage\./i.test(String(host).split(':')[0]);
 
@@ -29,9 +29,8 @@ export function addSeoRoutes(app) {
     if (isStageHost(req.headers.host)) res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     next();
   });
-  // Страницы-списка «Блог» пока нет: адрес /blog/ временно ведёт на единственную статью (302, чтобы поисковики не запоминали это навсегда).
-  // Когда статей станет 3+, здесь вместо редиректа отдаём страницу блога.
-  app.get('/blog', (req, res) => res.redirect(302, '/blog/kak-vesti-uchet-rashodov/'));
+  // One canonical directory URL; the index itself is served by express.static below.
+  app.get('/blog', (req, res, next) => req.path.endsWith('/') ? next() : res.redirect(301, '/blog/' + (req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '')));
   app.get('/robots.txt', (req, res) => res.type('text/plain; charset=utf-8').send(robotsTxt(req.headers.host)));
   app.get('/sitemap.xml', (req, res) => {
     if (isStageHost(req.headers.host)) return res.status(404).end();

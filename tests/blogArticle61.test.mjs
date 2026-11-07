@@ -182,7 +182,7 @@ test('карта сайта и иконки', () => {
   }
 });
 
-test('сервер: статья отдаётся, без слэша — 301 на адрес со слэшем, /blog/ — 302 на статью, на stage noindex', async () => {
+test('сервер: статья отдаётся, без слэша — 301 на адрес со слэшем, /blog/ — посадочная, на stage noindex', async () => {
   const app = express();
   addSeoRoutes(app);
   app.use(express.static(pub));
@@ -199,11 +199,9 @@ test('сервер: статья отдаётся, без слэша — 301 н�
     const noSlash = await get(URL_PATH.slice(0, -1));
     assert.equal(noSlash.status, 301);
     assert.match(noSlash.headers.location, /\/blog\/kak-vesti-uchet-rashodov\/$/);
-    for (const p of ['/blog', '/blog/']) {
-      const r = await get(p);
-      assert.equal(r.status, 302, p);
-      assert.equal(r.headers.location, URL_PATH);
-    }
+    assert.equal((await get('/blog')).status, 301);
+    assert.equal((await get('/blog')).headers.location, '/blog/');
+    assert.equal((await get('/blog/')).status, 200);
     assert.equal((await get(URL_PATH, 'stage.finnikbot.ru')).headers['x-robots-tag'], 'noindex, nofollow');
     for (const [p, type] of [['/css/blog.css', /text\/css/], ['/js/blog.js', /javascript/], ['/images/blog/blog-1-cover.webp', /image\/webp/], ['/images/blog/og-blog-1.jpg', /image\/jpeg/]]) {
       const r = await get(p);

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head prefix="og: https://ogp.me/ns#">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Блог Финника — учёт расходов, бюджет и накопления</title>
+  <meta name="description" content="Как вести учёт расходов без таблиц, разобраться в бюджете и откладывать на цели. Практические статьи и калькулятор накоплений от Финника.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://finnikbot.ru/blog/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Финник · Деньги">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Блог Финника — о деньгах просто и по делу">
+  <meta property="og:description" content="Учёт расходов, привычки и накопления: понятные шаги для личных финансов.">
+  <meta property="og:url" content="https://finnikbot.ru/blog/">
+  <meta property="og:image" content="https://finnikbot.ru/images/blog/og-blog-3.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Финник с копилкой и монетами — иллюстрация к статье о накоплениях">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" type="image/svg+xml" href="/images/favicon-finnik.svg">
+  <link rel="apple-touch-icon" href="/images/bot-app-icon-180.png">
+  <link rel="preload" href="/fonts/manrope/manrope-cyrillic-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/manrope/manrope-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/blog.css">
+  <link rel="stylesheet" href="/css/blog-index.css">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "@id": "https://finnikbot.ru/blog/#page",
+      "url": "https://finnikbot.ru/blog/",
+      "name": "Блог Финника — об учёте расходов, бюджете и накоплениях",
+      "description": "Статьи о личных финансах: как вести учёт расходов, выбрать удобный способ записи и откладывать на цели.",
+      "inLanguage": "ru-RU",
+      "mainEntity": {
+        "@id": "https://finnikbot.ru/blog/#articles"
+      }
+    },
+    {
+      "@type": "ItemList",
+      "@id": "https://finnikbot.ru/blog/#articles",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "url": "https://finnikbot.ru/blog/skolko-otkladyvat-s-zarplaty/",
+          "name": "Сколько откладывать с зарплаты: проценты, правила и расчет на цель"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "url": "https://finnikbot.ru/blog/kak-vesti-uchet-rashodov/",
+          "name": "Как вести учет расходов без таблиц и не бросить"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "url": "https://finnikbot.ru/blog/alternativa-excel-uchet-finansov/",
+          "name": "Альтернатива Excel: учет финансов без таблиц и сложных приложений"
+        }
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Главная",
+          "item": "https://finnikbot.ru/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Блог",
+          "item": "https://finnikbot.ru/blog/"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+</head>
+<body class="blog-index">
+<a class="catalog-skip" href="#main">К содержимому</a>
+<header class="header" id="header">
+  <div class="header__wrap">
+    <a href="/" class="header__logo" aria-label="Финник · Деньги — главная">
+      <img src="/images/logo-finnik-main.svg" width="174" height="45" alt="Финник · Деньги">
+    </a>
+    <nav class="header__nav" aria-label="Основная навигация">
+      <a href="/#how" class="header__nav-link">Как работает бот</a>
+      <a href="/#pricing" class="header__nav-link">Тарифы</a>
+      <a href="/#pricing" class="header__nav-link">Подписка</a>
+      <a href="/#faq" class="header__nav-link">Вопросы и ответы</a>
+      <a href="/blog/" class="header__nav-link" aria-current="page">Блог</a>
+    </nav>
+    <div class="header__actions">
+      <a href="/cabinet/login" class="btn btn--secondary">Войти</a>
+      <a href="/cabinet/register" class="btn btn--primary">Создать аккаунт</a>
+    </div>
+    <button class="header__burger" id="burger" aria-label="Меню" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+  <div class="header__overlay" id="menuOverlay" aria-hidden="true"></div>
+  <div class="header__mobile" id="mobileMenu" aria-hidden="true" role="dialog" aria-label="Меню навигации">
+    <nav class="header__mobile-nav">
+      <a href="/#how">Как работает бот</a>
+      <a href="/#pricing">Тарифы</a>
+      <a href="/#pricing">Подписка</a>
+      <a href="/#faq">Вопросы и ответы</a>
+      <a href="/blog/" aria-current="page">Блог</a>
+    </nav>
+    <div class="header__mobile-actions">
+      <a href="/cabinet/login" class="btn btn--secondary">Войти</a>
+      <a href="/cabinet/register" class="btn btn--blue">Создать аккаунт</a>
+    </div>
+  </div>
+</header>
+<main class="page" id="main">
+ <div class="page__in">
+  <nav class="crumbs" aria-label="Хлебные крошки"><a href="/">Главная</a><span aria-hidden="true">/</span><span aria-current="page">Блог</span></nav>
+  <section class="catalog-intro" aria-labelledby="blog-title">
+   <div><span class="tag">Блог Финника</span><h1 id="blog-title">О деньгах —<br>просто и по делу</h1></div>
+   <p class="catalog-intro__lead">Как разобраться в расходах, найти удобный способ учёта и начать откладывать на свои цели. Понятные шаги, примеры и инструменты, которые можно попробовать уже сегодня.</p>
+  </section>
+  <section class="catalog" id="articles" aria-labelledby="articles-title">
+   <div class="catalog__heading"><h2 id="articles-title">Статьи о личных финансах</h2><span>Начни с того, что важно сейчас</span></div>
+<article class="catalog-card catalog-card--featured">
+  <a class="catalog-card__link" href="/blog/skolko-otkladyvat-s-zarplaty/" aria-labelledby="title-skolko-otkladyvat-s-zarplaty">
+    <div class="catalog-card__image"><img src="/images/blog/blog-3-cover.webp" width="1200" height="630" alt="Финник с копилкой-свинкой: стрелка ведет от конверта «Зарплата» к копилке, рядом большие стопки монет" fetchpriority="high" decoding="async"></div>
+    <div class="catalog-card__body">
+      <div class="catalog-card__meta"><span class="catalog-card__topic">Накопления</span><span>13 минут</span></div>
+      <h3 id="title-skolko-otkladyvat-s-zarplaty">Сколько откладывать с зарплаты: проценты, правила и расчет на цель</h3>
+      <p>Как выбрать посильный взнос, разобраться с правилом 50/30/20 и рассчитать, сколько нужно откладывать на свою цель. Внутри — калькулятор накоплений.</p>
+      <div class="catalog-card__bottom"><time datetime="2026-11-06">06.11.2026</time><span class="catalog-card__read">Читать статью <span aria-hidden="true">↗</span></span></div>
+    </div>
+  </a>
+</article>
+<div class="catalog__grid"><article class="catalog-card">
+  <a class="catalog-card__link" href="/blog/kak-vesti-uchet-rashodov/" aria-labelledby="title-kak-vesti-uchet-rashodov">
+    <div class="catalog-card__image"><img src="/images/blog/blog-1-cover.webp" width="1200" height="630" alt="Финник с телефоном и сообщение «Кофе 380»: бот ответил «Есть, записал»" loading="lazy" decoding="async"></div>
+    <div class="catalog-card__body">
+      <div class="catalog-card__meta"><span class="catalog-card__topic">Учет расходов</span><span>8 минут</span></div>
+      <h3 id="title-kak-vesti-uchet-rashodov">Как вести учет расходов без таблиц и не бросить</h3>
+      <p>С чего начать, как записывать покупки без таблиц и что поможет не бросить учёт через неделю. Простой план для первой записи.</p>
+      <div class="catalog-card__bottom"><time datetime="2026-11-03">03.11.2026</time><span class="catalog-card__read">Читать статью <span aria-hidden="true">↗</span></span></div>
+    </div>
+  </a>
+</article><article class="catalog-card">
+  <a class="catalog-card__link" href="/blog/alternativa-excel-uchet-finansov/" aria-labelledby="title-alternativa-excel-uchet-finansov">
+    <div class="catalog-card__image"><img src="/images/blog/blog-2-cover.webp" width="1200" height="630" alt="Слева ноутбук с таблицей Excel и банковскими картами, справа телефон с чатом Финника и талисманом" loading="lazy" decoding="async"></div>
+    <div class="catalog-card__body">
+      <div class="catalog-card__meta"><span class="catalog-card__topic">Учет расходов</span><span>6 минут</span></div>
+      <h3 id="title-alternativa-excel-uchet-finansov">Альтернатива Excel: учет финансов без таблиц и сложных приложений</h3>
+      <p>Сравниваем таблицы, приложения и запись сообщением. Разбираемся, какой способ учёта проще встроить в обычный день.</p>
+      <div class="catalog-card__bottom"><time datetime="2026-10-30">30.10.2026</time><span class="catalog-card__read">Читать статью <span aria-hidden="true">↗</span></span></div>
+    </div>
+  </a>
+</article></div>
+  </section>
+  <section class="cta catalog-cta" aria-labelledby="try-title">
+   <div><h2 id="try-title">От чтения — к первой записи 💛</h2>
+    <p>Попробуй записать сегодняшнюю покупку в Финнике — например, «кофе 250». Я сохраню расход, а ты сможешь посмотреть свои записи в истории.</p>
+    <div class="cta__actions"><a href="/cabinet/register" class="btn btn--blue btn--lg">Попробовать бесплатно</a><a href="/#how" class="btn btn--ghost btn--lg">Как работает Финник</a></div>
+   </div>
+   <figure class="ph ph--mascot"><img src="/images/blog/finnik-mascot-phone.webp" width="600" height="600" alt="Финник с телефоном" loading="lazy" decoding="async"></figure>
+  </section>
+ </div>
+</main>
+<footer class="footer" id="footer">
+  <div class="footer__container">
+    <div class="footer__top">
+      <a href="/" class="footer__logo" aria-label="Финник · Деньги — главная">
+        <img src="/images/logo-footer.svg" alt="Финник · Деньги — твой финансовый помощник">
+      </a>
+      <div class="footer__contacts">
+        <a href="/blog/" class="footer__contact-pill">
+          <img src="/images/icon_blog.svg" width="24" height="24" alt="" aria-hidden="true">
+          <span>Блог</span>
+        </a>
+        <a href="mailto:hello@finnikbot.ru" class="footer__contact-pill">
+          <img src="/images/icon_mail.svg" width="24" height="24" alt="" aria-hidden="true">
+          <span>hello@finnikbot.ru</span>
+        </a>
+        <a href="https://t.me/FinnikMoneyBot" class="footer__contact-pill" target="_blank" rel="noopener">
+          <img src="/images/icon_telegram.svg" width="24" height="24" alt="" aria-hidden="true">
+          <span>Запустить бота</span>
+        </a>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p class="footer__legal">Индивидуальный предприниматель Захарова Анастасия Вячеславовна, ИНН 504230305760, ОГРНИП 326508100607489. hello@finnikbot.ru</p>
+      <div class="footer__docs">
+        <a href="/legal/offer" class="footer__doc-link">Публичная оферта</a>
+        <a href="/legal/privacy" class="footer__doc-link">Политика конфиденциальности</a>
+        <a href="/legal/consent" class="footer__doc-link">Согласие на обработку данных</a>
+        <a href="/legal/cookies" class="footer__doc-link">Cookies</a>
+        <a href="#" class="footer__doc-link" data-cookie-settings>Настройки cookie</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<script src="/js/blog.js" defer></script>
+<script src="/js/consent.js" defer></script>
+</body>
+</html>
