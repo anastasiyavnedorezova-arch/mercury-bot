@@ -15,6 +15,7 @@ const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const FOREIGN_KEYS = {
   budget: { users: 'user_id' },
   email_events: { users: 'user_id' },
+  email_consent_events: { users: 'user_id' },
   email_log: { users: 'user_id' },
   categories: { category_groups: 'group_id', users: 'user_id' },
   category_groups: {},

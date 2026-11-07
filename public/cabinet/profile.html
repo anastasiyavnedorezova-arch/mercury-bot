@@ -587,6 +587,17 @@
 
       </div><!-- /profile-top-grid -->
 
+      <section class="profile-card email-news-card" aria-labelledby="emailNewsTitle" style="margin-bottom:16px">
+        <h2 id="emailNewsTitle" class="card-title" style="margin:0">Новости и предложения по email</h2>
+        <p id="emailNewsDescription" style="margin:0;line-height:1.6">Обновления Финника, предупреждения о технических работах и промокоды на скидки.</p>
+        <label style="display:flex;align-items:center;gap:12px;cursor:pointer;min-height:44px">
+          <input id="emailNewsEnabled" type="checkbox" disabled aria-describedby="emailNewsDescription emailNewsStatus" style="width:22px;height:22px;accent-color:var(--color-green,#22c55e)">
+          <span>Хочу получать эти письма</span>
+        </label>
+        <p style="margin:0;font-size:14px;line-height:1.5;color:var(--color-text-secondary,#64748b)">Изменить выбор можно здесь в любой момент. Сервисные письма об аккаунте и подписке продолжат приходить.</p>
+        <p id="emailNewsStatus" role="status" aria-live="polite" style="margin:0;font-size:14px;line-height:1.5"></p>
+      </section>
+
       <!-- DANGER ZONE -->
       <div class="danger-zone">
         <button class="delete-btn" onclick="openModal('modalDeleteAccount')">Удалить аккаунт</button>
@@ -992,7 +1003,39 @@
       return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
     }
 
+    let emailNewsSaved = false;
+    let emailNewsCanEnable = false;
+    function renderEmailNews(data) {
+      const input = document.getElementById('emailNewsEnabled');
+      const status = document.getElementById('emailNewsStatus');
+      emailNewsSaved = data.email_letters_accepted === true;
+      emailNewsCanEnable = !!data.email && !data.email_delivery_blocked;
+      input.checked = emailNewsSaved;
+      input.disabled = !emailNewsCanEnable && !emailNewsSaved;
+      status.textContent = !data.email ? 'Добавь e-mail в личных данных, чтобы включить письма.'
+        : data.email_delivery_blocked ? 'Письма на этот адрес сейчас недоступны. Если нужна помощь, напиши на hello@finnikbot.ru.' : '';
+    }
+    document.getElementById('emailNewsEnabled').addEventListener('change', async function () {
+      const input = this, status = document.getElementById('emailNewsStatus');
+      const accepted = input.checked;
+      input.disabled = true;
+      status.textContent = 'Сохраняю…';
+      try {
+        const response = await fetch('/api/profile/email-preference', {method:'POST',headers:authHeaders(),body:JSON.stringify({accepted})});
+        if (response.status === 401) { window.location.href = '/cabinet/login'; return; }
+        const result = await response.json();
+        if (!response.ok) throw new Error('save');
+        emailNewsSaved = result.accepted;
+        input.checked = emailNewsSaved;
+        status.textContent = emailNewsSaved ? 'Письма включены 💌' : 'Письма отключены. Предлагать подписку больше не буду 💛';
+      } catch {
+        input.checked = emailNewsSaved;
+        status.textContent = 'Не получилось сохранить выбор. Попробуй ещё раз.';
+      } finally { input.disabled = !emailNewsCanEnable && !emailNewsSaved; }
+    });
+
     function renderProfile(data) {
+      renderEmailNews(data);
       // Личные данные
       const nameEl = document.getElementById('personalName');
       if (data.web_username) {

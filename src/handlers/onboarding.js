@@ -7,6 +7,7 @@ import { getUserAccess } from '../utils/access.js';
 import { recordHint } from '../utils/botTexts.js';
 import { startTrial, hadTrial } from '../utils/trial.js';
 import { findUserIdByExternalId } from '../utils/findUser.js';
+import { maybeShowCommunication } from '../utils/communicationPreferences.js';
 
 const GREETING = `Привет! Я бот сервиса Финник Деньги 👋`;
 
@@ -80,8 +81,12 @@ export async function maybeShowFirstRecordTip(bot, chatId, txId, db = supabase) 
       .from('transactions')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', tx.user_id);
-    if (count !== 1) return false;
+    if (count !== 1) {
+      if (count > 0) await maybeShowCommunication(bot, chatId, tx.user_id, { db, firstOnly: true });
+      return false;
+    }
     await bot.sendMessage(chatId, FIRST_RECORD_TEXT, FIRST_RECORD_KEYBOARD);
+    await maybeShowCommunication(bot, chatId, tx.user_id, { db, firstOnly: true });
     return true;
   } catch (err) {
     console.error('[onboarding] first record tip:', err.message);

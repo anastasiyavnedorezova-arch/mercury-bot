@@ -1,4 +1,6 @@
+import { createEmailPreferencesRouter } from './cabinet/emailPreferences.js';
 import { Router } from 'express';
+import { maybeShowCommunication, answerEmailOffer, emailEnabled } from './utils/communicationPreferences.js';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { isWebAccount } from './auth/authCore.js';
@@ -745,7 +747,7 @@ router.get('/api/profile', requireAuth, async (req, res) => {
   try {
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, external_id, channel, created_at, tg_username, web_username, email, status, password_hash')
+      .select('id, external_id, channel, created_at, tg_username, web_username, email, status, password_hash, email_letters_accepted, email_unsubscribed_at, email_blocked_at')
       .eq('id', req.userId)
       .single();
     if (error || !user) return res.status(404).json({ error: 'User not found' });
@@ -771,6 +773,8 @@ router.get('/api/profile', requireAuth, async (req, res) => {
       tg_username: user.tg_username,
       web_username: user.web_username,
       email: user.email,
+      email_letters_accepted: emailEnabled(user),
+      email_delivery_blocked: !!user.email_blocked_at,
       username: user.web_username || user.tg_username || user.email || null,
       telegram_connected: user.channel === 'telegram',
       // Telegram можно отключить только если остаётся вход по почте и паролю
@@ -832,6 +836,8 @@ router.put('/api/profile', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+router.use(createEmailPreferencesRouter({ db: supabase, requireAuth }));
 
 // ──────────────────────────────────────────
 // POST /api/profile/activate-trial
@@ -932,7 +938,11 @@ router.post('/api/bot/init', requireAuth, async (req, res) => {
       .is('terms_accepted_at', null);
 
     const welcomed = await maybeShowWebWelcome(webBot, chatId, req.userId);
-    if (!welcomed) await showMainMenu(webBot, chatId);
+    if (!welcomed) {
+      await showMainMenu(webBot, chatId);
+      const { count, error } = await supabase.from('transactions').select('id', { count: 'exact', head: true }).eq('user_id', req.userId);
+      if (!error && count > 0) await maybeShowCommunication(webBot, chatId, req.userId, { db: supabase });
+    }
 
     const queue = getWebChatQueue(chatId);
     const messages = queue.splice(0, queue.length);
@@ -1007,7 +1017,7 @@ router.get('/api/bot/poll', requireAuth, async (req, res) => {
 router.post('/api/bot/callback', requireAuth, async (req, res) => {
   try {
     const { callback_data } = req.body;
-    if (!callback_data) return res.status(400).json({ error: 'Missing callback_data' });
+    if (typeof callback_data !== 'string' || !callback_data) return res.status(400).json({ error: 'Missing callback_data' });
 
     const chatId = await getOrCreateWebChatId(req.userId);
     clearWebChatQueue(chatId);
@@ -1024,7 +1034,18 @@ router.post('/api/bot/callback', requireAuth, async (req, res) => {
       },
     };
 
-    await dispatchCallbackQuery(webBot, fakeQuery);
+    if (callback_data.startsWith('email-news:')) {
+      if (process.env.COMMUNICATION_ONBOARDING_ENABLED !== 'true') return res.status(400).json({ error: 'OFFER_DISABLED' });
+      const match = /^email-news:([123]):(accept|later|decline)$/.exec(callback_data);
+      if (!match) return res.status(400).json({ error: 'INVALID_EMAIL_OFFER' });
+      try {
+        const result = await answerEmailOffer(supabase, req.userId, Number(match[1]), match[2]);
+        await webBot.sendMessage(chatId, result.stale ? 'Это предложение уже обработано 💛 Изменить выбор можно в профиле.' : result.text);
+      } catch (err) {
+        if (['INVALID_EMAIL_OFFER','EMAIL_REQUIRED','EMAIL_BLOCKED'].includes(err.message)) return res.status(400).json({error:err.message});
+        throw err;
+      }
+    } else await dispatchCallbackQuery(webBot, fakeQuery);
 
     const queue = getWebChatQueue(chatId);
     const messages = queue.splice(0, queue.length);

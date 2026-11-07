@@ -1,6 +1,7 @@
 // Собственная авторизация сайта: регистрация, вход, сброс пароля по e-mail.
 // Заменяет Supabase Auth. Фабрика получает базу и «почтальона» снаружи — так её можно тестировать без сети.
 import express from 'express';
+import { emailConsentFields } from '../utils/communicationPreferences.js';
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import {
@@ -99,6 +100,7 @@ export function createAuthRouter({ db, mailer, limits = {}, getBaseUrl, getJwtSe
         terms_accepted_at: nowIso,
         terms_version: '2.0',
         email_letters_accepted: b.email_letters_accepted === true,
+        ...(b.email_letters_accepted === true ? emailConsentFields(true, 'registration', new Date(nowIso)) : {}),
         utm: (() => { const u = sanitizeUtm(b.utm); return u ? JSON.stringify(u) : null; })(),
         created_at: nowIso,
         last_active_at: nowIso,

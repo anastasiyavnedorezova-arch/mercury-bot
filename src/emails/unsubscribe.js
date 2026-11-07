@@ -4,6 +4,7 @@
 //  POST /unsubscribe                     — отписка (форма на странице или «в один клик» из почтового клиента)
 //  POST /unsubscribe  action=resubscribe — вернуть письма
 import crypto from 'crypto';
+import { emailConsentFields } from '../utils/communicationPreferences.js';
 import express from 'express';
 import { escapeHtml } from '../utils/email.js';
 
@@ -89,13 +90,13 @@ export function createEmailRouter({ db }) {
 
     try {
       if (action === 'resubscribe') {
-        const { error } = await db.from('users').update({ email_letters_accepted: true, email_unsubscribed_at: null }).eq('id', u);
+        const { error } = await db.from('users').update(emailConsentFields(true, 'email_resubscribe')).eq('id', u);
         if (error) throw new Error(error.message);
         return res.send(resubPage());
       }
       const { error } = await db
         .from('users')
-        .update({ email_letters_accepted: false, email_unsubscribed_at: new Date().toISOString() })
+        .update(emailConsentFields(false, 'email_unsubscribe'))
         .eq('id', u);
       if (error) throw new Error(error.message);
       console.log(`[unsubscribe] user ${u.slice(0, 8)} unsubscribed`);
